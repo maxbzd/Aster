@@ -4,7 +4,7 @@ import { blankLead } from '@/data/leads'
 import type { Interaction, Lead, Person, Reminder } from '@/data/types'
 import { DAY } from '@/lib/format'
 
-/** Фиксированное «сейчас»: понедельник, 5 октября 2026, 12:00 (по местному времени). */
+/** A fixed "now": Monday, 5 October 2026, 12:00 (local time). */
 export const NOW = new Date(2026, 9, 5, 12, 0, 0).getTime()
 
 let seq = 0
@@ -22,7 +22,7 @@ export const reminder = (p: Partial<Reminder> = {}): Reminder => ({
   id: `r${++seq}`, text: 'Позвонить', dueAt: NOW + DAY, done: false, createdAt: NOW - DAY, ...p,
 })
 
-/** Человек, у которого последний контакт был `days` дней назад. */
+/** A person whose last contact was `days` days ago. */
 export const contactedAgo = (days: number, p: Partial<Person> = {}) => person({ lastContactAt: NOW - days * DAY, ...p })
 
 export async function resetDb() {

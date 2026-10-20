@@ -6,26 +6,26 @@ import { t } from '@/i18n'
 
 export interface ControllerOptions {
   remote: Remote
-  /** движок над конкретной базой; по умолчанию — база приложения */
+  /** the engine over a specific database; the app's database by default */
   engine?: Engine
   userId: string
   report: (patch: Partial<CloudState>) => void
-  /** подписка на «в облаке что-то изменилось» (Realtime); возвращает отписку */
+  /** a subscription to "something changed in the cloud" (Realtime); returns an unsubscribe */
   subscribe?: (ping: () => void) => () => void
-  /** пауза после локальной правки перед отправкой */
+  /** the pause after a local edit before sending */
   debounceMs?: number
-  /** как часто проверять облако, если пинги не приходят */
+  /** how often to check the cloud when no pings arrive */
   pollMs?: number
-  /** не чаще раза в столько мс реагировать на возвращение в приложение */
+  /** react to a return to the app at most once per this many ms */
   focusThrottleMs?: number
   online?: () => boolean
-  /** паузы перед повтором после ошибки, мс */
+  /** pauses before a retry after an error, ms */
   backoffMs?: number[]
 }
 
 export const BACKOFF = [3_000, 10_000, 30_000, 60_000, 180_000, 300_000]
 
-/** Один «сеанс» синхронизации для вошедшего пользователя. */
+/** One sync "session" for a signed-in user. */
 export class SyncController {
   private inflight: Promise<void> | null = null
   private again: { full: boolean } | null = null
@@ -51,18 +51,18 @@ export class SyncController {
     return timer
   }
 
-  /** Запуск: определяем, чьи это данные, при необходимости готовим очередь и делаем первую синхронизацию. */
+  /** Start: work out whose data this is, prepare the queue if needed and run the first sync. */
   async start() {
     const e = this.e
     e.installTracking()
     const stored = await e.getMeta<string>('userId')
     if (stored && stored !== this.o.userId) {
-      // на устройстве лежат данные другого аккаунта: смешивать их нельзя
+      // the device holds another account's data: they must not be mixed
       await e.clearLocalData()
       this.o.report({ notice: t("This device had another account's data — it was removed, loading yours.") })
     }
     if (stored !== this.o.userId && (await e.hasDemoData())) {
-      // вымышленные люди не должны попасть в настоящий аккаунт
+      // fictional people must not get into a real account
       await e.clearLocalData()
       this.o.report({ notice: t("Demo data was removed from the device so it doesn't reach the cloud.") })
     }
@@ -114,7 +114,7 @@ export class SyncController {
     for (const c of this.cleanups.splice(0)) c()
   }
 
-  /** Синхронизация сейчас. Одновременно идёт не больше одной; лишние запросы схлопываются в один повтор. */
+  /** Sync now. Never more than one at a time; extra requests collapse into one repeat. */
   syncNow(opts: { full?: boolean } = {}): Promise<void> {
     if (this.stopped) return Promise.resolve()
     if (this.inflight) {
@@ -132,7 +132,7 @@ export class SyncController {
     return this.inflight
   }
 
-  /** Полная пересинхронизация: всё локальное в очередь и чтение облака с самого начала. */
+  /** A full resync: everything local goes to the queue and the cloud is read from the very start. */
   async resync() {
     await this.e.clearRejected()
     await this.e.enqueueAll()

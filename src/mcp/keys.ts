@@ -2,11 +2,11 @@ import { getClient } from '@/cloud/auth'
 import { SUPABASE_URL } from '@/cloud/config'
 import { t } from '@/i18n'
 
-/* Ключи доступа для Claude (MCP). В базе хранится только хэш ключа: сам ключ виден один раз, при создании. */
+/* Access keys for Claude (MCP). Only the key's hash is stored in the database: the key itself is shown once, when it is created. */
 
 export interface McpKey { id: string; label: string; created_at: string; last_used_at: string | null }
 
-/** Адрес для подключения в Claude: ключ — часть адреса. */
+/** The address to connect in Claude: the key is part of the address. */
 export const mcpUrl = (token: string) => `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/mcp/${token}`
 
 function explain(e: { message: string; code?: string }): never {

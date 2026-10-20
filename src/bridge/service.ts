@@ -26,7 +26,7 @@ async function ownBridge(): Promise<OwnBridge> {
   return own
 }
 
-/** Подставить свои реализации (в тестах). */
+/** Substitute your own implementations (in tests). */
 export function __setBridgeDeps(d: { own?: OwnBridge | null; meta?: MetaStore }) {
   if (d.own !== undefined) own = d.own
   if (d.meta) meta = d.meta
@@ -38,7 +38,7 @@ export async function refreshConnections(): Promise<Connection[]> {
   return conns
 }
 
-/** Один круг обмена. Параллельные вызовы схлопываются в один повтор. */
+/** One exchange round. Parallel calls collapse into one repeat. */
 export function runBridge(): Promise<void> {
   if (running) { again = true; return running }
   running = (async () => {
@@ -62,7 +62,7 @@ export function runBridge(): Promise<void> {
   return running
 }
 
-/** Запуск вместе со входом в облако: первый круг, затем по расписанию, при возвращении в приложение и после правок. */
+/** Starts together with the cloud sign-in: a first round, then on a schedule, when you return to the app and after edits. */
 export function startBridge() {
   stopBridge()
   set({ active: true })
@@ -85,7 +85,7 @@ export function stopBridge() {
   set({ active: false, connections: [], phase: 'idle', revoked: false, error: undefined, report: undefined, lastCycleAt: undefined })
 }
 
-/* ---------- действия экрана ---------- */
+/* ---------- screen actions ---------- */
 
 export async function makeCode() {
   const r = await createPairingCode(await ownBridge(), SELF)
@@ -110,7 +110,7 @@ export async function changeScopes(c: Connection, scopes: Scope[]) {
   await refreshConnections()
 }
 
-/** Связать человека в Aster с человеком в Орбите вручную. Сразу публикуется, чтобы другая сторона узнала. */
+/** Link a person in Aster to a person in Orbita by hand. It is published at once so that the other side learns of it. */
 export async function linkPeople(localId: string, peerId: string) {
   const o = await ownBridge()
   await o.putLinks([{ local_id: localId, peer_id: peerId, origin: 'user', deleted: false, updated_ms: Date.now() }])

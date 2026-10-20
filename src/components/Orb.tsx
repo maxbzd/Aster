@@ -9,7 +9,7 @@ const TONES = {
 } as const
 export type OrbTone = keyof typeof TONES
 
-/** Светящийся шар (Gentler Streak) + тонкая дуга прогресса (WHOOP). */
+/** A glowing orb (Gentler Streak) plus a thin progress arc (WHOOP). */
 export function Orb({ value, tone, size = 240, label }: { value: number; tone: OrbTone; size?: number; label?: string }) {
   const tone2 = TONES[tone]
   const mv = useMotionValue(0)

@@ -9,7 +9,7 @@ import { deleteInteraction, toggleReminder } from '@/data/actions'
 import { haptic, useUI } from '@/app/store'
 import { t } from '@/i18n'
 
-/** Вертикальная лента событий (Oura timeline). */
+/** A vertical timeline of events (Oura timeline). */
 export function Timeline({ items, people, showPeople = true, allowDelete, allowEdit = allowDelete }: { items: Interaction[]; people: Map<string, Person>; showPeople?: boolean; allowDelete?: boolean; allowEdit?: boolean }) {
   const nav = useNavigate()
   const toast = useUI(s => s.toast)

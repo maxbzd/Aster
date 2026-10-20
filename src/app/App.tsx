@@ -18,7 +18,7 @@ import { Today } from '@/screens/Today'
 import { People } from '@/screens/People'
 import { Me } from '@/screens/Me'
 
-// Второстепенные экраны грузятся по требованию (офлайн их всё равно кеширует service worker)
+// Secondary screens are loaded on demand (offline, the service worker caches them anyway)
 const screenLoaders: (() => Promise<unknown>)[] = []
 const lazyScreen = <K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) => {
   screenLoaders.push(load)
@@ -52,7 +52,7 @@ export default function App() {
   )
 }
 
-/** Восстанавливаем прокрутку при «назад», при переходе вперёд — наверх. */
+/** Restore the scroll position on "back"; going forward, scroll to the top. */
 function useScrollMemory(key: string) {
   const navType = useNavigationType()
   const positions = useRef(new Map<string, number>())
@@ -73,7 +73,7 @@ function Shell() {
   const setSearch = useUI(s => s.setSearch)
   const nav = useNavigate()
   useScrollMemory(location.pathname)
-  // смена экрана закрывает открытые шторки и поиск
+  // changing the screen closes open sheets and search
   const pendingShare = useRef<string | null>(null)
   useEffect(() => {
     useUI.getState().close(); useUI.getState().setSearch(false)
@@ -84,12 +84,12 @@ function Shell() {
     }
   }, [location.pathname])
 
-  // «Поделиться» из другого приложения (Android PWA): ссылка или текст сразу попадают в новый контакт резерва
+  // "Share" from another app (Android PWA): a link or text goes straight into a new reserve contact
   const onboarded = !!settings?.onboarded
-  // ссылка «сбросить пароль» из письма: сразу открываем форму нового пароля
+  // a "reset password" link from an email: open the new-password form at once
   const recovery = useCloud(s => s.recovery && !!s.userId)
   useEffect(() => { if (recovery) useUI.getState().open({ kind: 'cloud' }) }, [recovery])
-  // после входа в аккаунт один раз включаем серверную нейросеть и распознавание речи, если на сервере есть ключи и свой выбор не сделан
+  // after signing in, enable the server-side model and speech recognition once, if the server has keys and the person has not chosen otherwise
   const server = useServerStatus()
   const userId = useCloud(s => s.userId)
   useEffect(() => {
@@ -100,10 +100,10 @@ function Shell() {
     void (async () => {
       if (patch.ai) await patchAi(patch.ai, AI_DEFAULTS)
       if (patch.stt) await patchStt(patch.stt)
-      try { localStorage.setItem(flag, '1') } catch { /* хранилище закрыто: попробуем при следующем запуске */ }
+      try { localStorage.setItem(flag, '1') } catch { /* storage is blocked: we will try on the next start */ }
     })()
   }, [userId, server, settings])
-  // возврат из TickTick после согласия: показываем результат и открываем шторку подключения
+  // the return from TickTick after consent: show the result and open the connection sheet
   useEffect(() => {
     if (!onboarded) return
     const r = takeReturnResult()
@@ -111,9 +111,9 @@ function Shell() {
     useUI.getState().toast(returnText(r), r === 'ok' ? 'check' : 'info')
     useUI.getState().open({ kind: 'ticktick' })
   }, [onboarded])
-  // просим браузер не вычищать хранилище: все данные живут только в нём
+  // ask the browser not to clear storage: all the data lives only there
   useEffect(() => { if (onboarded) navigator.storage?.persist?.().catch(() => undefined) }, [onboarded])
-  // после первой отрисовки в фоне подгружаем остальные экраны и шторки — переходы мгновенные, офлайн работает
+  // after the first render, load the remaining screens and sheets in the background: transitions are instant and offline works
   useEffect(() => {
     if (!onboarded) return
     const run = () => { for (const l of screenLoaders) l().catch(() => undefined); prefetchSheets() }
@@ -126,13 +126,13 @@ function Shell() {
     if (!onboarded) return
     const sp = new URLSearchParams(window.location.search)
     const [title, text, url] = ['title', 'text', 'url'].map(k => sp.get(k)?.trim() ?? '')
-    // заголовок страницы («Имя — должность | LinkedIn») полезен, только если текста нет
+    // the page title ("Name - position | LinkedIn") is useful only if there is no text
     const cleanTitle = title.replace(/\s*[|•·-]\s*(?:LinkedIn|Instagram|Telegram|Facebook|X|Twitter)\b.*$/i, '').replace(/\s*\(@[\w.]+\)\s*$/, '')
     const parts = [...new Set([text || cleanTitle, url].filter(Boolean))]
     if (!parts.length) return
     window.history.replaceState(null, '', window.location.pathname + window.location.hash)
     const smart = [...new Set(parts)].join('\n')
-    // переход на «Резерв» закрывает шторки, поэтому форму открываем уже после него
+    // going to "Reserve" closes sheets, so the form is opened after it
     if (location.pathname === '/reserve') useUI.getState().open({ kind: 'leadEdit', smart })
     else { pendingShare.current = smart; nav('/reserve') }
   }, [onboarded]) // eslint-disable-line react-hooks/exhaustive-deps

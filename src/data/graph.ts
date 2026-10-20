@@ -1,7 +1,7 @@
 import type { ID, Interaction, Intro, Person } from './types'
 import { t } from '@/i18n'
 
-/** Кто кого знает: явные связи из профиля, знакомства через тебя, «кто познакомил», совместные встречи. */
+/** Who knows whom: explicit links from profiles, acquaintances through you, "who introduced whom", shared meetings. */
 export type EdgeKind = 'link' | 'intro' | 'introducedBy' | 'together'
 
 export interface GraphEdge { a: ID; b: ID; w: number; kinds: EdgeKind[] }
@@ -25,7 +25,7 @@ export function buildEdges(people: Person[], intros: Intro[] = [], ints: Interac
     if (p.introducedBy) add(p.id, p.introducedBy, 'introducedBy')
   }
   for (const i of intros) if (i.status === 'done') add(i.aId, i.bId, 'intro')
-  // были на одной встрече: слабая, но настоящая связь (большие события не считаем — там знакомы все со всеми)
+  // were at one meeting: a weak but real link (big events do not count, everyone there knows everyone)
   for (const i of ints) {
     if (i.personIds.length < 2 || i.personIds.length > 6) continue
     for (let x = 0; x < i.personIds.length; x++) for (let y = x + 1; y < i.personIds.length; y++) add(i.personIds[x]!, i.personIds[y]!, 'together')
@@ -33,7 +33,7 @@ export function buildEdges(people: Person[], intros: Intro[] = [], ints: Interac
   return [...map.values()]
 }
 
-/** Группы: взвешенное распространение меток — каждый переходит в ту группу, где у него больше всего связей. */
+/** Groups: weighted label propagation. Everyone moves to the group where they have the most links. */
 export function detectClusters(nodeIds: ID[], edges: GraphEdge[]): Map<ID, number> {
   const ids = [...nodeIds].sort()
   const nb = new Map<ID, Array<[ID, number]>>(ids.map(i => [i, []]))
@@ -52,7 +52,7 @@ export function detectClusters(nodeIds: ID[], edges: GraphEdge[]): Map<ID, numbe
     }
     if (!changed) break
   }
-  // номера по размеру: самая большая группа — 0
+  // numbered by size: the biggest group is 0
   const sizes = new Map<number, number>()
   for (const l of label.values()) sizes.set(l, (sizes.get(l) ?? 0) + 1)
   const order = [...sizes.entries()].sort((a, b) => b[1] - a[1] || a[0] - b[0]).map(([l]) => l)
@@ -60,7 +60,7 @@ export function detectClusters(nodeIds: ID[], edges: GraphEdge[]): Map<ID, numbe
   return new Map([...label.entries()].map(([id, l]) => [id, renum.get(l)!]))
 }
 
-/** Посредничество (алгоритм Брандеса): через кого проходит больше всего кратчайших путей между другими людьми. */
+/** Betweenness (Brandes' algorithm): who the most shortest paths between other people pass through. */
 export function betweenness(nodeIds: ID[], edges: GraphEdge[]): Map<ID, number> {
   const nb = new Map<ID, ID[]>(nodeIds.map(i => [i, []]))
   for (const e of edges) { nb.get(e.a)?.push(e.b); nb.get(e.b)?.push(e.a) }
@@ -87,12 +87,12 @@ export function betweenness(nodeIds: ID[], edges: GraphEdge[]): Map<ID, number> 
       if (w !== s) cb.set(w, cb.get(w)! + delta.get(w)!)
     }
   }
-  // каждая пара посчитана дважды (неориентированный граф)
+  // every pair is counted twice (an undirected graph)
   return new Map([...cb.entries()].map(([k, v]) => [k, v / 2]))
 }
 
 export interface Cluster { id: number; members: Person[]; name: string }
-export interface Bridge { person: Person; score: number; /** номера групп, которые он соединяет */ clusters: number[]; degree: number }
+export interface Bridge { person: Person; score: number; /** the numbers of the groups it connects */ clusters: number[]; degree: number }
 
 export interface GraphAnalysis {
   edges: GraphEdge[]
@@ -100,9 +100,9 @@ export interface GraphAnalysis {
   clusterOf: Map<ID, number>
   bridges: Bridge[]
   degree: Map<ID, number>
-  /** люди, про чьи связи ничего не известно */
+  /** people whose links are unknown */
   isolated: Person[]
-  /** люди на графе (есть хотя бы одна связь) */
+  /** people on the graph (with at least one link) */
   connected: Person[]
 }
 
@@ -113,7 +113,7 @@ const topShare = (members: Person[], pick: (p: Person) => string | undefined): s
   return best && best[1] >= Math.max(2, Math.ceil(members.length * 0.5)) ? best[0] : null
 }
 
-/** Название группы: общий круг, компания или город; если ничего общего — по самому «связанному» человеку. */
+/** A group's name: a shared circle, company or city; if nothing is shared, after its most "connected" person. */
 export function nameCluster(members: Person[], circleName: (id: ID) => string | undefined, degree: Map<ID, number>, n: number): string {
   const circles = new Map<ID, number>()
   for (const p of members) for (const c of p.circleIds) circles.set(c, (circles.get(c) ?? 0) + 1)
@@ -142,7 +142,7 @@ export function analyzeGraph(people: Person[], intros: Intro[] = [], ints: Inter
   for (const p of connected) groups.set(clusterOf.get(p.id)!, [...(groups.get(clusterOf.get(p.id)!) ?? []), p])
   const clusters: Cluster[] = [...groups.entries()].sort((a, b) => a[0] - b[0])
     .map(([id, members]) => ({ id, members, name: nameCluster(members, circleName, degree, id) }))
-  // одинаковые названия («Работа» дважды) различаем по самому связанному человеку группы
+  // identical names ("Work" twice) are told apart by the group's most connected person
   const seen = new Map<string, number>()
   for (const c of clusters) seen.set(c.name, (seen.get(c.name) ?? 0) + 1)
   for (const c of clusters) {
@@ -164,11 +164,11 @@ export function analyzeGraph(people: Person[], intros: Intro[] = [], ints: Inter
   return { edges, clusters, clusterOf, bridges, degree, isolated, connected }
 }
 
-/* ---------- раскладка ---------- */
+/* ---------- layout ---------- */
 
 export interface LayoutNode { id: ID; x: number; y: number }
 
-/** Простая силовая раскладка (Фрюхтерман — Рейнгольд) с притяжением к центру своей группы. Детерминирована: без случайности. */
+/** A simple force-directed layout (Fruchterman-Reingold) with attraction to the centre of the person's group. Deterministic: no randomness. */
 export function layoutGraph(nodeIds: ID[], edges: GraphEdge[], clusterOf: Map<ID, number>, width: number, height: number, pad = 28): Map<ID, { x: number; y: number }> {
   const n = nodeIds.length
   const out = new Map<ID, { x: number; y: number }>()
@@ -218,7 +218,7 @@ export function layoutGraph(nodeIds: ID[], edges: GraphEdge[], clusterOf: Map<ID
     for (const id of ids) {
       const p = pos.get(id)!; const c = center.get(clusterOf.get(id) ?? 0)!
       const g = disp.get(id)!
-      // группа держится вместе, весь граф — ближе к середине
+      // a group holds together, the whole graph is pulled toward the middle
       g.x += (c.x - p.x) * 0.9; g.y += (c.y - p.y) * 0.9
       g.x += (width / 2 - p.x) * 0.12; g.y += (height / 2 - p.y) * 0.12
       const len = Math.max(0.01, Math.hypot(g.x, g.y))
@@ -227,7 +227,7 @@ export function layoutGraph(nodeIds: ID[], edges: GraphEdge[], clusterOf: Map<ID
     }
     temp *= 0.975
   }
-  // вписываем в рамку с полями
+  // fit into a frame with margins
   const xs = ids.map(i => pos.get(i)!.x); const ys = ids.map(i => pos.get(i)!.y)
   const minX = Math.min(...xs); const maxX = Math.max(...xs); const minY = Math.min(...ys); const maxY = Math.max(...ys)
   const sx = (width - pad * 2) / Math.max(1, maxX - minX); const sy = (height - pad * 2) / Math.max(1, maxY - minY)

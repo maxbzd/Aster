@@ -16,7 +16,7 @@ import { dateShort, fullName, inDays } from '@/lib/format'
 import { useUI } from '@/app/store'
 import { t } from '@/i18n'
 
-/** Бриф недели — личный коуч по сети. */
+/** The weekly brief: a personal coach for your network. */
 export function Weekly() {
   const nav = useNavigate()
   const open = useUI(s => s.open)

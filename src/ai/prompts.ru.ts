@@ -1,8 +1,8 @@
 import type { Prompts } from './prompts'
 
 /**
- * Системные промпты Астры по-русски. Держим их стабильными (без дат и переменных) — так работает кеш.
- * Всё изменчивое уходит в сообщение пользователя. Английская версия — в prompts.en.ts.
+ * Astra's system prompts in Russian. They are kept stable (no dates or variables) so that the cache works.
+ * Everything that varies goes into the user message. The English version is in prompts.en.ts.
  */
 
 const BASE = `Ты — Астра, ассистент внутри Aster: личной CRM для нетворкинга. Пользователь записывает людей, встречи и договорённости, чтобы не терять связи и быть полезным своей сети.

@@ -9,17 +9,17 @@ import { DAY } from '@/lib/format'
 import { download } from '@/lib/ics'
 import { seed, renderApp, watchConsole } from './harness'
 
-// скачивание файла в happy-dom «переходит» по blob-ссылке и ломает роутер — подменяем на шпиона
+// a file download in happy-dom "navigates" to the blob link and breaks the router: replace it with a spy
 vi.mock('@/lib/ics', async orig => ({ ...(await orig<typeof import('@/lib/ics')>()), download: vi.fn() }))
 const downloaded = () => vi.mocked(download).mock.calls
 
 const dialog = () => screen.findByRole('dialog')
 const personByName = async (name: string) => (await db.people.filter(p => p.firstName === name).first())!
 
-describe('новый человек', () => {
+describe('a new person', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('«Новый человек» из меню «+» → карточка в базе и переход в профиль', async () => {
+  it('"New person" from the "+" menu → a card in the database and a move to the profile', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/people')
     await screen.findByText('Алина Воронцова')
@@ -35,7 +35,7 @@ describe('новый человек', () => {
     expect(bad).toEqual([])
   })
 
-  it('без имени «Добавить в сеть» недоступно', async () => {
+  it('without a name "Add to the network" is unavailable', async () => {
     const { user } = renderApp('/people')
     await screen.findByText('Алина Воронцова')
     await user.click(screen.getAllByRole('button', { name: 'Добавить' })[0])
@@ -44,10 +44,10 @@ describe('новый человек', () => {
   })
 })
 
-describe('профиль человека', () => {
+describe('a person\'s profile', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('«Записать» → тип, заметка → «Сохранить»: в хронологии появляется запись и обновляется последний контакт', async () => {
+  it('"Log" → type, note → "Save": a record appears in the timeline and the last contact is updated', async () => {
     const nina = await personByName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await screen.findAllByText('Нина Чернова')
@@ -64,7 +64,7 @@ describe('профиль человека', () => {
     expect(await screen.findByText('Обсудили переезд в Порту')).toBeInTheDocument()
   })
 
-  it('следующий шаг при записи контакта создаёт напоминание', async () => {
+  it('the next step when logging contact creates a reminder', async () => {
     const nina = await personByName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await user.click(await screen.findByRole('button', { name: 'Записать' }))
@@ -78,7 +78,7 @@ describe('профиль человека', () => {
     expect(r.dueAt - Date.now()).toBeGreaterThan(6 * DAY)
   })
 
-  it('«Напомнить» создаёт напоминание с выбранным сроком', async () => {
+  it('"Remind" creates a reminder with the chosen due date', async () => {
     const nina = await personByName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await user.click(await screen.findByRole('button', { name: 'Напомнить' }))
@@ -89,7 +89,7 @@ describe('профиль человека', () => {
     await waitFor(async () => expect(await db.reminders.filter(r => r.text === 'Спросить про клинику').count()).toBe(1))
   })
 
-  it('меню «Ещё»: удаление человека убирает его и возвращает к списку', async () => {
+  it('the "More" menu: deleting a person removes them and returns to the list', async () => {
     const nina = await personByName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await user.click(await screen.findByRole('button', { name: 'Ещё' }))
@@ -99,7 +99,7 @@ describe('профиль человека', () => {
     await waitFor(async () => expect(await db.people.get(nina.id)).toBeUndefined())
   })
 
-  it('избранное переключается', async () => {
+  it('the favourite toggles', async () => {
     const nina = await personByName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await user.click(await screen.findByRole('button', { name: 'В избранные' }))
@@ -107,9 +107,9 @@ describe('профиль человека', () => {
   })
 })
 
-describe('«Наговорить встречу» (текстом)', () => {
+describe('"Dictate a meeting" (by text)', () => {
   beforeEach(() => seed({ demo: true }))
-  it('текст → разбор → «Сохранить всё» → человек, запись и напоминание', async () => {
+  it('text → parse → "Save all" → a person, a record and a reminder', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/capture')
     const box = await screen.findByPlaceholderText(/Например|Расскажи|Что произошло/i).catch(() => screen.findByRole('textbox'))
@@ -118,7 +118,7 @@ describe('«Наговорить встречу» (текстом)', () => {
     await user.click(await screen.findByRole('button', { name: /Разобрать/ }))
     expect(await screen.findByText(/Вот что я поняла/i)).toBeInTheDocument()
     await user.click(await screen.findByRole('button', { name: 'Сохранить всё' }))
-    // приложение пишет человека, запись общения и напоминания последовательно — ждём всех троих
+    // the app writes the person, the interaction and the reminder one after another: wait for all three
     await waitFor(async () => {
       const p = await db.people.filter(x => x.firstName === 'Артём').first()
       expect(p).toBeTruthy()
@@ -130,22 +130,22 @@ describe('«Наговорить встречу» (текстом)', () => {
   })
 })
 
-describe('«Сводник»', () => {
+describe('the "Matchmaker"', () => {
   beforeEach(() => seed({ demo: true }))
-  it('пары для знакомства; «Не подходит» убирает пару и запоминает выбор', async () => {
+  it('pairs for introductions; "Not a fit" removes a pair and remembers the choice', async () => {
     const { user } = renderApp('/intros')
     const first = (await screen.findAllByRole('button', { name: 'Не подходит' }))[0]
     const reason = first.closest('.glow-card')?.querySelector('p')?.textContent as string
     expect(reason).toBeTruthy()
     await user.click(first)
-    // на место скрытой пары встаёт следующая, поэтому проверяем исчезновение именно этой
+    // the next pair takes the place of the hidden one, so we check that exactly this one disappears
     await waitFor(() => expect(screen.queryByText(reason)).not.toBeInTheDocument())
     expect((await db.intros.toArray()).some(i => i.status === 'dismissed')).toBe(true)
   })
 })
 
-describe('резервные копии в приложении', () => {
-  it('Профиль → «Резервная копия» скачивает файл и запоминает дату', async () => {
+describe('backups in the app', () => {
+  it('Profile → "Backup" downloads a file and remembers the date', async () => {
     await seed({ demo: true })
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Резервная копия'))
@@ -156,7 +156,7 @@ describe('резервные копии в приложении', () => {
     expect(await screen.findByText(/последняя/)).toBeInTheDocument()
   })
 
-  it('напоминание о копии на главном экране: показывается, скачивает, закрывается', async () => {
+  it('the backup reminder on the home screen: shown, downloads, can be closed', async () => {
     await seed({ demo: true })
     const { user } = renderApp('/')
     expect(await screen.findByText(/Данные живут только на этом устройстве/)).toBeInTheDocument()
@@ -165,7 +165,7 @@ describe('резервные копии в приложении', () => {
     await waitFor(() => expect(screen.queryByText(/Данные живут только на этом устройстве/)).not.toBeInTheDocument())
   })
 
-  it('«Напомнить позже» откладывает напоминание на две недели', async () => {
+  it('"Remind later" postpones the reminder by two weeks', async () => {
     await seed({ demo: true })
     const { user } = renderApp('/')
     await screen.findByText(/Данные живут только на этом устройстве/)
@@ -173,14 +173,14 @@ describe('резервные копии в приложении', () => {
     await waitFor(async () => expect(((await db.settings.get('me'))?.backupSnoozeUntil ?? 0)).toBeGreaterThan(Date.now() + 13 * DAY))
   })
 
-  it('новичку (мало людей или свежая установка) копию не навязывает', async () => {
+  it('a newcomer (few people or a fresh install) is not pushed to make a backup', async () => {
     await seed({})
     renderApp('/')
     await screen.findByText('Твоя вселенная пока пуста')
     expect(screen.queryByText(/Данные живут только на этом устройстве/)).not.toBeInTheDocument()
   })
 
-  it('битый файл при восстановлении не стирает данные', async () => {
+  it('a broken file on restore does not erase the data', async () => {
     await seed({ demo: true })
     const before = await db.people.count()
     await expect(importBackup({ app: 'aster', people: [{ id: 'x' }] })).rejects.toThrow()
@@ -192,11 +192,11 @@ describe('резервные копии в приложении', () => {
   })
 })
 
-describe('сеть безопасности: ErrorBoundary', () => {
+describe('the safety net: ErrorBoundary', () => {
   class Bomb extends Component<{ armed: boolean; children?: ReactNode }> {
     render() { if (this.props.armed) throw new Error('Тестовый взрыв'); return <div>цел и невредим</div> }
   }
-  it('вместо белого экрана показывает сообщение и кнопки; данные не страдают', async () => {
+  it('instead of a white screen it shows a message and buttons; the data does not suffer', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     render(<ErrorBoundary><Bomb armed /></ErrorBoundary>)
     expect(screen.getByText('Что-то пошло не так')).toBeInTheDocument()
@@ -205,11 +205,11 @@ describe('сеть безопасности: ErrorBoundary', () => {
     expect(screen.getByRole('button', { name: 'Перезагрузить' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Сохранить копию данных' })).toBeInTheDocument()
   })
-  it('без ошибки не вмешивается', () => {
+  it('without an error it does not interfere', () => {
     render(<ErrorBoundary><Bomb armed={false} /></ErrorBoundary>)
     expect(screen.getByText('цел и невредим')).toBeInTheDocument()
   })
-  it('«Сохранить копию данных» скачивает файл', async () => {
+  it('"Save a copy of the data" downloads a file', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined)
     await seed({ demo: true })
     const { default: userEvent } = await import('@testing-library/user-event')

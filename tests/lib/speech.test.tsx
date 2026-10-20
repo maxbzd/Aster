@@ -2,7 +2,7 @@ import { act, renderHook } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { speechSupported, useSpeech } from '@/lib/speech'
 
-/** Минимальная имитация Web Speech API: тесты сами «говорят» и «роняют» распознавание. */
+/** A minimal imitation of the Web Speech API: the tests "speak" and "drop" recognition themselves. */
 class FakeRecognition {
   static instances: FakeRecognition[] = []
   lang = ''
@@ -28,13 +28,13 @@ const uninstall = () => { delete (window as unknown as Record<string, unknown>).
 
 beforeEach(() => {
   FakeRecognition.instances = []
-  // метр громкости трогает микрофон — в тестах он не нужен
+  // the volume meter touches the microphone, which tests do not need
   Object.defineProperty(navigator, 'userAgent', { value: 'Mozilla/5.0 (iPhone)', configurable: true })
 })
 afterEach(uninstall)
 
 describe('useSpeech', () => {
-  it('без поддержки браузера — понятное сообщение, а не падение', () => {
+  it('without browser support: a clear message, not a crash', () => {
     uninstall()
     expect(speechSupported()).toBe(false)
     const { result } = renderHook(() => useSpeech())
@@ -44,7 +44,7 @@ describe('useSpeech', () => {
     expect(result.current.listening).toBe(false)
   })
 
-  it('запуск настраивает русский язык и непрерывное распознавание', () => {
+  it('starting sets the language and continuous recognition', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -53,7 +53,7 @@ describe('useSpeech', () => {
     expect(result.current.listening).toBe(true)
   })
 
-  it('черновой текст виден сразу, окончательный копится через пробел', () => {
+  it('the draft text is visible at once, the final text accumulates separated by spaces', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -68,7 +68,7 @@ describe('useSpeech', () => {
     expect(result.current.interim).toBe('')
   })
 
-  it('Chrome сам завершает распознавание после паузы — перезапускаем, пока человек не нажал «стоп»', () => {
+  it('Chrome ends recognition after a pause on its own: we restart until the person presses "stop"', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -79,10 +79,10 @@ describe('useSpeech', () => {
     act(() => result.current.stop())
     expect(rec.stopped).toBe(true)
     expect(result.current.listening).toBe(false)
-    expect(rec.starts).toBe(2) // после «стоп» не оживает
+    expect(rec.starts).toBe(2) // it does not come alive after "stop"
   })
 
-  it('повторный start не плодит распознаватели', () => {
+  it('a repeated start does not multiply recognisers', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -90,7 +90,7 @@ describe('useSpeech', () => {
     expect(FakeRecognition.instances).toHaveLength(1)
   })
 
-  it('«тишина» и «отмена» ошибками не считаются; запрет микрофона — считается', () => {
+  it('"silence" and "cancel" do not count as errors; a microphone denial does', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -102,7 +102,7 @@ describe('useSpeech', () => {
     expect(result.current.error).toMatch(/Нет доступа к микрофону/)
   })
 
-  it('прочие сбои — «попробуй ещё раз», перезапуск не зацикливается', () => {
+  it('other failures: "try again", the restart does not loop', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -114,7 +114,7 @@ describe('useSpeech', () => {
     expect(result.current.listening).toBe(false)
   })
 
-  it('setText позволяет править и сбрасывать распознанное', () => {
+  it('setText lets you edit and reset what was recognised', () => {
     install()
     const { result } = renderHook(() => useSpeech())
     act(() => result.current.setText('черновик'))
@@ -123,7 +123,7 @@ describe('useSpeech', () => {
     expect(result.current.text).toBe('')
   })
 
-  it('при закрытии экрана распознавание прерывается', () => {
+  it('when the screen closes, recognition is interrupted', () => {
     install()
     const { result, unmount } = renderHook(() => useSpeech())
     act(() => result.current.start())
@@ -132,7 +132,7 @@ describe('useSpeech', () => {
     expect(rec.aborted).toBe(true)
   })
 
-  it('старт, который бросает исключение, даёт сообщение, а не белый экран', () => {
+  it('a start that throws gives a message, not a white screen', () => {
     class Broken extends FakeRecognition { start(): void { throw new Error('busy') } }
     ;(window as unknown as Record<string, unknown>).SpeechRecognition = Broken
     const { result } = renderHook(() => useSpeech())

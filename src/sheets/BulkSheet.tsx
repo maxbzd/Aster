@@ -14,7 +14,7 @@ import { t, tn } from '@/i18n'
 
 type StatusChoice = 'keep' | 'active' | LifeStatus
 
-/** Массовая правка пачки людей: «всем этим сменить город и источник». Показывает итог словами до применения. */
+/** Bulk edit of a batch of people: "change the city and source for all of these". Shows the outcome in words before applying. */
 export function BulkSheet({ personIds, onClose }: { personIds: ID[]; onClose: () => void }) {
   const toast = useUI(s => s.toast)
   const people = useAllPeople()

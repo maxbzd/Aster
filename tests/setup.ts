@@ -10,16 +10,21 @@ import ru from '@/i18n/locales/ru.json'
 registerDictionary('ru', ru as Dictionary)
 setLocale('ru')
 
-// Часть тестов (серверный прокси) идёт в окружении node — браузерных заглушек там нет и они не нужны.
+// Some tests (the server proxy) run in the node environment: there are no browser stubs there and none are needed.
 if (typeof window !== 'undefined') {
   afterEach(() => cleanup())
-  // без гигантского дампа DOM в сообщениях об ошибках — читать отчёт можно глазами
-  // ленивые экраны и шторки при параллельном прогоне грузятся дольше секунды: ждём до 5 с
+  // no giant DOM dump in error messages: the report can be read by eye
+  // lazy screens and sheets take longer than a second to load in a parallel run: wait up to 5 s
   configure({ asyncUtilTimeout: 5000, getElementError: message => new Error(message ?? 'Element not found') })
-  // анимации в тестах не нужны: переходы мгновенные, а WAAPI в happy-dom кидает AbortError при отмене
+  // animations are not needed in tests: transitions are instant, and WAAPI in happy-dom throws AbortError on cancel
   MotionGlobalConfig.skipAnimations = true
+  // happy-dom rejects the `finished` promise of a cancelled Web Animation, which surfaces as an unhandled error when a screen unmounts mid-animation
+  Element.prototype.animate = (() => ({
+    finished: Promise.resolve(), ready: Promise.resolve(), currentTime: 0, playbackRate: 1, playState: 'finished', onfinish: null, oncancel: null,
+    cancel() {}, finish() {}, play() {}, pause() {}, reverse() {}, commitStyles() {}, persist() {}, updatePlaybackRate() {}, addEventListener() {}, removeEventListener() {},
+  })) as unknown as typeof Element.prototype.animate
 
-  // happy-dom не реализует эти API — приложение их использует, тестам хватает заглушек
+  // happy-dom does not implement these APIs, the app uses them, and stubs are enough for tests
   if (!window.matchMedia) {
     window.matchMedia = (query: string) => ({
       matches: false, media: query, onchange: null,

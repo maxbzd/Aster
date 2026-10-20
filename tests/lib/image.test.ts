@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { fileToAvatar, fileToPhoto, pickFile } from '@/lib/image'
 
-/** Подменяем Image и canvas: проверяем математику обрезки и ужатия, а не декодер браузера. */
+/** Image and canvas are replaced: we check the crop and shrink arithmetic, not the browser's decoder. */
 let draw: ReturnType<typeof vi.fn>
 let toDataURL: ReturnType<typeof vi.fn>
 let canvasSize: { width: number; height: number }
@@ -50,20 +50,20 @@ afterEach(() => vi.unstubAllGlobals())
 const file = new File(['x'], 'a.jpg', { type: 'image/jpeg' })
 
 describe('fileToAvatar', () => {
-  it('обрезает по центру в квадрат и ужимает до 512', async () => {
+  it('crops to a centred square and shrinks to 512', async () => {
     stubImage(2000, 1000)
     expect(await fileToAvatar(file)).toBe('data:image/jpeg;base64,XYZ')
     expect(draw).toHaveBeenCalledWith(expect.anything(), 500, 0, 1000, 1000, 0, 0, 512, 512)
     expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.86)
     expect(canvasSize).toEqual({ width: 512, height: 512 })
   })
-  it('маленькие фото не растягивает', async () => {
+  it('does not stretch small photos', async () => {
     stubImage(300, 400)
     await fileToAvatar(file)
     expect(draw).toHaveBeenCalledWith(expect.anything(), 0, 50, 300, 300, 0, 0, 300, 300)
     expect(canvasSize).toEqual({ width: 300, height: 300 })
   })
-  it('освобождает ссылку на файл и при ошибке чтения', async () => {
+  it('releases the file reference also on a read error', async () => {
     stubImage(1, 1, true)
     await expect(fileToAvatar(file)).rejects.toThrow(/прочитать картинку/)
     expect(revoke).toHaveBeenCalledWith('blob:test')
@@ -71,14 +71,14 @@ describe('fileToAvatar', () => {
 })
 
 describe('fileToPhoto', () => {
-  it('сохраняет пропорции, длинная сторона не больше maxSide', async () => {
+  it('keeps the proportions, the long side is at most maxSide', async () => {
     stubImage(3000, 2000)
     await fileToPhoto(file, 1400)
     expect(canvasSize).toEqual({ width: 1400, height: 933 })
     expect(draw).toHaveBeenCalledWith(expect.anything(), 0, 0, 1400, 933)
     expect(toDataURL).toHaveBeenCalledWith('image/jpeg', 0.85)
   })
-  it('маленькие снимки не увеличивает', async () => {
+  it('does not enlarge small shots', async () => {
     stubImage(800, 600)
     await fileToPhoto(file)
     expect(canvasSize).toEqual({ width: 800, height: 600 })
@@ -91,27 +91,27 @@ describe('pickFile', () => {
     onInput = el => { input = el }
     return () => input
   }
-  it('настраивает тип файла и камеру', () => {
+  it('sets the file type and the camera', () => {
     const get = grab()
     void pickFile('image/*', 'environment')
     expect(get()).toMatchObject({ type: 'file', accept: 'image/*' })
     expect(get().getAttribute('capture')).toBe('environment')
   })
-  it('отдаёт выбранный файл', async () => {
+  it('returns the chosen file', async () => {
     const get = grab()
     const p = pickFile('.csv')
     Object.defineProperty(get(), 'files', { value: [file] })
     get().onchange?.(new Event('change'))
     expect(await p).toBe(file)
   })
-  it('нет файла — null', async () => {
+  it('no file: null', async () => {
     const get = grab()
     const p = pickFile('.csv')
     Object.defineProperty(get(), 'files', { value: [] })
     get().onchange?.(new Event('change'))
     expect(await p).toBeNull()
   })
-  it('закрыл окно выбора — тоже null, обещание не виснет', async () => {
+  it('closing the picker is null too, the promise does not hang', async () => {
     const get = grab()
     const p = pickFile('.csv')
     get().dispatchEvent(new Event('cancel'))

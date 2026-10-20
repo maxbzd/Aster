@@ -1,9 +1,9 @@
-/** Разбор файлов с расшифровкой встречи: txt, md, srt, vtt, json (Whisper, Otter и подобные) → чистый текст. */
+/** Parsing files with a meeting transcript: txt, md, srt, vtt, json (Whisper, Otter and the like) → plain text. */
 
 const TIME = /^\d{1,2}:\d{2}(?::\d{2})?[.,]?\d{0,3}\s*-->\s*\d{1,2}:\d{2}(?::\d{2})?[.,]?\d{0,3}.*$/
 
 function fromCues(text: string): string {
-  // субтитр = блок строк между пустыми строками; строки внутри блока — одна реплика
+  // a subtitle is a block of lines between blank lines; the lines inside a block are one utterance
   const out: string[] = []
   for (const block of text.replace(/^﻿/, '').replace(/\r/g, '').split(/\n\s*\n/)) {
     const lines = block.split('\n').map(l => l.trim()).filter(l => l && !/^WEBVTT/i.test(l) && !/^(NOTE|STYLE|REGION)\b/.test(l) && !/^\d+$/.test(l) && !TIME.test(l))

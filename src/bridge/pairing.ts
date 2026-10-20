@@ -1,15 +1,15 @@
 import { BridgeError } from './protocol'
 import { t } from '@/i18n'
 
-/** Что зашито в код подключения: где живёт приложение-источник и одноразовый код. */
+/** What is encoded in the pairing code: where the source app lives and a one-time code. */
 export interface PairingPayload {
-  /** адрес проекта Supabase */
+  /** the address of the Supabase project */
   u: string
-  /** публичный ключ проекта (publishable/anon) */
+  /** the project's public key (publishable/anon) */
   k: string
-  /** одноразовый код */
+  /** a one-time code */
   c: string
-  /** как называется приложение, создавшее код */
+  /** the name of the app that created the code */
   l: string
 }
 
@@ -30,7 +30,7 @@ const fromB64Url = (s: string) => {
 
 export const encodePairing = (p: PairingPayload) => PREFIX + toB64Url(JSON.stringify(p))
 
-/** Разбирает вставленный код. Лишние пробелы, переносы и кавычки вокруг допускаются. */
+/** Parses a pasted code. Extra spaces, line breaks and quotes around it are tolerated. */
 export function decodePairing(text: string): PairingPayload {
   const raw = text.trim().replace(/^["'«]+|["'»]+$/g, '').replace(/\s+/g, '')
   if (!raw.startsWith(PREFIX)) throw new BridgeError('bad-code', t("This isn't a connection code. Copy it whole from the other app."))
@@ -50,14 +50,14 @@ export function decodePairing(text: string): PairingPayload {
 
 const hex = (bytes: Uint8Array) => Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('')
 
-/** Новый ключ доступа: 256 бит случайности. */
+/** A new access key: 256 bits of randomness. */
 export function newToken(): string {
   const b = new Uint8Array(32)
   crypto.getRandomValues(b)
   return `bt_${hex(b)}`
 }
 
-/** Тот же хэш, что считает сервер (bridge_hash): SHA-256 в hex. */
+/** The same hash the server computes (bridge_hash): SHA-256 in hex. */
 export async function hashToken(token: string): Promise<string> {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(token))
   return hex(new Uint8Array(d))

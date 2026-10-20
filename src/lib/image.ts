@@ -1,5 +1,5 @@
 import { t } from '@/i18n'
-/** Читает картинку, обрезает в квадрат по центру и ужимает до JPEG ~512px. */
+/** Reads an image, crops it to a centred square and shrinks it to a ~512px JPEG. */
 export async function fileToAvatar(file: File, size = 512): Promise<string> {
   const url = URL.createObjectURL(file)
   try {
@@ -25,7 +25,7 @@ export async function fileToAvatar(file: File, size = 512): Promise<string> {
   }
 }
 
-/** Фото документа (визитка, бейдж): без обрезки, длинная сторона до maxSide. */
+/** A photo of a document (business card, badge): no cropping, the long side up to maxSide. */
 export async function fileToPhoto(file: File, maxSide = 1400): Promise<string> {
   const url = URL.createObjectURL(file)
   try {
@@ -55,7 +55,7 @@ export function pickFile(accept: string, capture?: 'environment' | 'user'): Prom
     input.accept = accept
     if (capture) input.setAttribute('capture', capture)
     input.onchange = () => resolve(input.files?.[0] ?? null)
-    // закрытие окна выбора без файла: иначе обещание повисло бы навсегда
+    // the picker closed with no file: otherwise the promise would hang forever
     input.addEventListener('cancel', () => resolve(null))
     input.click()
   })

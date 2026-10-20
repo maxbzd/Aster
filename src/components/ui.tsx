@@ -21,7 +21,7 @@ export function IconButton({
   )
 }
 
-/** Круглая кнопка быстрого действия с подписью (Revolut). */
+/** A round quick-action button with a label (Revolut). */
 export function ActionButton({ icon: I, label, onClick, primary, active }: { icon: Icon; label: string; onClick?: () => void; primary?: boolean; active?: boolean }) {
   return (
     <button type="button" onClick={() => { haptic(); onClick?.() }} className="press flex w-[64px] flex-col items-center gap-2">
@@ -94,7 +94,7 @@ export function SectionTitle({ children, action, onAction, count }: { children: 
   )
 }
 
-/** Карточка-группа строк (Oura / iOS grouped list) */
+/** A card that groups rows (Oura / iOS grouped list) */
 export function Group({ children, className = '', title }: { children: ReactNode; className?: string; title?: string }) {
   return (
     <div className={className}>

@@ -4,8 +4,8 @@ import { SCOPE_OF, SCOPES, type Connection, type FeedItem, type LinkRow, type Pu
 import type { MetaStore } from '@/bridge/cycle'
 
 /**
- * Проект Supabase в памяти с теми же правилами, что в supabase/migrations/…_bridge.sql:
- * одноразовые коды, ключи по хэшу, фильтр по разрешениям, «побеждает новая метка», одинаковое не меняет номер.
+ * A Supabase project in memory with the same rules as in supabase/migrations/…_bridge.sql:
+ * one-time codes, keys by hash, a permission filter, "the newer stamp wins", identical content does not change the number.
  */
 export class Project {
   seq = 0
@@ -18,7 +18,7 @@ export class Project {
   idn = 0
   constructor(public url: string, public key: string) {}
 
-  /* вызовы с входом */
+  /* calls with sign-in */
   own(): OwnBridge {
     const self = this
     const guard = () => { if (self.failNext > 0) { self.failNext--; throw new Error('Failed to fetch') } }
@@ -68,7 +68,7 @@ export class Project {
     }
   }
 
-  /* анонимные вызовы по ключу (то, что делает fetch другого приложения) */
+  /* anonymous calls by key (what the other app's fetch does) */
   async rpc(fn: string, b: Record<string, unknown>): Promise<{ status: number; body: unknown }> {
     if (this.failNext > 0) { this.failNext--; throw new TypeError('Failed to fetch') }
     const denied = (message: string) => ({ status: 400, body: { code: '28000', message } })
@@ -98,7 +98,7 @@ export class Project {
   }
 }
 
-/** Заменитель fetch: по адресу находит проект и вызывает функцию. */
+/** A fetch replacement: finds the project by the address and calls the function. */
 export function worldFetch(projects: Project[]): typeof fetch {
   return (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)

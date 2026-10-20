@@ -165,7 +165,7 @@ function StartOption({ icon: I, title, text, onClick, glow, disabled }: { icon: 
   )
 }
 
-/** Мини-орбита для приветствия. */
+/** A mini orbit for the welcome. */
 function HeroOrbit() {
   const rings = [{ r: 62, n: 3, dur: 26, s: 30 }, { r: 104, n: 4, dur: 38, s: 26 }, { r: 146, n: 3, dur: 52, s: 22 }]
   let k = 0

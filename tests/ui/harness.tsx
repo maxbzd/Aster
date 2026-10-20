@@ -3,10 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import App from '@/app/App'
 import { useUI } from '@/app/store'
+import { LocaleRoot } from '@/i18n/react'
 import { DEFAULT_CIRCLES, saveSettings, setCircles } from '@/data/actions'
 import { resetDb } from '../helpers'
 
-/** Чистая база + человек, прошедший онбординг. `demo` — 32 человека и 23 контакта в резерве. */
+/** A clean database plus a person who has gone through onboarding. `demo` means 32 people and 23 contacts in the reserve. */
 export async function seed({ demo = false, onboarded = true }: { demo?: boolean; onboarded?: boolean } = {}) {
   await resetDb()
   useUI.setState({ sheet: null, search: false, toasts: [] })
@@ -19,10 +20,10 @@ export async function seed({ demo = false, onboarded = true }: { demo?: boolean;
 export function renderApp(route = '/') {
   window.location.hash = `#${route}`
   const user = userEvent.setup({ pointerEventsCheck: 0 })
-  return { user, ...render(<App />) }
+  return { user, ...render(<LocaleRoot><App /></LocaleRoot>) }
 }
 
-/** Ловит ошибки и предупреждения React (вложенные кнопки, ключи, act…) — они не должны появляться. */
+/** Catches React errors and warnings (nested buttons, keys, act…): they must not appear. */
 export function watchConsole() {
   const bad: string[] = []
   const grab = (...a: unknown[]) => { bad.push(a.map(x => String(x)).join(' ').slice(0, 300)) }

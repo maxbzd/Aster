@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { intlTag, t } from '@/i18n'
 
-/* Web Speech API браузера. Где именно идёт распознавание, решает сам браузер: Chrome отправляет звук на серверы Google, Safari использует систему. */
+/* The browser's Web Speech API. Where recognition actually happens is up to the browser: Chrome sends audio to Google's servers, Safari uses the system. */
 
 interface SRResult { isFinal: boolean; 0: { transcript: string } }
 interface SREvent { resultIndex: number; results: ArrayLike<SRResult> }
@@ -47,7 +47,7 @@ export function useSpeech(lang = intlTag()) {
     setLevel(0)
   }
 
-  // Индикатор громкости для «живой» сферы. На iOS микрофон занят распознаванием — обходимся без метра.
+  // A volume meter for the "live" orb. On iOS the microphone is busy with recognition, so we go without a meter.
   const startMeter = async () => {
     if (/iPhone|iPad|iPod/.test(navigator.userAgent)) return
     try {
@@ -66,12 +66,12 @@ export function useSpeech(lang = intlTag()) {
       }
       audio.current = { ctx, stream, raf: requestAnimationFrame(tick) }
     } catch {
-      /* без метра */
+      /* no meter */
     }
   }
 
   const start = useCallback(() => {
-    if (wantOn.current) return // уже слушаем — второй распознаватель не запускаем
+    if (wantOn.current) return // already listening: a second recogniser is not started
     const C = Ctor()
     if (!C) { setError(t("Speech recognition isn't available in this browser — use your keyboard's dictation")); return }
     setError(null)
@@ -95,9 +95,9 @@ export function useSpeech(lang = intlTag()) {
       setError(e.error === 'not-allowed' ? t('No microphone access — allow it in your browser settings') : t('Recognition was interrupted — try again'))
       wantOn.current = false
     }
-    // Chrome сам останавливает распознавание после паузы — перезапускаем, пока пользователь не нажал «стоп»
+    // Chrome stops recognition after a pause on its own, so we restart it until the user presses "stop"
     r.onend = () => {
-      if (wantOn.current) { try { r.start() } catch { /* уже запущено */ } }
+      if (wantOn.current) { try { r.start() } catch { /* already started */ } }
       else { setListening(false); setInterim(''); stopMeter() }
     }
     rec.current = r

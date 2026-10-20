@@ -2,18 +2,18 @@ import type { OwnBridge } from './own'
 import { peerPull, type PeerEndpoint } from './peer'
 import { BridgeError, itemKey, stable, type Connection, type FeedItem, type LinkRow, type PulledItem } from './protocol'
 
-/** Хранилище служебного состояния моста на этом устройстве (курсоры, кэши, отпечатки опубликованного). */
+/** Storage of the bridge's bookkeeping on this device (cursors, caches, fingerprints of what was published). */
 export interface MetaStore {
   get<T>(key: string): Promise<T | undefined>
   set(key: string, value: unknown): Promise<void>
 }
 
-/** Связи как их видит приложение: peerId → localId и обратно, плюс явно разорванные. */
+/** Links as the app sees them: peerId → localId and back, plus the explicitly broken ones. */
 export interface LinkMap {
-  /** активные связи: id у меня → id у другого */
+  /** active links: my id → the other's id */
   byLocal: Map<string, string>
   byPeer: Map<string, string>
-  /** разорванные пары, которые нельзя связывать автоматически */
+  /** broken pairs that must not be linked automatically */
   blocked: Array<{ localId: string; peerId: string }>
   rows: LinkRow[]
 }
@@ -37,16 +37,16 @@ export interface ApplyContext {
 }
 
 export interface ApplyResult {
-  /** связи, которые приложение хочет создать или изменить (автоматическое сопоставление, чужие связи) */
+  /** links the app wants to create or change (automatic matching, the other side's links) */
   links: LinkRow[]
   changed: number
 }
 
-/** Всё, что в мосте зависит от конкретного приложения. */
+/** Everything in the bridge that depends on a specific app. */
 export interface BridgeAdapter {
-  /** Текущее состояние всего, что приложение публикует. Исчезнувшее из списка уйдёт как удалённое. */
+  /** The current state of everything the app publishes. Whatever disappears from the list goes out as deleted. */
   collect(links: LinkMap): Promise<FeedItem[]>
-  /** Применяет то, что пришло из другого приложения. Должно быть идемпотентным. */
+  /** Applies what came from the other app. Must be idempotent. */
   apply(rows: PulledItem[], ctx: ApplyContext): Promise<ApplyResult>
 }
 
@@ -69,14 +69,14 @@ export interface CycleReport {
 
 const PUBLISH_CHUNK = 200
 const PULL_PAGE = 200
-/** Курсор отступает назад: запись другой стороны могла зафиксироваться позже уже прочитанных. */
+/** The cursor steps back: a record of the other side may have been committed later than ones already read. */
 const PULL_OVERLAP = 100
 
 interface PubState { [k: string]: { fp: string; ms: number } }
 
 /**
- * Один круг обмена: опубликовать своё, забрать чужое, применить.
- * Сеть недоступна или другая сторона отключилась — это не ошибка круга: статус виден в отчёте.
+ * One exchange round: publish yours, fetch the other's, apply.
+ * An unreachable network or a disconnected other side is not a round error: the status is visible in the report.
  */
 export async function bridgeCycle(d: CycleDeps): Promise<CycleReport> {
   const now = d.now ?? Date.now
@@ -94,11 +94,11 @@ export async function bridgeCycle(d: CycleDeps): Promise<CycleReport> {
     const status = await pullFrom(d, c, links, now, report)
     report.peers.push({ id: c.id, label: c.peer_label, ...status })
     if (report.linksChanged) {
-      // связи изменились: чужие данные могли тогда подойти к людям, с которыми раньше не связывались
+      // links changed: the other side's data may now fit people that were not linked before
       links = buildLinkMap(await d.own.listLinks())
     }
   }
-  // актуальные связи нужны экранам (кто с кем связан) и работают без сети
+  // current links are needed by the screens (who is linked to whom) and work offline
   await d.meta.set('links', await d.own.listLinks())
   return report
 }
@@ -113,7 +113,7 @@ async function publish(d: CycleDeps, links: LinkMap, at: number): Promise<number
     const fp = stable({ d: it.data, x: it.deleted })
     const p = prev[k]
     if (p && p.fp === fp) { next[k] = p; continue }
-    // метка растёт при каждом изменении, даже если приложение дало более раннее время
+    // the stamp grows with every change, even if the app gave an earlier time
     const ms = Math.max(it.updated_ms ?? at, (p?.ms ?? 0) + 1)
     next[k] = { fp, ms }
     out.push({ ...it, updated_ms: ms })
@@ -124,7 +124,7 @@ async function publish(d: CycleDeps, links: LinkMap, at: number): Promise<number
     out.push({ entity: entity as FeedItem['entity'], key: rest.join(':'), data: null, deleted: true, updated_ms: Math.max(at, p.ms + 1) })
   }
   for (let i = 0; i < out.length; i += PUBLISH_CHUNK) await d.own.publish(out.slice(i, i + PUBLISH_CHUNK))
-  // отпечатки запоминаются только после успешной отправки всех пачек
+  // fingerprints are remembered only after all batches were sent successfully
   await d.meta.set('pub', next)
   return out.length
 }
@@ -150,7 +150,7 @@ async function pullFrom(d: CycleDeps, c: Connection, links: LinkMap, now: () => 
       max = Math.max(max, pos)
       if (page.rows.length < PULL_PAGE) break
     }
-    // если связи поменялись, следующий круг перечитает всё с начала — чужие записи могли теперь подойти
+    // if links changed, the next round re-reads everything from the start: the other side's records may fit now
     await d.meta.set(cursorKey, report.linksChanged ? 0 : max)
     return { status: 'ok' }
   } catch (e) {

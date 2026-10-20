@@ -11,10 +11,10 @@ const dialog = () => screen.findByRole('dialog')
 const open = (s: Exclude<SheetState, null>) => act(() => useUI.getState().open(s))
 const byName = async (name: string) => (await db.people.filter(p => p.firstName === name).first())!
 
-describe('Астра: подключение модели', () => {
+describe('Astra: connecting a model', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('режимы, ключ, согласие и модель сохраняются; проверка недоступна без согласия', async () => {
+  it('modes, key, consent and model are saved; the check is unavailable without consent', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/me')
     await screen.findByText('Профиль')
@@ -41,7 +41,7 @@ describe('Астра: подключение модели', () => {
     expect(bad).toEqual([])
   })
 
-  it('режим «Прокси» (скрыт, пока не выбран) просит адрес и токен', async () => {
+  it('the "Proxy" mode (hidden until chosen) asks for an address and a token', async () => {
     const me = (await db.settings.get('me'))!
     await db.settings.put({ ...me, ai: { mode: 'proxy', model: 'claude-opus-5-5', shareNotes: true, webSearch: false } })
     const { user } = renderApp('/me')
@@ -52,7 +52,7 @@ describe('Астра: подключение модели', () => {
     expect(d.getByPlaceholderText('пароль к серверу')).toHaveAttribute('type', 'password')
   })
 
-  it('«Устройство» скрывает настройки облака, снятие согласия выключает Астру', async () => {
+  it('"Device" hides the cloud settings, withdrawing consent turns Astra off', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Астра'))
     const d = within(await dialog())
@@ -67,9 +67,9 @@ describe('Астра: подключение модели', () => {
   })
 })
 
-describe('Круги', () => {
+describe('Circles', () => {
   beforeEach(() => seed({ demo: true }))
-  it('новый круг, переименование, порядок, цвет, удаление снимает круг с людей', async () => {
+  it('a new circle, renaming, order, colour, deleting removes the circle from people', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Круги'))
     const d = within(await dialog())
@@ -79,15 +79,15 @@ describe('Круги', () => {
     const input = await d.findByDisplayValue('Новый круг')
     await user.clear(input)
     await user.type(input, 'Соседи')
-    expect(input).toHaveValue('Соседи') // буквы не теряются, пока запись в базу «догоняет»
+    expect(input).toHaveValue('Соседи') // letters are not lost while the database write "catches up"
     await waitFor(async () => expect((await db.circles.filter(c => c.name === 'Соседи').count())).toBe(1))
     await user.click(await d.findByRole('button', { name: 'Океан' }))
     await waitFor(async () => expect((await db.circles.filter(c => c.name === 'Соседи').first())?.palette).toBe('ocean'))
-    // порядок: поднять вверх
+    // order: move up
     const circle = (await db.circles.filter(c => c.name === 'Соседи').first())!
     await user.click(d.getAllByRole('button', { name: 'Выше' })[d.getAllByRole('button', { name: 'Выше' }).length - 1])
     await waitFor(async () => expect((await db.circles.get(circle.id))?.order).toBeLessThan(before))
-    // удаление
+    // deletion
     const work = (await db.circles.filter(c => c.name === 'Работа').first())!
     expect(await db.people.where('circleIds').equals(work.id).count()).toBeGreaterThan(0)
     await user.click(d.getAllByRole('button', { name: 'Удалить круг' })[0])
@@ -96,9 +96,9 @@ describe('Круги', () => {
   })
 })
 
-describe('Знакомство: шторка «Познакомить»', () => {
+describe('Introduction: the "Introduce" sheet', () => {
   beforeEach(() => seed({ demo: true }))
-  it('три сообщения; «Отправить» копирует и помечает пару как «спросили»; «Познакомлены» создаёт связь', async () => {
+  it('three messages; "Send" copies and marks the pair as "asked"; "Introduced" creates a link', async () => {
     const hasan = await byName('Хасан')
     const mark = await byName('Марк')
     const { user } = renderApp('/')
@@ -120,10 +120,10 @@ describe('Знакомство: шторка «Познакомить»', () => 
   })
 })
 
-describe('Импорт .vcf', () => {
+describe('Import .vcf', () => {
   beforeEach(() => seed({ demo: true }))
   const vcf = ['BEGIN:VCARD', 'FN:Новая Контактова', 'TEL:+7 900 111 22 33', 'END:VCARD', 'BEGIN:VCARD', 'FN:Алина Воронцова', 'END:VCARD'].join('\r\n')
-  it('показывает найденные, пропускает уже существующих по имени и добавляет остальных', async () => {
+  it('shows what was found, skips those already existing by name and adds the rest', async () => {
     const { user } = renderApp('/')
     await screen.findByText(/тонус сети/i)
     const before = await db.people.count()
@@ -135,7 +135,7 @@ describe('Импорт .vcf', () => {
     const added = await db.people.filter(p => p.firstName === 'Новая').first()
     expect(added).toMatchObject({ lastName: 'Контактова', closeness: 4 })
   })
-  it('пустой файл — понятное сообщение и неактивная кнопка', async () => {
+  it('an empty file: a clear message and an inactive button', async () => {
     renderApp('/')
     await screen.findByText(/тонус сети/i)
     open({ kind: 'importVcf', text: 'ничего' })
@@ -145,9 +145,9 @@ describe('Импорт .vcf', () => {
   })
 })
 
-describe('Бриф и черновик', () => {
+describe('Brief and draft', () => {
   beforeEach(() => seed({ demo: true }))
-  it('бриф перед встречей собирается из карточки', async () => {
+  it('the pre-meeting brief is built from the card', async () => {
     const nina = await byName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await user.click(await screen.findByRole('button', { name: 'Бриф' }))
@@ -155,7 +155,7 @@ describe('Бриф и черновик', () => {
     expect(await d.findByText(/Нина — /)).toBeInTheDocument()
   })
 
-  it('черновик: тоны, правка текста, «Написать» открывает канал и предлагает записать контакт', async () => {
+  it('a draft: tones, editing the text, "Write" opens the channel and offers to log the contact', async () => {
     const nina = await byName('Нина')
     renderApp('/')
     await screen.findByText(/тонус сети/i)
@@ -174,9 +174,9 @@ describe('Бриф и черновик', () => {
   })
 })
 
-describe('Карточка человека: редактирование', () => {
+describe('A person\'s card: editing', () => {
   beforeEach(() => seed({ demo: true }))
-  it('меняет поля, добавляет канал, тег и ритм; «Сохранить» пишет в базу', async () => {
+  it('changes fields, adds a channel, a tag and a rhythm; "Save" writes to the database', async () => {
     const bad = watchConsole()
     const nina = await byName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
@@ -197,7 +197,7 @@ describe('Карточка человека: редактирование', () =
     expect(bad).toEqual([])
   })
 
-  it('смена ритма на карточке', async () => {
+  it('changing the rhythm on the card', async () => {
     const nina = await byName('Нина')
     const { user } = renderApp(`/person/${nina.id}`)
     await user.click(await screen.findByRole('button', { name: /Ритм общения/ }))

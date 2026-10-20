@@ -3,7 +3,7 @@ import { useEffect, useId, useState } from 'react'
 import { useUI } from '@/app/store'
 import { t, msg } from '@/i18n'
 
-/** Звезда Астры. thinking — пульс, орбита и вспышки. */
+/** Astra's star. thinking: a pulse, an orbit and flashes. */
 export function AstraStar({ size = 24, thinking = false, className = '' }: { size?: number; thinking?: boolean; className?: string }) {
   const id = useId()
   return (
@@ -40,13 +40,13 @@ const PHRASES: Record<string, string[]> = {
   event: [msg('Reading the badges…'), msg('Going through the notes…'), msg('Preparing the cards…')],
 }
 
-/** Состояние «Астра думает»: звезда + сменяющиеся фразы. */
+/** The "Astra is thinking" state: the star plus changing phrases. */
 export function AstraThinking({ kind, className = '' }: { kind: keyof typeof PHRASES; className?: string }) {
   const [i, setI] = useState(0)
   const [visible, setVisible] = useState(false)
   useEffect(() => {
     const timer = setInterval(() => setI(x => (x + 1) % PHRASES[kind].length), 1400)
-    const v = setTimeout(() => setVisible(true), 200) // мгновенные ответы не мигают
+    const v = setTimeout(() => setVisible(true), 200) // instant answers do not flicker
     return () => { clearInterval(timer); clearTimeout(v) }
   }, [kind])
   if (!visible) return <div className={`py-8 ${className}`} style={{ minHeight: 160 }} />
@@ -68,7 +68,7 @@ export function AstraThinking({ kind, className = '' }: { kind: keyof typeof PHR
   )
 }
 
-/** Метка источника: облачная модель или локальный мозг. */
+/** A source label: a cloud model or the local brain. */
 export function SourceBadge({ source, error }: { source: 'ai' | 'local'; error?: string }) {
   const open = useUI(s => s.open)
   if (source === 'ai') {
@@ -86,7 +86,7 @@ export function SourceBadge({ source, error }: { source: 'ai' | 'local'; error?:
   )
 }
 
-/** Обводка «живого» ИИ-блока: мягко переливающаяся рамка. */
+/** The outline of a "live" AI block: a softly shimmering frame. */
 export const astraGlow = {
   background: 'linear-gradient(var(--color-ink-2), var(--color-ink-2)) padding-box, conic-gradient(from var(--a, 0deg), rgb(255 217 168 / 0.55), rgb(167 150 255 / 0.55), rgb(116 166 255 / 0.4), rgb(255 217 168 / 0.55)) border-box',
   border: '1px solid transparent',

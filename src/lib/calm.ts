@@ -1,4 +1,4 @@
-/** Пока идёт прокрутка, фоновые анимации (`.ambient`) стоят на паузе: кадры нужны самой прокрутке. */
+/** While scrolling, background animations (`.ambient`) are paused: the frames are needed by the scrolling itself. */
 export function installCalm(root: HTMLElement = document.documentElement): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined
   const onScroll = () => {

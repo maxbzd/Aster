@@ -13,14 +13,14 @@ export class AsterDB extends Dexie {
   aiCache!: EntityTable<AiCacheEntry, 'key'>
   aiUsage!: EntityTable<AiUsage, 'id'>
   leads!: EntityTable<Lead, 'id'>
-  /** очередь изменений, ещё не отправленных в облако */
+  /** the queue of changes not yet sent to the cloud */
   outbox!: EntityTable<OutboxEntry, 'key'>
-  /** служебное состояние синхронизации (курсор, владелец данных) */
+  /** sync bookkeeping (the cursor, the owner of the data) */
   syncMeta!: EntityTable<SyncMetaEntry, 'key'>
-  /** служебное состояние моста с другим приложением (курсоры, кэши) — только на этом устройстве */
+  /** bookkeeping of the bridge to the other app (cursors, caches), on this device only */
   bridgeMeta!: EntityTable<SyncMetaEntry, 'key'>
   collections!: EntityTable<Collection, 'id'>
-  /** разговор с Астрой — только на этом устройстве */
+  /** the conversation with Astra, on this device only */
   chat!: EntityTable<ChatMessage, 'id'>
 
   constructor(name = 'aster') {

@@ -15,7 +15,7 @@ export const TABS: { to: string; label: string; icon: Icon }[] = [
   { to: '/me', get label() { return t('Me') }, icon: UserIcon },
 ]
 
-/** В боковой панели резерв — отдельный пункт. */
+/** In the sidebar the reserve is a separate item. */
 const SIDE_TABS: { to: string; label: string; icon: Icon }[] = [
   TABS[0], TABS[1], { to: '/reserve', get label() { return t('Reserve') }, icon: VaultIcon }, TABS[2], TABS[3],
 ]
@@ -86,7 +86,7 @@ function AddMenu({ onClose, desktop }: { onClose: () => void; desktop?: boolean 
   )
 }
 
-/** Плавающий стеклянный таб-бар + отдельная круглая кнопка «+» (Opal / Oura). */
+/** A floating glass tab bar plus a separate round "+" button (Opal / Oura). */
 export function TabBar() {
   const { pathname } = useLocation()
   const nav = useNavigate()
@@ -133,7 +133,7 @@ export function TabBar() {
   )
 }
 
-/** Боковая панель на широких экранах. */
+/** The sidebar on wide screens. */
 export function Sidebar() {
   const { pathname } = useLocation()
   const [menu, setMenu] = useState(false)

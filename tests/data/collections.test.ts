@@ -7,8 +7,8 @@ import { interaction, lead, NOW, person, reminder, resetDb } from '../helpers'
 
 beforeEach(resetDb)
 
-describe('списки', () => {
-  it('создаёт с порядком и цветом, название обязательно', async () => {
+describe('lists', () => {
+  it('creates with an order and a colour, the name is required', async () => {
     const a = await createCollection({ name: ' Для раунда ', emoji: '📈' })
     const b = await createCollection({ name: 'Для найма' })
     const list = await db.collections.orderBy('order').toArray()
@@ -18,7 +18,7 @@ describe('списки', () => {
     await expect(createCollection({ name: '   ' })).rejects.toThrow('название')
   })
 
-  it('добавляет и убирает людей и контакты резерва без дублей', async () => {
+  it('adds and removes people and reserve contacts without duplicates', async () => {
     const id = await createCollection({ name: 'Для PR', personIds: ['a', 'a'] })
     await addToCollection(id, { personIds: ['a', 'b'], leadIds: ['l1'] })
     expect(await db.collections.get(id)).toMatchObject({ personIds: ['a', 'b'], leadIds: ['l1'] })
@@ -26,7 +26,7 @@ describe('списки', () => {
     expect(await db.collections.get(id)).toMatchObject({ personIds: ['b'], leadIds: [] })
   })
 
-  it('переименование и удаление', async () => {
+  it('renaming and deleting', async () => {
     const id = await createCollection({ name: 'Старое' })
     await updateCollection(id, { name: 'Новое', emoji: '🚀', note: 'зачем' })
     expect(await db.collections.get(id)).toMatchObject({ name: 'Новое', emoji: '🚀', note: 'зачем' })
@@ -35,7 +35,7 @@ describe('списки', () => {
     expect(await db.collections.get(id)).toBeUndefined()
   })
 
-  it('человек в нескольких списках: одним действием', async () => {
+  it('a person in several lists: in one action', async () => {
     const a = await createCollection({ name: 'А' })
     const b = await createCollection({ name: 'Б', personIds: ['p'] })
     const c = await createCollection({ name: 'В' })
@@ -45,7 +45,7 @@ describe('списки', () => {
     expect(cs.find(x => x.id === b)?.personIds).toEqual([])
   })
 
-  it('участники и CSV; удалённые пропускаются; кавычки экранируются', async () => {
+  it('members and CSV; deleted ones are skipped; quotes are escaped', async () => {
     const id = await createCollection({ name: 'Для PR', personIds: ['p1', 'gone'], leadIds: ['l1'] })
     const p = person({ id: 'p1', firstName: 'Ева', lastName: 'Ланская', role: 'Журналист "Forbes"', channels: [{ type: 'telegram', value: 'eva' }] })
     const l = lead({ id: 'l1', firstName: 'Контакт', city: 'Дубай' })
@@ -60,14 +60,14 @@ describe('списки', () => {
     expect(csv).toContain('"резерв"')
   })
 
-  it('удаление человека убирает его из списков', async () => {
+  it('deleting a person removes them from the lists', async () => {
     await db.people.add(person({ id: 'p', firstName: 'А' }))
     const id = await createCollection({ name: 'Л', personIds: ['p', 'q'] })
     await deletePerson('p')
     expect((await db.collections.get(id))?.personIds).toEqual(['q'])
   })
 
-  it('удаление человека уносит и его семью, и их записи', async () => {
+  it('deleting a person takes their family and its records with them', async () => {
     await db.people.bulkAdd([person({ id: 'o', firstName: 'О' }), person({ id: 'k', firstName: 'К', familyOf: 'o', relation: 'child' })])
     await db.interactions.add(interaction({ personIds: ['k'] }))
     await deletePerson('o')
@@ -76,8 +76,8 @@ describe('списки', () => {
   })
 })
 
-describe('поиск дублей', () => {
-  it('то же имя и фамилия, в том числе на другом языке; одно имя без фамилии — не дубль', () => {
+describe('finding duplicates', () => {
+  it('the same first and last name, also in another language; a first name alone is not a duplicate', () => {
     const g = findDuplicates([
       person({ id: '1', firstName: 'Алексей', lastName: 'Петров' }),
       person({ id: '2', firstName: 'Alexey', lastName: 'Petrov' }),
@@ -90,7 +90,7 @@ describe('поиск дублей', () => {
     expect(g[0]!.reasons).toEqual(['то же имя и фамилия'])
   })
 
-  it('общий телефон в разных записях, ник и почта без регистра; группы склеиваются', () => {
+  it('a shared phone in different records, a handle and an email ignoring case; groups merge', () => {
     const g = findDuplicates([
       person({ id: '1', firstName: 'А', lastName: 'Один', channels: [{ type: 'phone', value: '+7 (916) 204-18-77' }] }),
       person({ id: '2', firstName: 'Б', lastName: 'Другой', channels: [{ type: 'phone', value: '8 916 204 18 77' }, { type: 'telegram', value: '@Same_Nick' }] }),
@@ -101,7 +101,7 @@ describe('поиск дублей', () => {
     expect(g[0]!.people.map(p => p.id).sort()).toEqual(['1', '2', '3'])
   })
 
-  it('семья и сайты не считаются', () => {
+  it('family and websites do not count', () => {
     expect(findDuplicates([
       person({ id: '1', firstName: 'Ева', lastName: 'Л', familyOf: 'x' }),
       person({ id: '2', firstName: 'Ева', lastName: 'Л', familyOf: 'x' }),
@@ -111,8 +111,8 @@ describe('поиск дублей', () => {
   })
 })
 
-describe('объединение', () => {
-  it('всё переезжает на главную карточку, лишние удаляются, последний контакт пересчитан', async () => {
+describe('merging', () => {
+  it('everything moves to the main card, extras are deleted, the last contact is recalculated', async () => {
     const keep = person({ id: 'k', firstName: 'Алексей', lastName: 'Петров', tags: ['AI'], notes: 'Главная', channels: [{ type: 'telegram', value: 'alex' }], createdAt: NOW - 100 * 86_400_000 })
     const dup = person({ id: 'd', firstName: 'Alexey', lastName: 'Petrov', company: 'Acme', city: 'Дубай', tags: ['AI', 'Fintech'], notes: 'Дубль', channels: [{ type: 'telegram', value: '@alex' }, { type: 'email', value: 'a@acme.io' }], createdAt: NOW - 300 * 86_400_000, closeness: 1, pinned: true, birthday: '1990-05-14' })
     const friend = person({ id: 'f', firstName: 'Друг', links: [{ personId: 'd', label: 'знакомы' }], introducedBy: 'd' })
@@ -130,7 +130,7 @@ describe('объединение', () => {
     expect(res.notes).toBe('Главная\n\nДубль')
     expect(res.createdAt).toBe(NOW - 300 * 86_400_000)
     expect((await db.interactions.get('i1'))?.personIds).toEqual(['k'])
-    expect((await db.interactions.get('i2'))?.personIds).toEqual(['k']) // без дубликата id
+    expect((await db.interactions.get('i2'))?.personIds).toEqual(['k']) // with no duplicate id
     expect((await db.reminders.get('r1'))?.personId).toBe('k')
     expect((await db.collections.get(cid))?.personIds).toEqual(['k'])
     expect((await db.people.get('f'))).toMatchObject({ links: [{ personId: 'k', label: 'знакомы' }], introducedBy: 'k' })
@@ -138,7 +138,7 @@ describe('объединение', () => {
     expect((await db.people.get('k'))?.lastContactAt).toBe(NOW - 3 * 86_400_000)
   })
 
-  it('главную карточку нельзя «слить саму в себя»; несуществующая главная — ошибка', async () => {
+  it('the main card cannot be "merged into itself"; a non-existent main card is an error', async () => {
     await db.people.add(person({ id: 'k', firstName: 'А' }))
     await mergePeople('k', ['k'])
     expect(await db.people.get('k')).toBeDefined()
@@ -146,8 +146,8 @@ describe('объединение', () => {
   })
 })
 
-describe('массовая правка', () => {
-  it('город и источник пачке; теги добавляются; круги добавляются и убираются', async () => {
+describe('bulk edit', () => {
+  it('city and source for a batch; tags are added; circles are added and removed', async () => {
     await db.people.bulkAdd([person({ id: 'a', firstName: 'А', tags: ['x'], circleIds: ['c1'] }), person({ id: 'b', firstName: 'Б', city: 'Москва' }), person({ id: 'c', firstName: 'В' })])
     const n = await bulkPatchPeople(['a', 'b', 'нет'], { city: ' Дубай ', metPlace: 'Web Summit', addTags: ['Web3', 'x'], addCircleIds: ['c2'], removeCircleIds: ['c1'] })
     expect(n).toBe(2)
@@ -155,7 +155,7 @@ describe('массовая правка', () => {
     expect(await db.people.get('b')).toMatchObject({ city: 'Дубай', tags: ['Web3', 'x'] })
     expect((await db.people.get('c'))?.city).toBeUndefined()
   })
-  it('статус, ритм и архив; пустое значение очищает поле', async () => {
+  it('status, rhythm and archive; an empty value clears the field', async () => {
     await db.people.bulkAdd([person({ id: 'a', firstName: 'А', city: 'Москва' })])
     await bulkPatchPeople(['a'], { lifeStatus: 'paused', cadenceDays: 90, archived: true, city: '' })
     expect(await db.people.get('a')).toMatchObject({ lifeStatus: 'paused', cadenceDays: 90, archived: true })
@@ -168,8 +168,8 @@ describe('массовая правка', () => {
   })
 })
 
-describe('правка записи общения', () => {
-  it('меняет дату, тип, участников; последний контакт пересчитывается у всех затронутых', async () => {
+describe('editing an interaction', () => {
+  it('changes the date, type, participants; the last contact is recalculated for everyone affected', async () => {
     await db.people.bulkAdd([person({ id: 'a', firstName: 'А', lastContactAt: NOW - 2 * 86_400_000 }), person({ id: 'b', firstName: 'Б' })])
     await db.interactions.add(interaction({ id: 'i', personIds: ['a'], type: 'meeting', date: NOW - 2 * 86_400_000 }))
     await updateInteraction('i', { personIds: ['b'], date: NOW - 20 * 86_400_000, type: 'call', title: 'Созвон', initiator: 'them' })
@@ -177,7 +177,7 @@ describe('правка записи общения', () => {
     expect((await db.people.get('a'))?.lastContactAt).toBeUndefined()
     expect((await db.people.get('b'))?.lastContactAt).toBe(NOW - 20 * 86_400_000)
   })
-  it('превращение встречи в заметку убирает «контакт»; без участников нельзя; несуществующая — тишина', async () => {
+  it('turning a meeting into a note removes "contact"; without participants it is not allowed; a non-existent one is silent', async () => {
     await db.people.add(person({ id: 'a', firstName: 'А', lastContactAt: NOW - 86_400_000 }))
     await db.interactions.add(interaction({ id: 'i', personIds: ['a'], type: 'meeting', date: NOW - 86_400_000 }))
     await updateInteraction('i', { type: 'note' })

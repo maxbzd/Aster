@@ -30,8 +30,8 @@ const ctx = (over: Partial<ChatCtx> = {}): ChatCtx => ({
   reminders: [reminder({ personId: 'oleg', text: 'Отправить список инвесторов', dueAt: NOW + 3 * DAY })], history: [], now: NOW, ...over,
 })
 
-describe('Диалог: обещания', () => {
-  it('«Что я обещал Олегу?» — обещания разделены на мои и обещанные мне, плюс напоминания', () => {
+describe('Chat: promises', () => {
+  it('"What did I promise Oleg?": promises are split into mine and promised to me, plus reminders', () => {
     const r = localChat('Что я обещал Олегу?', ctx())
     expect(r.intent).toBe('promises')
     expect(r.cards[0]?.id).toBe('oleg')
@@ -43,20 +43,20 @@ describe('Диалог: обещания', () => {
     expect(r.text).toMatch(/Отправить список инвесторов/)
   })
 
-  it('без имени: все мои обещания по сети', () => {
+  it('without a name: all my promises across the network', () => {
     const r = localChat('Что я кому обещал?', ctx())
     expect(r.intent).toBe('promises')
     expect(r.cards.map(c => c.id)).toContain('oleg')
   })
 
-  it('если обещаний нет — честно говорит об этом', () => {
+  it('if there are no promises, it says so honestly', () => {
     const r = localChat('Что я обещал Нине?', ctx())
     expect(r.text).toMatch(/нет ни обещаний/)
   })
 })
 
-describe('Диалог: память о разговорах', () => {
-  it('«О чём мы говорили с Ниной про переезд?» — находит нужные места записей', () => {
+describe('Chat: memory of conversations', () => {
+  it('"What did Nina and I talk about regarding the move?": finds the right places in the records', () => {
     const r = localChat('О чём мы говорили с Ниной про переезд?', ctx())
     expect(r.intent).toBe('topic')
     expect(r.cards[0]?.id).toBe('nina')
@@ -65,19 +65,19 @@ describe('Диалог: память о разговорах', () => {
     expect(r.text).not.toMatch(/ничего нет/)
   })
 
-  it('темы в записях нет — говорит об этом и показывает последние разговоры', () => {
+  it('the topic is not in the records: it says so and shows the latest conversations', () => {
     const r = localChat('О чём мы говорили с Ниной про ипотеку?', ctx())
     expect(r.text).toMatch(/ничего нет/)
     expect(r.quotes.length).toBeGreaterThan(0)
   })
 
-  it('имя в любом падеже и латиницей', () => {
+  it('a name in any case form and in Latin letters', () => {
     expect(resolvePeople('что я писал Олегу', ctx()).people[0]?.id).toBe('oleg')
     expect(resolvePeople('что у меня с Alexey', ctx()).people[0]?.id).toBe('alex')
     expect(resolvePeople('как там Дима', ctx()).people[0]?.id).toBe('dima')
   })
 
-  it('«а он ещё что-то обещал?» — понимает, о ком речь, по прошлому ответу', () => {
+  it('"did he promise anything else?": understands who is meant from the previous answer', () => {
     const first = localChat('Что я обещал Олегу?', ctx())
     const history: ChatMessage[] = [{ id: 'a', at: NOW, role: 'astra', text: first.text, focus: first.focus }]
     const r = localChat('а когда мы с ним виделись последний раз?', ctx({ history }))
@@ -85,33 +85,33 @@ describe('Диалог: память о разговорах', () => {
     expect(r.cards[0]?.id).toBe('oleg')
   })
 
-  it('«когда мы виделись» отвечает датой и тем, была ли встреча вживую', () => {
+  it('"when did we last meet" answers with a date and whether the meeting was in person', () => {
     const r = localChat('Когда мы виделись с Ниной в последний раз?', ctx())
     expect(r.intent).toBe('last')
     expect(r.text).toMatch(/Последний контакт/)
   })
 })
 
-describe('Диалог: выборки', () => {
-  it('«Кого я давно не видел из инвесторов в Дубае?» — по кругу и городу, самые давние сверху', () => {
+describe('Chat: selections', () => {
+  it('"Which investors in Dubai haven\'t I seen for a while?": by circle and city, the oldest on top', () => {
     const r = localChat('Кого я давно не видел из инвесторов в Дубае?', ctx())
     expect(r.intent).toBe('filter')
     const ids = r.cards.map(c => c.id)
     expect(ids).toEqual(['dima', 'arman'])
-    expect(ids).not.toContain('boris') // Берлин
-    expect(ids).not.toContain('lena') // Дубай, но не из круга инвесторов
+    expect(ids).not.toContain('boris') // Berlin
+    expect(ids).not.toContain('lena') // Dubai, but not in the investors circle
     expect(r.cards[0]?.reason).toMatch(/виделись/)
   })
 
-  it('«не видел» считает только живые встречи, а не звонки', () => {
+  it('"haven\'t seen" counts only real meetings, not calls', () => {
     const f = parseFilters('кого давно не видел из инвесторов', ctx())!
     expect(f.meetingsOnly).toBe(true)
     const r = localChat('кого давно не видел из инвесторов', ctx())
-    // у Армана недавний звонок, но встреча была 150 дней назад — для «не видел» он давнее Бориса без встреч
+    // Arman has a recent call, but the meeting was 150 days ago: for "haven't seen" he is older than Boris, who has no meetings
     expect(r.cards.map(c => c.id)).toContain('arman')
   })
 
-  it('уточнение «а из Берлина?» наследует прошлые условия', () => {
+  it('the refinement "and from Berlin?" inherits the previous conditions', () => {
     const first = localChat('Кого давно не видел из инвесторов в Дубае?', ctx())
     const history: ChatMessage[] = [{ id: 'a', at: NOW, role: 'astra', text: first.text, focus: first.focus }]
     const r = localChat('а из Берлина?', ctx({ history }))
@@ -119,26 +119,26 @@ describe('Диалог: выборки', () => {
     expect(r.cards.map(c => c.id)).toEqual(['boris'])
   })
 
-  it('роль по слову из карточек: «юристы» находят юристов', () => {
+  it('a role by a word from the cards: "lawyers" finds lawyers', () => {
     const r = localChat('Кто у меня юрист в Дубае?', ctx())
     expect(r.cards.map(c => c.id)).toEqual(['lena'])
   })
 
-  it('списки: «кого из списка для раунда давно не видел»', () => {
+  it('lists: "who on the list for the round haven\'t I seen for a while"', () => {
     const coll = { id: 'c1', name: 'Для раунда', emoji: '📈', palette: 'jade' as const, personIds: ['arman', 'lena'], leadIds: [], order: 0, createdAt: 1, updatedAt: 1 }
     const r = localChat('Кого из списка для раунда давно не видел?', ctx({ collections: [coll] }))
     expect(r.cards.map(c => c.id).sort()).toEqual(['arman', 'lena'])
   })
 })
 
-describe('Диалог: остальное', () => {
-  it('приветствие и «что ты умеешь» дают подсказки', () => {
+describe('Chat: the rest', () => {
+  it('a greeting and "what can you do" give hints', () => {
     const r = localChat('Привет', ctx())
     expect(r.intent).toBe('help')
     expect(r.followUps).toHaveLength(3)
   })
 
-  it('день рождения и досье', () => {
+  it('a birthday and a dossier', () => {
     const withBd = person({ id: 'bd', firstName: 'Ксения', birthday: '1990-10-21', giftIdeas: 'книга про Лиссабон' })
     const r = localChat('Когда день рождения у Ксении?', ctx({ people: [withBd, oleg] }))
     expect(r.intent).toBe('birthday')
@@ -148,13 +148,13 @@ describe('Диалог: остальное', () => {
     expect(a.text).toMatch(/Nord/)
   })
 
-  it('нет имени и условий — запасной смысловой поиск, без ошибок', () => {
+  it('no name and no conditions: the fallback semantic search, without errors', () => {
     const r = localChat('кто поможет с визой', ctx())
     expect(['search', 'filter']).toContain(r.intent)
     expect(r.text).toBeTruthy()
   })
 
-  it('в ответах нет имён после предлогов без кавычек', () => {
+  it('answers have no names after prepositions without quotes', () => {
     for (const q of ['Что я обещал Олегу?', 'О чём мы говорили с Ниной про переезд?', 'Когда мы виделись с Ниной?']) {
       const r = localChat(q, ctx())
       expect(r.text).not.toMatch(/(?:^|\s)(?:с|про|о|для|к|у|от)\s+(?:Олег|Нин|Алексе)/)

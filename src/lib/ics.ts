@@ -21,7 +21,7 @@ export function download(filename: string, content: string | Blob, type = 'text/
   setTimeout(() => URL.revokeObjectURL(url), 2000)
 }
 
-/** RFC 5545: строки длиннее 75 октетов переносятся, продолжение начинается с пробела. Символ не режем пополам. */
+/** RFC 5545: lines longer than 75 octets are folded, the continuation starts with a space. A character is never cut in half. */
 export function foldLine(line: string): string {
   const enc = new TextEncoder()
   if (enc.encode(line).length <= 75) return line
@@ -54,7 +54,7 @@ export function reminderICS(title: string, at: number, note?: string) {
 export function birthdayICS(name: string, nextDate: number) {
   const next = dOnly(nextDate)
   const nd = new Date(nextDate)
-  const end = dOnly(new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 1).getTime()) // не «+24 часа»: в день перевода часов это тот же день
+  const end = dOnly(new Date(nd.getFullYear(), nd.getMonth(), nd.getDate() + 1).getTime()) // not "+24 hours": on the day the clocks change that is the same day
   return wrap([
     'BEGIN:VEVENT', `UID:${uid()}@aster`, `DTSTAMP:${dt(Date.now())}`,
     `DTSTART;VALUE=DATE:${next}`, `DTEND;VALUE=DATE:${end}`, 'RRULE:FREQ=YEARLY',

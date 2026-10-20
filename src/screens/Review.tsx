@@ -159,7 +159,7 @@ function CardItem({ p, depth, onDecide }: { p: Person; depth: number; onDecide: 
       whileDrag={{ scale: 1.02 }}
     >
       <div className="glass-strong relative flex h-full flex-col overflow-hidden rounded-[34px]" style={{ filter: depth ? `brightness(${1 - depth * 0.2})` : undefined }}>
-        {/* градиентная обложка */}
+        {/* gradient cover */}
         <div className="relative h-[46%] shrink-0 overflow-hidden" style={{ background: `radial-gradient(70% 90% at 25% 10%, ${g.a}, transparent 70%), radial-gradient(70% 80% at 85% 30%, ${g.b}, transparent 70%), linear-gradient(160deg, ${g.deep}, #0b0c14)` }}>
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgb(16 16 24 / 0.95))' }} />
           <div className="absolute inset-x-0 bottom-4 flex flex-col items-center">

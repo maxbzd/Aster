@@ -8,15 +8,15 @@ const occ = (kind: OccasionKind, data: Record<string, string> = {}): Occasion =>
 const KINDS = Object.keys(OCCASION_META) as OccasionKind[]
 const DATA: Record<string, string> = { years: '3', promise: 'Прислать презентацию', favor: 'интро', need: 'CTO', helperId: 'h', topic: 'Переезд', news: 'Новая роль', member: 'Ева', relation: 'ребёнок', days: '2', label: 'Годовщина свадьбы' }
 
-describe('«вы» вместо «ты»', () => {
-  it('замены с сохранением регистра', () => {
+describe('"вы" instead of "ты" (formal Russian address)', () => {
+  it('replacements that keep the case', () => {
     expect(formalize('Привет! Как ты? Давай созвонимся, расскажи о себе.')).toBe('Здравствуйте! Как вы? Давайте созвонимся, расскажите о себе.')
     expect(formalize('Помню твой запрос и тебе напишу, у тебя всё получится')).toBe('Помню ваш запрос и вам напишу, у вас всё получится')
   })
-  it('приветствие после имени переставляется', () => {
+  it('a greeting after the name is moved', () => {
     expect(formalize('Алина, привет! Как дела?')).toBe('Здравствуйте, Алина! Как дела?')
   })
-  it('во ВСЕХ черновиках для «вы» не остаётся «ты», «тебе», «твой», «привет»', () => {
+  it('in ALL drafts for the formal register no "ты", "тебе", "твой", "привет" is left', () => {
     const p = person({ id: 'p', firstName: 'Алина', company: 'Lumen', metPlace: 'Web Summit', topics: [{ id: '1', text: 'Как прошёл раунд', done: false }], prefs: { address: 'vy' } })
     const helper = person({ id: 'h', firstName: 'Борис' })
     for (const kind of [...KINDS, null] as const) {
@@ -26,14 +26,14 @@ describe('«вы» вместо «ты»', () => {
       }
     }
   })
-  it('без отметки остаются на «ты»', () => {
+  it('without a mark they stay informal', () => {
     const p = person({ id: 'p', firstName: 'Алина' })
     expect(localDrafts(p, null, 'Макс', [p]).short).toMatch(/привет/i)
   })
 })
 
-describe('язык общения', () => {
-  it('английский для основных поводов; русский текст не просачивается', () => {
+describe('the language of communication', () => {
+  it('English for the main occasions; no Russian text leaks in', () => {
     const p = person({ id: 'p', firstName: 'Anna', company: 'Acme', prefs: { language: 'en' } })
     for (const kind of [...KINDS, null] as const) {
       const d = localDrafts(p, kind ? occ(kind, { ...DATA, member: 'Eva', label: 'wedding anniversary', promise: 'send the deck', favor: 'the intro', need: 'a CTO for an AI project', topic: 'the move', news: 'a new round' }) : null, 'Max', [p])
@@ -45,18 +45,18 @@ describe('язык общения', () => {
   })
 })
 
-describe('семья и важные даты в поводах написать', () => {
+describe('family and important dates in the reasons to write', () => {
   const owner = person({ id: 'o', firstName: 'Алина', lastName: 'Воронцова', createdAt: NOW - 800 * 86_400_000 })
   const kid = person({ id: 'k', firstName: 'Ева', familyOf: 'o', relation: 'child', birthday: '2021-10-07', giftIdeas: 'Конструктор' })
 
-  it('день рождения члена семьи — повод написать владельцу', () => {
+  it('a family member\'s birthday is a reason to write to the owner', () => {
     const list = computeOccasions([owner, kid], [], [], [], NOW)
     const f = list.find(o => o.kind === 'family')!
     expect(f).toMatchObject({ personId: 'o', title: 'Ева: день рождения послезавтра', data: { member: 'Ева', turning: '5' } })
     expect(f.detail).toBe('ребёнок Алины · исполнится 5 · идея подарка: Конструктор')
   })
 
-  it('важные даты человека: в окно напоминания попадают, за окном — нет', () => {
+  it('a person\'s important dates: inside the reminder window they appear, outside it they do not', () => {
     const p = person({ id: 'p', firstName: 'Борис', importantDates: [
       { id: '1', kind: 'anniversary', label: 'Годовщина свадьбы', date: '2016-10-07' },
       { id: '2', kind: 'nameday', label: 'Именины', date: '--10-20' },
@@ -68,7 +68,7 @@ describe('семья и важные даты в поводах написать
     expect(computeOccasions([p], [], [], [], NOW).find(o => o.title.startsWith('Годовщина'))?.detail).toBe('10 лет')
   })
 
-  it('«больше не актуален» и семья архивного владельца не напоминают; обычные поводы у семьи не создаются', () => {
+  it('"no longer relevant" and the family of an archived owner do not remind; ordinary reasons are not created for family', () => {
     const gone = person({ id: 'g', firstName: 'Г', birthday: '1990-10-07', lifeStatus: 'irrelevant' })
     const archOwner = person({ id: 'ao', firstName: 'А', archived: true })
     const kid2 = person({ id: 'k2', firstName: 'К', familyOf: 'ao', relation: 'child', birthday: '2020-10-07' })
@@ -77,7 +77,7 @@ describe('семья и важные даты в поводах написать
     expect(silent.filter(o => o.personId === 'k')).toEqual([])
   })
 
-  it('черновик о семье называет члена семьи', () => {
+  it('a draft about family names the family member', () => {
     const o = computeOccasions([owner, kid], [], [], [], NOW).find(x => x.kind === 'family')!
     const d = localDrafts(owner, o, 'Макс', [owner, kid])
     expect(d.warm).toContain('Ева')

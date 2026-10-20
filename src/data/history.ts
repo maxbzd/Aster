@@ -3,21 +3,21 @@ import { CADENCE_OPTIONS, cadenceOf, CLOSENESS } from './logic'
 import { DAY } from '@/lib/format'
 import { t } from '@/i18n'
 
-/** Живой контакт (заметка — нет). Тот же набор, что в actions, но без зависимости от базы. */
+/** A real contact (a note is not). The same set as in actions, but without a dependency on the database. */
 const CONTACT = new Set(['meeting', 'call', 'message', 'event', 'favor_given', 'favor_got', 'gift'])
 
 const WEIGHT: Record<string, number> = { meeting: 3, event: 2.5, call: 2, favor_given: 2, favor_got: 2, gift: 2, message: 1, note: 0 }
 
-/* ---------- история тепла ---------- */
+/* ---------- warmth history ---------- */
 
 export interface WarmthPoint {
-  /** начало месяца */
+  /** the start of the month */
   t: number
-  /** 0..100, null — человека ещё не знали */
+  /** 0..100, null: the person was not known yet */
   score: number | null
-  /** сколько контактов было в этом месяце */
+  /** how many contacts there were this month */
   count: number
-  /** «вес» общения в месяце: встреча тяжелее сообщения */
+  /** the "weight" of the month's contact: a meeting weighs more than a message */
   activity: number
 }
 
@@ -26,17 +26,17 @@ const nextMonth = (value2: number) => { const d = new Date(value2); return new D
 
 export const scoreFromRatio = (ratio: number) => Math.round(Math.max(0, Math.min(100, 100 - Math.max(0, ratio - 0.5) * 50)))
 
-/** Ритм для графика: даже у «без ритма» теплоту прошлого считаем по ритму орбиты. */
+/** The rhythm for the chart: even for "no rhythm", past warmth is computed from the orbit's rhythm. */
 const historyCadence = (p: Person) => cadenceOf(p) || CLOSENESS[p.closeness].cadence
 
 /**
- * Как менялась связь: теплота на конец каждого месяца — по тому, сколько дней прошло с последнего контакта
- * относительно ритма. Так видно не только «сейчас», но и целые периоды, когда связь остывала.
+ * How the connection changed: the warmth at the end of each month, from how many days had passed since the last contact
+ * relative to the rhythm. So you see not just "now" but whole periods when the connection was cooling.
  */
 export function warmthHistory(p: Person, ints: Interaction[], now = Date.now(), maxMonths = 60): WarmthPoint[] {
   const mine = ints.filter(i => i.personIds.includes(p.id)).sort((a, b) => a.date - b.date)
   const contacts = mine.filter(i => CONTACT.has(i.type))
-  // график начинается с того дня, когда общение стали записывать: что было раньше, приложение не знает
+  // the chart starts from the day contact began to be recorded: the app does not know what was before
   const knownSince = Math.min(mine[0]?.date ?? Infinity, p.createdAt)
   const start = monthStart(knownSince)
   const cadence = historyCadence(p)
@@ -74,7 +74,7 @@ export function yearSummaries(points: WarmthPoint[]): YearSummary[] {
   })
 }
 
-/** Куда идёт связь: последние три месяца против трёх до них. */
+/** Where the connection is heading: the last three months against the three before. */
 export function warmthTrend(points: WarmthPoint[]): 'up' | 'down' | 'flat' | null {
   const scored = points.filter(p => p.score !== null)
   if (scored.length < 6) return null
@@ -83,15 +83,15 @@ export function warmthTrend(points: WarmthPoint[]): 'up' | 'down' | 'flat' | nul
   return diff > 8 ? 'up' : diff < -8 ? 'down' : 'flat'
 }
 
-/* ---------- взаимность ---------- */
+/* ---------- reciprocity ---------- */
 
 export interface Reciprocity {
   me: number
   them: number
   both: number
-  /** записей без отметки, кто начал */
+  /** records with no mark of who started */
   unknown: number
-  /** −1 (пишут только они) … +1 (пишешь только ты) */
+  /** −1 (only they write) … +1 (only you write) */
   skew: number
   label: string
   level: 'balanced' | 'me' | 'them' | 'unknown'
@@ -117,7 +117,7 @@ export function reciprocity(ints: Interaction[], now = Date.now(), windowDays = 
     : { me, them, both, unknown, skew, label: t('More often they start — {pct}%', { pct }), level: 'them' }
 }
 
-/** У кого самый заметный перекос в инициативе (нужно хотя бы 4 отмеченных контакта). */
+/** Who has the most noticeable imbalance in initiative (at least 4 marked contacts are needed). */
 export function reciprocityRanking(people: Person[], ints: Interaction[], now = Date.now()) {
   const by = new Map<string, Interaction[]>()
   for (const i of ints) for (const pid of i.personIds) by.set(pid, [...(by.get(pid) ?? []), i])
@@ -129,11 +129,11 @@ export function reciprocityRanking(people: Person[], ints: Interaction[], now = 
     .sort((a, b) => Math.abs(b.r.skew) - Math.abs(a.r.skew))
 }
 
-/* ---------- умные ритмы ---------- */
+/* ---------- smart rhythms ---------- */
 
 export interface CadenceSuggestion {
   current: number
-  /** как часто общаетесь на самом деле, дней */
+  /** how often you are really in touch, days */
   actualDays: number
   suggested: number
   direction: 'longer' | 'shorter'
@@ -147,7 +147,7 @@ const median = (xs: number[]) => {
   return s.length % 2 ? s[m]! : (s[m - 1]! + s[m]!) / 2
 }
 
-/** Ближайший из стандартных ритмов (по логарифму: 20 дней ближе к 14, чем к 30? нет — к 14 и 30 одинаково). */
+/** The nearest of the standard rhythms (by logarithm: 20 days is equally close to 14 and 30). */
 export function nearestCadence(days: number): number {
   const opts = CADENCE_OPTIONS.map(o => o.days).filter(d => d > 0)
   return opts.reduce((best, d) => (Math.abs(Math.log(d / days)) < Math.abs(Math.log(best / days)) ? d : best), opts[0]!)
@@ -156,8 +156,8 @@ export function nearestCadence(days: number): number {
 const cadenceWord = (d: number) => CADENCE_OPTIONS.find(o => o.days === d)?.label.toLowerCase() ?? t('every {d} days', { d })
 
 /**
- * Предлагает сменить ритм, если реальное общение сильно отличается от заданного.
- * Нужны минимум 4 контакта за 18 месяцев; семья, «рядом каждый день» и люди с жизненным статусом пропускаются.
+ * Suggests changing the rhythm if real contact differs a lot from the set one.
+ * At least 4 contacts in 18 months are needed; family, "around every day" and people with a life status are skipped.
  */
 export function suggestCadence(p: Person, ints: Interaction[], now = Date.now()): CadenceSuggestion | null {
   if (p.archived || p.familyOf || p.everyday || p.lifeStatus) return null
@@ -165,14 +165,14 @@ export function suggestCadence(p: Person, ints: Interaction[], now = Date.now())
   const current = cadenceOf(p)
   if (!current) return null
   const dates = ints.filter(i => i.personIds.includes(p.id) && CONTACT.has(i.type) && now - i.date <= 540 * DAY).map(i => i.date).sort((a, b) => a - b)
-  // несколько записей за один день — это одно общение
+  // several records on one day count as one contact
   const days = [...new Set(dates.map(d => Math.floor(d / DAY)))]
   if (days.length < 4) return null
   const gaps = days.slice(1).map((d, i) => d - days[i]!)
   const actual = Math.max(1, Math.round(median(gaps)))
   const suggested = nearestCadence(actual)
   if (suggested === current) return null
-  // порог: ритм и реальность различаются минимум в 1,8 раза — иначе это шум
+  // threshold: the rhythm and reality differ at least 1.8 times, otherwise it is noise
   const ratio = actual / current
   if (ratio < 1.8 && ratio > 1 / 1.8) return null
   const longer = suggested > current

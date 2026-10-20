@@ -3,9 +3,9 @@ import { useEffect, useRef } from 'react'
 interface Star { x: number; y: number; r: number; a: number; c: string }
 
 /**
- * Звёздное небо. Звёзды рисуются один раз на два слоя; мерцание — это плавная смена прозрачности второго слоя средствами CSS.
- * Так в каждом кадре нет ни JS, ни перерисовки холста: видеокарта только складывает готовые слои. Раньше небо перерисовывалось
- * 20 раз в секунду, и на телефонах это было заметно по лагам.
+ * The starry sky. The stars are drawn once onto two layers; twinkling is a smooth change of the second layer's opacity done in CSS.
+ * So there is no JS and no canvas redraw in any frame: the GPU just composites ready layers. The sky used to be redrawn
+ * 20 times a second, and on phones that showed as lag.
  */
 export function Starfield({ density = 1, className = '' }: { density?: number; className?: string }) {
   const still = useRef<HTMLCanvasElement>(null)
@@ -46,7 +46,7 @@ export function Starfield({ density = 1, className = '' }: { density?: number; c
       const dpr = Math.min(window.devicePixelRatio || 1, 2)
       const w = a.clientWidth
       const h = a.clientHeight
-      // адресная строка на телефоне «дышит» при прокрутке: мелкие смены высоты не должны пересоздавать небо
+      // the address bar on a phone "breathes" while scrolling: small height changes must not recreate the sky
       if (cw && w === cw && Math.abs(h - ch) < 160) return
       cw = w
       ch = h
@@ -65,7 +65,7 @@ export function Starfield({ density = 1, className = '' }: { density?: number; c
           a: big ? 0.9 : 0.15 + Math.random() * 0.6,
           c: tints[Math.floor(Math.random() * tints.length)],
         }
-        // каждая третья звезда мерцает: она на втором слое
+        // every third star twinkles: it is on the second layer
         dot(i % 3 === 0 ? ctxB : ctxA, s)
       }
     }

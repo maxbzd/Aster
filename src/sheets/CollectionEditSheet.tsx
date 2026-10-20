@@ -10,7 +10,7 @@ import { useUI } from '@/app/store'
 import type { ID, PaletteKey } from '@/data/types'
 import { t } from '@/i18n'
 
-/** Создание и правка собственного списка: «Для раунда», «Для найма», любой другой. */
+/** Creating and editing your own list: "For the round", "For hiring", any other. */
 export function CollectionEditSheet({ id, addPersonIds, onClose }: { id?: ID; addPersonIds?: ID[]; onClose: () => void }) {
   const toast = useUI(s => s.toast)
   const [name, setName] = useState('')

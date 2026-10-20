@@ -15,22 +15,22 @@ beforeEach(() => {
   f = worldFetch([a, b])
 })
 
-describe('код подключения', () => {
-  it('кодируется и разбирается обратно, терпит пробелы и кавычки', () => {
+describe('pairing code', () => {
+  it('is encoded and decoded back, tolerates spaces and quotes', () => {
     const p = { u: 'https://x.supabase.co', k: 'sb_publishable_abc', c: `bo_${'a'.repeat(48)}`, l: 'Орбита' }
     const text = encodePairing(p)
     expect(text.startsWith('bridge1.')).toBe(true)
     expect(decodePairing(`  «${text.slice(0, 20)}\n${text.slice(20)}»  `)).toEqual(p)
   })
-  it.each([['', 'не код'], ['hello', 'не код'], ['bridge1.@@@', 'повреждён'], ['bridge1.e30', 'повреждён']])('%j отвергается', (text, why) => {
+  it.each([['', 'не код'], ['hello', 'не код'], ['bridge1.@@@', 'повреждён'], ['bridge1.e30', 'повреждён']])('%j is rejected', (text, why) => {
     expect(() => decodePairing(text)).toThrow(why === 'не код' ? /Это не код/ : /повреждён/)
   })
-  it('адрес не https или без кода — отвергается', () => {
+  it('a non-https address or no code: rejected', () => {
     const bad = (u: string, c: string) => encodePairing({ u, k: 'k', c, l: '' })
     expect(() => decodePairing(bad('http://x.co', `bo_${'a'.repeat(48)}`))).toThrow(BridgeError)
     expect(() => decodePairing(bad('https://x.co', 'bo_short'))).toThrow(BridgeError)
   })
-  it('ключи доступа: длинные, случайные, хэш стабилен', async () => {
+  it('access keys: long, random, the hash is stable', async () => {
     const t1 = newToken()
     expect(t1).toMatch(/^bt_[0-9a-f]{64}$/)
     expect(newToken()).not.toBe(t1)
@@ -38,50 +38,50 @@ describe('код подключения', () => {
   })
 })
 
-describe('подключение', () => {
-  it('код → ключи в обе стороны', async () => {
+describe('connecting', () => {
+  it('code → keys both ways', async () => {
     const { text } = await createPairingCode(a.own(), A)
     const id = await acceptPairingCode(b.own(), B, text, allScopes, f)
     const ca = (await a.own().listConnections())[0]!
     const cb = (await b.own().listConnections()).find(c => c.id === id)!
     expect(ca).toMatchObject({ peer_label: 'Орбита', peer_url: B.url, peer_key: B.key })
     expect(cb).toMatchObject({ peer_label: 'Aster', peer_url: A.url, peer_key: A.key })
-    // каждая сторона держит ключ, который проверяет другая
+    // each side holds the key that the other one verifies
     expect(await hashToken(ca.outbound_token!)).toBe(b.conns[0]!.inbound_hash)
     expect(await hashToken(cb.outbound_token!)).toBe(a.conns[0]!.inbound_hash)
   })
 
-  it('код одноразовый', async () => {
+  it('the code is one-time', async () => {
     const { text } = await createPairingCode(a.own(), A)
     await acceptPairingCode(b.own(), B, text, allScopes, f)
     const other = new Project('https://third.test', 'k')
     await expect(acceptPairingCode(other.own(), { ...B, url: other.url }, text, allScopes, worldFetch([a, other]))).rejects.toMatchObject({ kind: 'code-expired' })
-    expect(other.conns).toHaveLength(0) // после неудачи ничего не осталось
+    expect(other.conns).toHaveLength(0) // nothing is left after a failure
   })
 
-  it('просроченный код не принимается, у принимающего ничего не остаётся', async () => {
+  it('an expired code is not accepted, the receiving side is left with nothing', async () => {
     const { text } = await createPairingCode(a.own(), A)
     a.now = () => Date.now() + 11 * 60_000
     await expect(acceptPairingCode(b.own(), B, text, allScopes, f)).rejects.toMatchObject({ kind: 'code-expired' })
     expect(b.conns).toHaveLength(0)
   })
 
-  it('нет сети при обмене кода — понятная ошибка и чистое состояние', async () => {
+  it('no network during the code exchange: a clear error and a clean state', async () => {
     const { text } = await createPairingCode(a.own(), A)
     a.failNext = 1
     await expect(acceptPairingCode(b.own(), B, text, allScopes, f)).rejects.toMatchObject({ kind: 'offline' })
     expect(b.conns).toHaveLength(0)
-    // код не сгорел, можно повторить
+    // the code did not burn, you can retry
     await acceptPairingCode(b.own(), B, text, allScopes, f)
     expect(b.conns).toHaveLength(1)
   })
 
-  it('свой же код вставить нельзя', async () => {
+  it('you cannot paste your own code', async () => {
     const { text } = await createPairingCode(a.own(), A)
     await expect(acceptPairingCode(a.own(), A, text, allScopes, f)).rejects.toMatchObject({ kind: 'bad-code' })
   })
 
-  it('отключение убирает ключи с обеих сторон', async () => {
+  it('disconnecting removes the keys on both sides', async () => {
     const { text } = await createPairingCode(a.own(), A)
     await acceptPairingCode(b.own(), B, text, allScopes, f)
     const cb = (await b.own().listConnections())[0]!
@@ -91,7 +91,7 @@ describe('подключение', () => {
   })
 })
 
-/** Простой адаптер: публикует заданные записи и запоминает полученные. */
+/** A simple adapter: publishes the given records and remembers the ones it receives. */
 function simpleAdapter(items: () => FeedItem[]): BridgeAdapter & { got: PulledItem[] } {
   const got: PulledItem[] = []
   return { got, collect: async () => items(), apply: async rows => { got.push(...rows); return { links: [], changed: rows.length } } }
@@ -102,14 +102,14 @@ async function paired() {
   await acceptPairingCode(b.own(), B, text, allScopes, f)
 }
 
-describe('цикл обмена', () => {
-  it('без подключений ничего не делает', async () => {
+describe('the exchange cycle', () => {
+  it('does nothing without connections', async () => {
     const ad = simpleAdapter(() => [])
     const r = await bridgeCycle({ own: a.own(), adapter: ad, meta: new MemoryMeta(), fetchImpl: f })
     expect(r).toMatchObject({ published: 0, pulled: 0, peers: [] })
   })
 
-  it('публикует своё, забирает чужое, не публикует то, что не менялось', async () => {
+  it('publishes its own, fetches the other\'s, does not publish what did not change', async () => {
     await paired()
     let mine: FeedItem[] = [{ entity: 'person', key: 'a1', data: { name: 'Алина' }, deleted: false }]
     const adA = simpleAdapter(() => mine)
@@ -122,16 +122,16 @@ describe('цикл обмена', () => {
     await bridgeCycle({ own: a.own(), adapter: adA, meta: metaA, fetchImpl: f })
     expect(adA.got.map(r => r.key)).toEqual(['c1'])
 
-    // повторный круг без изменений: ничего не публикуется
+    // a repeated round with no changes: nothing is published
     expect((await bridgeCycle({ own: a.own(), adapter: adA, meta: metaA, fetchImpl: f })).published).toBe(0)
-    // изменилось — уходит одно
+    // something changed: one record goes out
     mine = [{ entity: 'person', key: 'a1', data: { name: 'Алина В.' }, deleted: false }]
     expect((await bridgeCycle({ own: a.own(), adapter: adA, meta: metaA, fetchImpl: f })).published).toBe(1)
     await bridgeCycle({ own: b.own(), adapter: adB, meta: metaB, fetchImpl: f })
     expect(adB.got.at(-1)).toMatchObject({ key: 'a1', data: { name: 'Алина В.' } })
   })
 
-  it('исчезнувшее у источника доходит как удалённое', async () => {
+  it('whatever disappears at the source arrives as deleted', async () => {
     await paired()
     let mine: FeedItem[] = [{ entity: 'fact', key: 'f1', data: { title: 'Любит бег' }, deleted: false }]
     const adA = simpleAdapter(() => mine)
@@ -145,21 +145,21 @@ describe('цикл обмена', () => {
     expect(adB.got.at(-1)).toMatchObject({ key: 'f1', deleted: true })
   })
 
-  it('читает только разрешённое владельцем', async () => {
+  it('reads only what the owner allowed', async () => {
     await paired()
     const adA = simpleAdapter(() => [
       { entity: 'person', key: 'p', data: { name: 'x' }, deleted: false },
       { entity: 'capture', key: 'c', data: { day: '2026-10-01' }, deleted: false },
     ])
     await bridgeCycle({ own: a.own(), adapter: adA, meta: new MemoryMeta(), fetchImpl: f })
-    // Aster разрешает другой стороне только людей
+    // Aster allows the other side only people
     await a.own().setScopes(a.conns[0]!.id, ['people'])
     const adB = simpleAdapter(() => [])
     await bridgeCycle({ own: b.own(), adapter: adB, meta: new MemoryMeta(), fetchImpl: f })
     expect(adB.got.map(r => r.entity)).toEqual(['person'])
   })
 
-  it('нет сети: статус offline, состояние не портится, потом всё догоняется', async () => {
+  it('no network: status offline, the state is not spoiled, then everything catches up', async () => {
     await paired()
     const ad = simpleAdapter(() => [{ entity: 'person', key: 'p', data: { name: 'x' }, deleted: false }])
     const metaB = new MemoryMeta()
@@ -173,14 +173,14 @@ describe('цикл обмена', () => {
     expect(adB.got).toHaveLength(1)
   })
 
-  it('другая сторона отключилась: статус revoked, а не падение', async () => {
+  it('the other side disconnected: status revoked, not a crash', async () => {
     await paired()
     await a.own().disconnect(a.conns[0]!.id)
     const r = await bridgeCycle({ own: b.own(), adapter: simpleAdapter(() => []), meta: new MemoryMeta(), fetchImpl: f })
     expect(r.peers[0]).toMatchObject({ status: 'revoked' })
   })
 
-  it('ошибка применения не сдвигает курсор: следующий круг повторит', async () => {
+  it('an apply error does not move the cursor: the next round repeats', async () => {
     await paired()
     const adA = simpleAdapter(() => [{ entity: 'person', key: 'p', data: { name: 'x' }, deleted: false }])
     await bridgeCycle({ own: a.own(), adapter: adA, meta: new MemoryMeta(), fetchImpl: f })
@@ -194,7 +194,7 @@ describe('цикл обмена', () => {
     expect(seen).toEqual(['p'])
   })
 
-  it('связи из адаптера записываются, и следующий круг читает чужие данные заново', async () => {
+  it('links from the adapter are recorded, and the next round reads the other side\'s data again', async () => {
     await paired()
     const adA = simpleAdapter(() => [{ entity: 'person', key: 'p1', data: { name: 'Алина' }, deleted: false }])
     await bridgeCycle({ own: a.own(), adapter: adA, meta: new MemoryMeta(), fetchImpl: f })
@@ -214,12 +214,12 @@ describe('цикл обмена', () => {
     expect([...b.links.values()]).toHaveLength(1)
     expect(await metaB.get(`cursor:${b.conns[0]!.id}`)).toBe(0)
     await bridgeCycle({ own: b.own(), adapter: adB, meta: metaB, fetchImpl: f })
-    expect(seen).toEqual([1, 1]) // тот же ряд перечитан после появления связи
+    expect(seen).toEqual([1, 1]) // the same row is re-read after the link appeared
   })
 })
 
 describe('buildLinkMap', () => {
-  it('активные связи в обе стороны, разорванные — отдельно', () => {
+  it('active links both ways, broken ones separately', () => {
     const m = buildLinkMap([
       { local_id: 'a', peer_id: 'x', origin: 'user', deleted: false, updated_ms: 1 },
       { local_id: 'b', peer_id: 'y', origin: 'auto', deleted: true, updated_ms: 1 },

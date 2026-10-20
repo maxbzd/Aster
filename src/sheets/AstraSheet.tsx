@@ -22,7 +22,7 @@ import { t } from '@/i18n'
 
 const DEFAULTS = AI_DEFAULTS
 
-/** Подключение Астры к облачной модели. */
+/** Connecting Astra to a cloud model. */
 export function AstraSheet({ onClose }: { onClose: () => void }) {
   const settings = useSettings()
   const status = useAstraStatus()

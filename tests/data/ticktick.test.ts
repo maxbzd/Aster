@@ -10,8 +10,8 @@ vi.mock('@/ticktick/api', () => api)
 const NOW = new Date('2026-10-12T10:00:00Z').getTime()
 const rem = (over: Partial<Reminder>): Reminder => ({ id: 'r1', text: 'Написать Олегу', dueAt: NOW + 3600_000, done: false, createdAt: NOW - 1000, ...over })
 
-describe('что уходит в TickTick', () => {
-  it('открытые напоминания — с названием, сроком и именем человека', () => {
+describe('what goes to TickTick', () => {
+  it('open reminders: with a title, a due date and the person\'s name', () => {
     const olga = blankPerson({ id: 'p1', firstName: 'Ольга', lastName: 'Сергеева' })
     const p = buildPayload([rem({ personId: 'p1' }), rem({ id: 'r2', text: 'Оплатить', dueAt: NOW })], [olga], NOW, 'Europe/Moscow')
     expect(p.tz).toBe('Europe/Moscow')
@@ -22,32 +22,32 @@ describe('что уходит в TickTick', () => {
     expect(p.done).toEqual([])
   })
 
-  it('отражения обязательств из Орбиты пропускаются: их отправляет Орбита', () => {
+  it('mirrors of commitments from Orbita are skipped: Orbita sends them', () => {
     const p = buildPayload([rem({ bridgeKey: 'orbita:item:1' }), rem({ id: 'r2', done: true, doneAt: NOW - 1000, bridgeKey: 'orbita:item:2' })], [], NOW)
     expect(p.open).toEqual([])
     expect(p.done).toEqual([])
   })
 
-  it('выполненные сообщаются 45 дней, дальше — нет', () => {
+  it('completed ones are reported for 45 days, after that not', () => {
     const day = 86_400_000
     const p = buildPayload([rem({ id: 'a', done: true, doneAt: NOW - 2 * day }), rem({ id: 'b', done: true, doneAt: NOW - 60 * day }), rem({ id: 'c', done: true })], [], NOW)
     expect(p.done).toEqual(['aster:reminder:a'])
   })
 
-  it('ключ и номер напоминания переводятся туда и обратно', () => {
+  it('the key and the reminder number convert back and forth', () => {
     expect(idOf(keyOf('abc-1'))).toBe('abc-1')
     expect(idOf('orbita:item:1')).toBeNull()
   })
 })
 
-describe('обмен с TickTick', () => {
+describe('exchange with TickTick', () => {
   beforeEach(async () => {
     vi.resetModules()
     api.getStatus.mockReset(); api.sync.mockReset()
     await db.reminders.clear(); await db.people.clear()
   })
 
-  it('отмечает напоминание выполненным, когда TickTick сообщил, что задача закрыта', async () => {
+  it('marks a reminder done when TickTick reports the task as closed', async () => {
     await db.reminders.put(rem({ id: 'r9' }))
     api.getStatus.mockResolvedValue({ configured: true, connected: true, expiresAt: null })
     api.sync.mockResolvedValue({ ok: true, reply: { completed: ['aster:reminder:r9', 'orbita:item:x', 'aster:reminder:missing'], created: 1, closed: 0, errors: [] } })
@@ -58,7 +58,7 @@ describe('обмен с TickTick', () => {
     expect(api.sync.mock.calls[0]![0].open.map((i: { key: string }) => i.key)).toEqual(['aster:reminder:r9'])
   })
 
-  it('без подключения ничего не отправляет', async () => {
+  it('without a connection it sends nothing', async () => {
     await db.reminders.put(rem({ id: 'r9' }))
     api.getStatus.mockResolvedValue({ configured: true, connected: false, expiresAt: null })
     const { syncNow } = await import('@/ticktick/cycle')
@@ -66,7 +66,7 @@ describe('обмен с TickTick', () => {
     expect(api.sync).not.toHaveBeenCalled()
   })
 
-  it('токен недействителен — состояние expired, напоминания не трогаются', async () => {
+  it('the token is invalid: state expired, the reminders are not touched', async () => {
     await db.reminders.put(rem({ id: 'r9' }))
     api.getStatus.mockResolvedValue({ configured: true, connected: true, expiresAt: null })
     api.sync.mockResolvedValue({ ok: false, reason: 'expired' })
@@ -76,7 +76,7 @@ describe('обмен с TickTick', () => {
     expect((await db.reminders.get('r9'))?.done).toBe(false)
   })
 
-  it('ошибка сервера показывается и не ломает приложение', async () => {
+  it('a server error is shown and does not break the app', async () => {
     api.getStatus.mockResolvedValue({ configured: true, connected: true, expiresAt: null })
     api.sync.mockResolvedValue({ ok: false, reason: 'error', message: 'TickTick недоступен' })
     const { syncNow, getTickState } = await import('@/ticktick/cycle')
@@ -85,8 +85,8 @@ describe('обмен с TickTick', () => {
   })
 })
 
-describe('демо-данные', () => {
-  it('пока загружено демо, в TickTick ничего не уходит', async () => {
+describe('demo data', () => {
+  it('while demo data is loaded nothing goes to TickTick', async () => {
     vi.resetModules()
     api.getStatus.mockReset(); api.sync.mockReset()
     api.getStatus.mockResolvedValue({ configured: true, connected: true, expiresAt: null })

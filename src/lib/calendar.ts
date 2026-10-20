@@ -1,4 +1,4 @@
-/* Чистая календарная арифметика для выбора даты. Даты — строки «ГГГГ-ММ-ДД» по местному времени, без часовых поясов. */
+/* Pure calendar arithmetic for the date picker. Dates are "YYYY-MM-DD" strings in local time, with no time zones. */
 
 import { getLocale, type Locale } from '@/i18n'
 import { monthGen } from '@/lib/format'
@@ -8,7 +8,7 @@ export interface Cell { iso: string; y: number; m: number; d: number; inMonth: b
 export const pad2 = (n: number) => String(n).padStart(2, '0')
 export const isoOf = (y: number, m: number, d: number) => `${String(y).padStart(4, '0')}-${pad2(m + 1)}-${pad2(d)}`
 
-/** Месяц нумеруется с 0, как в Date. Выход за границы (m = -1, 12) переносится в соседний год. */
+/** The month is numbered from 0, as in Date. Going out of range (m = -1, 12) carries over to the neighbouring year. */
 export function parseISO(s?: string | null): { y: number; m: number; d: number } | null {
   const r = /^(\d{4})-(\d{2})-(\d{2})/.exec(s ?? '')
   if (!r) return null
@@ -33,10 +33,10 @@ export function addMonths(iso: string, n: number) {
   return isoOf(first.getFullYear(), first.getMonth(), Math.min(p.d, daysIn(first.getFullYear(), first.getMonth())))
 }
 
-/** 0 — понедельник … 6 — воскресенье. */
+/** 0 is Monday … 6 is Sunday. */
 export const weekdayIndex = (y: number, m: number, d: number) => (new Date(y, m, d).getDay() + 6) % 7
 
-/** Сетка из шести недель, неделя начинается с понедельника. Хвосты соседних месяцев помечены inMonth: false. */
+/** A grid of six weeks, the week starts on Monday. The tails of neighbouring months are marked inMonth: false. */
 export function monthGrid(y: number, m: number): Cell[] {
   const lead = weekdayIndex(y, m, 1)
   const out: Cell[] = []
@@ -47,7 +47,7 @@ export function monthGrid(y: number, m: number): Cell[] {
   return out
 }
 
-/** Строки «ГГГГ-ММ-ДД» сравниваются как обычные строки. */
+/** "YYYY-MM-DD" strings are compared as ordinary strings. */
 export const outOfRange = (iso: string, min?: string, max?: string) => (!!min && iso < min) || (!!max && iso > max)
 
 export function clampISO(iso: string, min?: string, max?: string) {
@@ -80,7 +80,7 @@ export function longDate(iso: string, withYear = true) {
   return getLocale() === 'en' ? `${month} ${p.d}${withYear ? `, ${p.y}` : ''}` : `${p.d} ${month}${withYear ? ` ${p.y}` : ''}`
 }
 
-/** Дата и время в миллисекундах ↔ части для выбора времени. */
+/** A date and time in milliseconds ↔ parts for the time picker. */
 export function withTime(iso: string, hour: number, minute: number) {
   const p = parseISO(iso)
   return p ? new Date(p.y, p.m, p.d, hour, minute).getTime() : NaN

@@ -22,7 +22,7 @@ import { t, msg } from '@/i18n'
 const QUESTION = /\?|^(кто|кого|кому|с кем|у кого|где|какие|какой|какая|сколько|когда|чей|чья|посоветуй|подскажи|найди|кем|о ком|что у|чем|who|whom|whose|which|what|where|when|how|why|can|could|should|find|suggest|recommend|do i|did i|is there|are there)\s/i
 const SUGGESTED = [msg('Who can help with a visa to the UAE?'), msg('Who should I invite to a dinner about AI?'), msg("Which investors haven't heard from me in a while?"), msg('Whose birthdays are coming up?')]
 
-/** Командная строка + «Спроси свою сеть». Ctrl/⌘ K. */
+/** A command line plus "Ask your network". Ctrl/⌘ K. */
 export function SearchOverlay() {
   const open = useUI(s => s.search)
   return <AnimatePresence>{open && <Search />}</AnimatePresence>
@@ -245,7 +245,7 @@ function Search() {
   )
 }
 
-/** Ответ на вопрос: кто подходит из резерва (локальный поиск, в облако резерв не уходит). */
+/** The answer to a question: who fits from the reserve (a local search; the reserve does not go to the cloud). */
 function ReserveAnswer({ q, leads, onOpen }: { q: string; leads: Lead[]; onOpen: (id: string) => void }) {
   const hits = useMemo(() => askReserve(q, leads, 5), [q, leads])
   if (!hits.length) return null

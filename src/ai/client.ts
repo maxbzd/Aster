@@ -1,4 +1,4 @@
-// SDK грузится лениво — только когда Астра реально идёт в облако
+// The SDK is loaded lazily, only when Astra really goes to the cloud
 import type Anthropic from '@anthropic-ai/sdk'
 import type * as z from 'zod/v4'
 import { db, uid } from '@/data/db'
@@ -19,11 +19,11 @@ async function clientFor(ai: AiSettings) {
   const key = `${ai.mode}|${ai.apiKey ?? ''}|${ai.proxyUrl ?? ''}|${ai.proxyToken ?? ''}`
   if (cached?.key === key) return cached.client
   const { default: Anthropic } = await import('@anthropic-ai/sdk')
-  // Личное приложение без сервера: ключ пользователя хранится только на его устройстве.
-  // Режим прокси держит ключ на сервере, а здесь — только токен доступа к прокси.
+  // A personal app with no server: the user's key is stored only on their device.
+  // Proxy mode keeps the key on the server, and here there is only the access token for the proxy.
   const client =
     ai.mode === 'managed'
-      // ключ на сервере: SDK ходит на воркер этого же сайта, а fetch подписывает запрос сессией аккаунта
+      // the key is on the server: the SDK calls the function and fetch signs the request with the account session
       ? new Anthropic({ baseURL: `${serverBase()}/anthropic`, apiKey: 'server', dangerouslyAllowBrowser: true, maxRetries: 2, fetch: authedFetch })
       : ai.mode === 'proxy'
       ? new Anthropic({ baseURL: ai.proxyUrl!.replace(/\/$/, ''), apiKey: ai.proxyToken || 'proxy', dangerouslyAllowBrowser: true, maxRetries: 2 })
@@ -32,7 +32,7 @@ async function clientFor(ai: AiSettings) {
   return client
 }
 
-/** Подключена ли Астра к облачной модели. */
+/** Whether Astra is connected to a cloud model. */
 export async function activeAi(): Promise<AiSettings | null> {
   const ai = (await db.settings.get('me'))?.ai
   if (!ai || ai.mode === 'off' || !ai.consentAt) return null
@@ -43,7 +43,7 @@ export async function activeAi(): Promise<AiSettings | null> {
 
 export function friendlyError(e: unknown): AstraError {
   if (e instanceof AstraError) return e
-  // без instanceof, чтобы не тянуть SDK в основной бандл
+  // without instanceof, so as not to pull the SDK into the main bundle
   const value = e instanceof Error ? e.message : ''
   const status = (e as { status?: number } | null)?.status
   if (e instanceof Error && e.name === 'Error' && (e as { kind?: string }).kind === 'format') return new AstraError(e.message, 'format')
@@ -68,11 +68,11 @@ async function recordUsage(task: string, model: string, usage: Anthropic.Beta.Be
 
 export interface JsonCall<T extends z.ZodType> {
   task: string
-  /** схемы (zod) подгружаются только при обращении к облаку */
+  /** schemas (zod) are loaded only when the cloud is called */
   schema: () => Promise<T>
-  /** стабильный системный промпт — кешируется */
+  /** a stable system prompt: cached */
   system: string
-  /** большой стабильный контекст (индекс сети) — отдельный кешируемый блок */
+  /** a large stable context (the network index): a separate cacheable block */
   context?: string
   content: string | Anthropic.Beta.BetaContentBlockParam[]
   effort?: 'low' | 'medium' | 'high'
@@ -80,10 +80,10 @@ export interface JsonCall<T extends z.ZodType> {
   signal?: AbortSignal
 }
 
-/** Вызов модели со строгой JSON-схемой ответа. */
+/** A model call with a strict JSON schema for the answer. */
 export async function astraJSON<T extends z.ZodType>(ai: AiSettings, call: JsonCall<T>): Promise<z.infer<T>> {
   const m = modelInfo(ai.model)
-  // Gemini и Groq: другой формат запроса (OpenAI), работают только через серверный режим
+  // Gemini, Groq and gateways: a different request format (OpenAI), they work only through the server mode
   if (ai.mode === 'managed' && providerOf(ai.model) !== 'anthropic') {
     try {
       const { compatJSON } = await import('./compat')
@@ -120,10 +120,10 @@ export async function astraJSON<T extends z.ZodType>(ai: AiSettings, call: JsonC
   }
 }
 
-/** Свободный текстовый ответ с веб-поиском (поводы: новости о человеке/компании). */
+/** A free-text answer with web search (reasons: news about a person/company). */
 export async function astraWebText(ai: AiSettings, task: string, system: string, prompt: string, signal?: AbortSignal): Promise<string> {
   const m = modelInfo(ai.model)
-  // веб-поиск есть только у Claude; у бесплатных моделей поводы по новостям просто не ищутся
+  // web search exists only for Claude; with the free models news-based reasons are simply not looked up
   if (providerOf(ai.model) !== 'anthropic') return ''
   try {
     const client = await clientFor(ai)
@@ -133,7 +133,7 @@ export async function astraWebText(ai: AiSettings, task: string, system: string,
         max_tokens: 4000,
         system,
         messages: [{ role: 'user', content: prompt }],
-        // у старых моделей (Haiku 4.5) — базовая версия инструмента
+        // older models (Haiku 4.5) use the base version of the tool
         tools: [m.id.includes('haiku') ? { type: 'web_search_20250305', name: 'web_search', max_uses: 3 } : { type: 'web_search_20260209', name: 'web_search', max_uses: 3 }],
         ...(m.effort ? { output_config: { effort: 'low' as const } } : {}),
         ...(m.fallbacks ? { betas: ['server-side-fallback-2026-07-01'], fallbacks: 'default' as const } : {}),

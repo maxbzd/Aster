@@ -13,7 +13,7 @@ const EASE = [0.22, 1, 0.36, 1] as const
 export interface SlideDef { key: string; colors: [string, string, string]; show: (r: YearReview) => boolean; render: (r: YearReview, ctx: SlideCtx) => React.ReactNode }
 export interface SlideCtx { years: number[]; setYear: (y: number) => void; close: () => void; copy: () => void; copied: boolean }
 
-/* ---------- общие кирпичики ---------- */
+/* ---------- shared building blocks ---------- */
 
 const Kicker = ({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) => (
   <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.6, ease: EASE }} className="micro text-white/70">{children}</motion.div>
@@ -27,7 +27,7 @@ const Note = ({ children, delay = 0.9 }: { children: React.ReactNode; delay?: nu
   <motion.p initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay, duration: 0.7, ease: EASE }} className="mt-4 max-w-[330px] text-[16px] leading-relaxed text-white/75">{children}</motion.p>
 )
 
-/* ---------- 0. Вступление ---------- */
+/* ---------- 0. Intro ---------- */
 
 export function IntroSlide({ r, ctx }: { r: YearReview; ctx: SlideCtx }) {
   const digits = String(r.year).split('')
@@ -65,7 +65,7 @@ export function IntroSlide({ r, ctx }: { r: YearReview; ctx: SlideCtx }) {
   )
 }
 
-/* ---------- 1. Всего общения ---------- */
+/* ---------- 1. Total contact ---------- */
 
 export function TotalSlide({ r }: { r: YearReview }) {
   const rings = [
@@ -113,7 +113,7 @@ export function TotalSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 2. По месяцам ---------- */
+/* ---------- 2. By month ---------- */
 
 export function MonthsSlide({ r }: { r: YearReview }) {
   const max = Math.max(1, ...r.monthly)
@@ -141,7 +141,7 @@ export function MonthsSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 3. Новые люди ---------- */
+/* ---------- 3. New people ---------- */
 
 export function NewPeopleSlide({ r }: { r: YearReview }) {
   const list = r.newPeople.slice(0, 22)
@@ -158,7 +158,7 @@ export function NewPeopleSlide({ r }: { r: YearReview }) {
       <Headline delay={0.5}>{tn(r.newPeople.length, 'new person', 'new people')}{' '}{t('in your network')}</Headline>
       <div className="relative mt-6 h-[250px] w-full max-w-[340px]">
         {list.map((p, i) => {
-          // спираль с золотым углом: аватары ложатся плотно и не перекрываются
+          // a spiral with the golden angle: avatars lie densely and do not overlap
           const a = i * 2.39996
           const rad = c * Math.sqrt(i + 0.5)
           return (
@@ -174,7 +174,7 @@ export function NewPeopleSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 4. Главный человек ---------- */
+/* ---------- 4. The main person ---------- */
 
 export function TopPersonSlide({ r }: { r: YearReview }) {
   const [top, ...rest] = r.topPeople
@@ -210,7 +210,7 @@ export function TopPersonSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 5. Города ---------- */
+/* ---------- 5. Cities ---------- */
 
 export function CitiesSlide({ r }: { r: YearReview }) {
   const max = Math.max(1, ...r.cities.map(c => c.count))
@@ -237,7 +237,7 @@ export function CitiesSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 6. Самые тёплые ---------- */
+/* ---------- 6. The warmest ---------- */
 
 export function WarmestSlide({ r }: { r: YearReview }) {
   const order = [r.warmest[1], r.warmest[0], r.warmest[2]]
@@ -265,7 +265,7 @@ export function WarmestSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 7. Взаимность ---------- */
+/* ---------- 7. Reciprocity ---------- */
 
 export function ReciprocitySlide({ r }: { r: YearReview }) {
   const { me, them, both } = r.reciprocity
@@ -291,7 +291,7 @@ export function ReciprocitySlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 8. С кем разошлись ---------- */
+/* ---------- 8. Who you drifted from ---------- */
 
 export function LostSlide({ r }: { r: YearReview }) {
   return (
@@ -316,7 +316,7 @@ export function LostSlide({ r }: { r: YearReview }) {
   )
 }
 
-/* ---------- 9. Итог ---------- */
+/* ---------- 9. Summary ---------- */
 
 export function SummarySlide({ r, ctx }: { r: YearReview; ctx: SlideCtx }) {
   const cells: Array<[string, number]> = [

@@ -23,14 +23,14 @@ export async function patchLeads(ids: ID[], fn: (l: Lead) => Partial<Lead>) {
   })
 }
 
-/** Отмена целого импорта. Возвращает, сколько карточек убрали. */
+/** Undoes a whole import. Returns how many cards were removed. */
 export async function undoBatch(batchId: ID) {
   const ids = await db.leads.where('batchId').equals(batchId).primaryKeys()
   await db.leads.bulkDelete(ids)
   return ids.length
 }
 
-/** Резерв → сеть: человек становится полноценной карточкой, а запись в резерве исчезает. */
+/** Reserve → network: the person becomes a full card and the reserve entry disappears. */
 export async function promoteLead(id: ID, opt: { closeness: Closeness; circleIds?: ID[] }) {
   const l = await db.leads.get(id)
   if (!l) return undefined

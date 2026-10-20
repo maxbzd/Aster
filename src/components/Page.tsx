@@ -16,7 +16,7 @@ export function Page({ children, className = '', bare }: { children: ReactNode; 
   )
 }
 
-/** Общий фон: глубокий космос + звёзды + едва заметное свечение сверху. */
+/** The common background: deep space plus stars plus a barely visible glow at the top. */
 export function SpaceBackground() {
   return (
     <div aria-hidden className="fixed inset-0 -z-10">

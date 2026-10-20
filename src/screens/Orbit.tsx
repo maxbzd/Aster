@@ -66,7 +66,7 @@ export function Orbit() {
   const half = size / 2
   const paused = !!sel
 
-  // позиции в режиме «Созвездия» (орбиты замирают в исходном положении)
+  // positions in "Constellations" mode (the orbits freeze in their initial position)
   const pos = useMemo(() => {
     const m = new Map<string, { x: number; y: number }>()
     for (const ring of rings) ring.items.forEach(({ p }, i) => {
@@ -103,10 +103,10 @@ export function Orbit() {
 
       <div ref={box} className="relative flex flex-1 items-center justify-center py-4" onClick={() => setSel(null)}>
         <div className="relative" style={{ width: size, height: size }}>
-          {/* туманность за планетой */}
+          {/* a nebula behind the planet */}
           <div aria-hidden className="absolute rounded-full" style={{ inset: '18%', background: 'radial-gradient(closest-side, rgb(255 110 90 / 0.28), rgb(124 92 255 / 0.12) 60%, transparent)', filter: 'blur(30px)' }} />
 
-          {/* кольца */}
+          {/* rings */}
           {rings.map(ring => (
             <div key={`line-${ring.c}`} aria-hidden className="absolute rounded-full" style={{
               left: half - ring.R, top: half - ring.R, width: ring.R * 2, height: ring.R * 2,
@@ -121,10 +121,10 @@ export function Orbit() {
             </div>
           ))}
 
-          {/* планета */}
+          {/* planet */}
           <Planet size={size * 0.2} center={half} photo={settings?.photo} />
 
-          {/* люди */}
+          {/* people */}
           {rings.map(ring => (
             <div key={`ring-${ring.c}`} className="ambient pointer-events-none absolute inset-0 z-[3]" style={{
               animationName: stars ? 'none' : ring.dir === 1 ? 'spin' : 'spin-rev',
@@ -161,7 +161,7 @@ export function Orbit() {
                   </div>
                 )
               })}
-              {/* те, кто не поместился — звёзды на орбите */}
+              {/* those who did not fit are stars on the orbit */}
               {ring.extra.map(({ p, w }, i) => {
                 const a = (i / ring.extra.length) * Math.PI * 2 + 0.31
                 const R = ring.R + ((i % 3) - 1) * 6
@@ -173,7 +173,7 @@ export function Orbit() {
             </div>
           ))}
 
-          {/* линии созвездий */}
+          {/* constellation lines */}
           {stars && (
             <svg aria-hidden="true" className="absolute inset-0 z-[2] overflow-visible" width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
               <defs>
@@ -205,7 +205,7 @@ export function Orbit() {
         )}
       </div>
 
-      {/* легенда */}
+      {/* legend */}
       {stars ? (
         <div className="mb-2 text-center text-[13px] text-fg-2">
           {lines.length ? <>{t('Lines show who should be introduced.')}{' '}<span className="text-fg-3">{t('Tap a line.')}</span></> : t('No pairs yet: add a “Looking for now” field to people')}
@@ -236,7 +236,7 @@ function Planet({ size, center, photo }: { size: number; center: number; photo?:
         <div className="ambient absolute inset-0 rounded-full" style={{ background: 'conic-gradient(from 20deg, transparent, rgb(255 255 255 / 0.18) 12%, transparent 25%, rgb(255 200 150 / 0.16) 45%, transparent 60%, rgb(255 255 255 / 0.1) 80%, transparent)', animation: 'spin 40s linear infinite' }} />
         {photo && <img src={photo} alt="" className="absolute inset-[18%] h-[64%] w-[64%] rounded-full object-cover opacity-90 ring-2 ring-white/30" />}
       </div>
-      {/* луна */}
+      {/* moon */}
       <div aria-hidden className="ambient absolute inset-[-22%]" style={{ animation: 'spin 18s linear infinite' }}>
         <span className="absolute left-1/2 top-0 h-2 w-2 -translate-x-1/2 rounded-full bg-[#ffe9cf] shadow-[0_0_10px_3px_rgba(255,220,180,0.6)]" />
       </div>

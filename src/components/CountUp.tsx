@@ -1,7 +1,7 @@
 import { animate, useInView, useReducedMotion } from 'motion/react'
 import { useEffect, useRef, useState } from 'react'
 
-/** Число, которое отсчитывается от нуля, когда попадает в поле зрения. При «уменьшении движения» показывается сразу. */
+/** A number that counts up from zero when it comes into view. With "reduced motion" it is shown at once. */
 export function CountUp({ value, duration = 1.4, delay = 0, className, format = (n: number) => String(Math.round(n)) }: {
   value: number
   duration?: number

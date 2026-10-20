@@ -5,10 +5,10 @@ import { NOW } from '../helpers'
 const lines = (ics: string) => ics.split('\r\n')
 
 describe('foldLine (RFC 5545)', () => {
-  it('короткие строки не трогает', () => {
+  it('leaves short lines alone', () => {
     expect(foldLine('SUMMARY:Привет')).toBe('SUMMARY:Привет')
   })
-  it('длинные режет по 75 октетов, продолжение начинается с пробела', () => {
+  it('cuts long ones at 75 octets, the continuation starts with a space', () => {
     const folded = foldLine(`SUMMARY:${'а'.repeat(80)}`)
     const parts = folded.split('\r\n')
     expect(parts.length).toBeGreaterThan(1)
@@ -16,7 +16,7 @@ describe('foldLine (RFC 5545)', () => {
     expect(parts.slice(1).every(p => p.startsWith(' '))).toBe(true)
     expect(parts.join('').replace(/ /g, '')).toBe(`SUMMARY:${'а'.repeat(80)}`)
   })
-  it('не режет многобайтовый символ пополам', () => {
+  it('does not cut a multi-byte character in half', () => {
     const folded = foldLine(`X:${'🎂'.repeat(40)}`)
     expect(folded.split('\r\n').join('').replace(/ /g, '')).toBe(`X:${'🎂'.repeat(40)}`)
   })
@@ -24,16 +24,16 @@ describe('foldLine (RFC 5545)', () => {
 
 describe('reminderICS', () => {
   const ics = reminderICS('Позвонить Ивану, обсудить; важное', NOW, 'Заметка\nвторая строка')
-  it('валидная рамка календаря и CRLF', () => {
+  it('a valid calendar frame and CRLF', () => {
     expect(ics.startsWith('BEGIN:VCALENDAR\r\n')).toBe(true)
     expect(ics.endsWith('END:VCALENDAR\r\n')).toBe(true)
     expect(ics).not.toMatch(/[^\r]\n/)
   })
-  it('экранирует запятые, точки с запятой и переводы строк', () => {
+  it('escapes commas, semicolons and line breaks', () => {
     expect(ics).toContain('SUMMARY:Позвонить Ивану\\, обсудить\\; важное')
     expect(ics).toContain('Заметка\\nвторая строка')
   })
-  it('содержит событие на 30 минут и будильник', () => {
+  it('contains a 30-minute event and an alarm', () => {
     const start = ics.match(/DTSTART:(\d{8}T\d{6}Z)/)?.[1]
     const end = ics.match(/DTEND:(\d{8}T\d{6}Z)/)?.[1]
     expect(start).toBeTruthy()
@@ -42,28 +42,28 @@ describe('reminderICS', () => {
     expect(toMs(end as string) - toMs(start as string)).toBe(30 * 60_000)
     expect(ics).toContain('BEGIN:VALARM')
   })
-  it('время в UTC соответствует моменту', () => {
+  it('the time in UTC matches the moment', () => {
     const d = new Date(NOW)
     const expected = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}T${String(d.getUTCHours()).padStart(2, '0')}${String(d.getUTCMinutes()).padStart(2, '0')}00Z`
     expect(ics).toContain(`DTSTART:${expected}`)
   })
-  it('без заметки не добавляет пустое описание', () => {
+  it('without a note it adds no empty description', () => {
     expect(reminderICS('Тест', NOW)).not.toMatch(/^DESCRIPTION:\s*$/m)
   })
-  it('ни одна строка не длиннее 75 октетов', () => {
+  it('no line is longer than 75 octets', () => {
     const long = reminderICS('Очень длинное название напоминания '.repeat(6), NOW)
     for (const l of lines(long)) expect(new TextEncoder().encode(l).length).toBeLessThanOrEqual(75)
   })
 })
 
 describe('birthdayICS', () => {
-  it('ежегодное событие на целый день, конец — следующий день', () => {
+  it('a yearly all-day event, the end is the next day', () => {
     const ics = birthdayICS('Анна Ким', new Date(2026, 9, 14).getTime())
     expect(ics).toContain('DTSTART;VALUE=DATE:20261014')
     expect(ics).toContain('DTEND;VALUE=DATE:20261015')
     expect(ics).toContain('RRULE:FREQ=YEARLY')
   })
-  it('конец месяца и года переносится корректно', () => {
+  it('the end of a month and a year carries over correctly', () => {
     expect(birthdayICS('X', new Date(2026, 11, 31).getTime())).toContain('DTEND;VALUE=DATE:20270101')
     expect(birthdayICS('X', new Date(2026, 9, 31).getTime())).toContain('DTEND;VALUE=DATE:20261101')
   })

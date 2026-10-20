@@ -7,10 +7,10 @@ import { bridgeMeta as dbMeta, META, type PeerCaptures, type PeerFacts } from '.
 import type { LinkRow } from './protocol'
 import { t } from '@/i18n'
 
-/** Что Орбита предлагает добавить в Aster. Предложения не применяются сами: человек подтверждает. */
+/** What Orbita suggests adding to Aster. Suggestions are never applied on their own: the person confirms. */
 export interface Suggestion {
   id: string
-  /** ключ записи или факта в Орбите */
+  /** the key of a record or fact in Orbita */
   key: string
   kind: 'capture' | 'fact'
   personId: string
@@ -39,7 +39,7 @@ async function linkMap() {
   return buildLinkMap(rows)
 }
 
-/** Собирает предложения из кэшей Орбиты: только про людей, которые связаны, и только ещё не обработанные. */
+/** Collects suggestions from Orbita's caches: only about linked people, and only those not handled yet. */
 export async function listSuggestions(now = Date.now()): Promise<Suggestion[]> {
   const [captures, facts, links, settings, people] = await Promise.all([
     dbMeta.get<PeerCaptures>(META.captures),
@@ -85,7 +85,7 @@ async function markHandled(ids: string[]) {
   })
 }
 
-/** Запись из Орбиты → взаимодействие в хронологии. id детерминированный: на втором устройстве дубля не будет. */
+/** A record from Orbita → an interaction in the timeline. The id is deterministic: there will be no duplicate on a second device. */
 export async function acceptSuggestion(s: Suggestion): Promise<void> {
   if (s.kind === 'capture') {
     const it: Interaction = { id: captureInteractionId(`${s.key}-${s.personId}`), personIds: [s.personId], type: s.type ?? 'note', date: dayMs(s.day ?? ''), title: s.title, note: s.text, place: s.place, createdAt: Date.now(), bridgeKey: s.key }

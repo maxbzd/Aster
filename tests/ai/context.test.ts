@@ -10,25 +10,25 @@ const secret = person({
 })
 const other = contactedAgo(40, { id: 'p0', firstName: 'Борис' })
 
-describe('networkIndex — что уходит в модель', () => {
+describe('networkIndex: what goes to the model', () => {
   const idx = networkIndex([secret, other], [{ id: 'c1', name: 'Работа', emoji: '💼', palette: 'ocean', order: 0 }], NOW)
-  it('нужное для сопоставления: роль, город, интересы, запрос, круг', () => {
+  it('what is needed for matching: role, city, interests, request, circle', () => {
     expect(idx).toContain('id:p1 | Анна Ким | CTO @ Acme | Алматы | Работа')
     expect(idx).toContain('интересы: ai')
     expect(idx).toContain('ищет: Инвестор')
     expect(idx).toContain('силён в: Rust')
     expect(idx).toContain('10 дн. без контакта')
   })
-  it('приватное не уходит: телефоны, почты, ники, заметки, семья, подарки', () => {
+  it('private data does not go: phones, emails, handles, notes, family, gifts', () => {
     for (const leak of ['+7 700', 'secret@mail.io', 'anna_secret', 'ЛИЧНАЯ ЗАМЕТКА', 'Муж Олег', 'Книги']) expect(idx).not.toContain(leak)
   })
-  it('порядок стабилен (по id) — важно для кеша промптов', () => {
+  it('the order is stable (by id): important for the prompt cache', () => {
     const a = networkIndex([secret, other], [], NOW)
     const b = networkIndex([other, secret], [], NOW)
     expect(a).toBe(b)
     expect(a.indexOf('id:p0')).toBeLessThan(a.indexOf('id:p1'))
   })
-  it('архивных нет, счётчик верный', () => {
+  it('no archived people, the count is right', () => {
     const r = networkIndex([secret, { ...other, archived: true }], [], NOW)
     expect(r).toContain('(1 чел.)')
     expect(r).not.toContain('Борис')
@@ -36,7 +36,7 @@ describe('networkIndex — что уходит в модель', () => {
 })
 
 describe('namesIndex', () => {
-  it('только имена, роли и город для сопоставления', () => {
+  it('only names, roles and the city for matching', () => {
     const r = namesIndex([secret, person({ id: 'p2', firstName: 'Лёва', nickname: 'Лев' })])
     expect(r).toContain('id:p1 | Анна Ким | CTO @ Acme | Алматы')
     expect(r).toContain('«Лев»')
@@ -51,23 +51,23 @@ describe('dossier', () => {
     interaction({ personIds: ['p1'], type: 'note', title: 'Мысль', note: 'ПРИВАТНОЕ РАЗМЫШЛЕНИЕ', date: NOW - 5 * DAY }),
   ]
   const rems = [reminder({ personId: 'p1', text: 'Отправить интро', dueAt: NOW + 2 * DAY })]
-  it('с shareNotes — заметки и история попадают в досье', () => {
+  it('with shareNotes the notes and history get into the dossier', () => {
     const d = dossier(secret, ints, rems, byId, true, NOW)
     expect(d).toContain('ЛИЧНАЯ ЗАМЕТКА')
     expect(d).toContain('Отправить интро')
     expect(d).toContain('Встреча: Кофе')
   })
-  it('без shareNotes — личные заметки не отправляются', () => {
+  it('without shareNotes the personal notes are not sent', () => {
     const d = dossier(secret, ints, rems, byId, false, NOW)
     expect(d).not.toContain('ЛИЧНАЯ ЗАМЕТКА')
     expect(d).not.toContain('ПРИВАТНОЕ РАЗМЫШЛЕНИЕ')
   })
-  it('контактные данные не попадают в досье никогда', () => {
+  it('contact details never get into the dossier', () => {
     const d = dossier(secret, ints, rems, byId, true, NOW)
     for (const leak of ['+7 700', 'secret@mail.io', 'anna_secret']) expect(d).not.toContain(leak)
   })
 })
 
-it('todayLine даёт дату в ISO, чтобы модель считала сроки', () => {
+it('todayLine gives the date in ISO so that the model can count deadlines', () => {
   expect(todayLine(NOW)).toBe('Сегодня: понедельник, 5 октября 2026 (2026-10-05).')
 })

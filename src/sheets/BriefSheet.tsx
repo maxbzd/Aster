@@ -14,7 +14,7 @@ import { useAstraStatus } from '@/ai/hooks'
 import { useUI } from '@/app/store'
 import { t } from '@/i18n'
 
-/** Бриф перед встречей — читается за 30 секунд. */
+/** The pre-meeting brief: read in 30 seconds. */
 export function BriefSheet({ personId, onClose }: { personId: string; onClose: () => void }) {
   const p = usePerson(personId)
   const status = useAstraStatus()
@@ -51,7 +51,7 @@ export function BriefSheet({ personId, onClose }: { personId: string; onClose: (
           </div>
           <p className="display text-[26px] leading-[1.18]">{b.headline}</p>
 
-          {/* С чего начать — карточка под лампой */}
+          {/* How to start: a card under the lamp */}
           <div className="glass relative mt-5 overflow-hidden rounded-[24px] px-5 pb-5 pt-9">
             <div aria-hidden className="absolute left-1/2 top-0 -translate-x-1/2">
               <div className="mx-auto h-3 w-px bg-white/25" />

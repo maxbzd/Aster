@@ -30,7 +30,7 @@ const emptyDraft = (): PersonDraft => ({
   looking_for: null, can_help: null, i_can_help: null, channels: [], birthday: null, met_place: null, introduced_by_id: null, topics: [], gift_ideas: null,
 })
 
-/** Режим события: быстро ловим людей на конференции, разбираем вечером. */
+/** Event mode: quickly catch people at a conference, sort them out in the evening. */
 export function EventMode() {
   const nav = useNavigate()
   const event = useLiveQuery(async () => (await db.events.filter(e => !e.endedAt).first()) ?? null, [])
@@ -96,7 +96,7 @@ function Live({ event, onExit }: { event: NetEvent; onExit: () => void }) {
   const process = async () => {
     setStage('processing')
     const out: Parsed[] = []
-    // берём свежий список: последняя запись могла сохраниться только что
+    // take a fresh list: the last entry may have just been saved
     const fresh = (await db.captures.where('eventId').equals(event.id).sortBy('createdAt')).filter(c => c.status === 'pending')
     setTotal(fresh.length)
     for (let i = 0; i < fresh.length; i++) {
@@ -163,7 +163,7 @@ function Capturing({ event, captures, pending, onProcess, onExit }: { event: Net
         <button type="button" disabled={pending === 0} onClick={end} className="press btn-glass h-11 disabled:opacity-40">{t('Review')}{' '}<ArrowRightIcon size={16} /></button>
       </div>
 
-      {/* текущий человек */}
+      {/* the current person */}
       <div className="glass glow-card mt-6 rounded-[30px] p-5" style={{ ['--glow' as string]: 'rgb(95 227 176 / 0.22)', ['--gx' as string]: '50%', ['--gy' as string]: '0%' }}>
         <div className="micro text-fg-3">{t('Person #')}{captures.length + 1}</div>
         <div className="mt-4 flex gap-3">
@@ -223,7 +223,7 @@ function Review({ event, parsed, setParsed, onBack, onDone }: { event: NetEvent;
         reminders: p.plan.reminders.filter(r => !r.person_ref || r.person_ref === p.origRef).map(r => ({ ...r, person_ref: 'p1' })),
       }
       const { refToId } = await applyPlan(plan, { metAt, metPlace: event.name, closeness, circleIds, interactionDate: p.capture.createdAt })
-      // фоллоу-ап завтра утром
+      // follow-up tomorrow morning
       if (refToId.p1) await addReminder({ personId: refToId.p1, text: t('Follow-up after “{name}”', { name: event.name }), dueAt: startOfDay() + DAY + 10 * 3600_000 })
       await db.captures.update(p.capture.id, { status: 'saved' })
     }

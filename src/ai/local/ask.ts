@@ -60,7 +60,7 @@ function fieldsOf(p: Person, notes: string): Field[] {
   ]
 }
 
-/** Локальный «спроси сеть»: смысловые намерения + ранжирование по полям. */
+/** The local "ask the network": semantic intents plus ranking by fields. */
 export function localAsk(q: string, people: Person[], interactions: Interaction[], now = Date.now()): AskResult {
   const query = lower(q)
   const active = people.filter(p => !p.archived)
@@ -92,7 +92,7 @@ export function localAsk(q: string, people: Person[], interactions: Interaction[
     }
   }
 
-  // общий поиск по смыслу
+  // general search by meaning
   const qs = stems(q)
   const expanded = new Set(qs)
   for (const s of qs) for (const [k, v] of Object.entries(ASK_SYN)) if (s.startsWith(k)) { for (const x of v) expanded.add(x) }
@@ -114,7 +114,7 @@ export function localAsk(q: string, people: Person[], interactions: Interaction[
         why.push(f.notes ? t('mentioned in notes') : `${f.name}: ${f.text.length > 60 ? f.text.slice(0, 60) + '…' : f.text}`)
       }
     }
-    // тёплые связи чуть выше
+    // warm connections slightly higher
     const w = warmthOf(p, now)
     if (score) score += w.level === 'hot' ? 0.6 : w.level === 'warm' ? 0.4 : 0
     return { p, score, why }

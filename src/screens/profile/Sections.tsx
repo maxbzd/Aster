@@ -26,7 +26,7 @@ import { t, tn } from '@/i18n'
 
 const DATE_ICON: Record<DateKind, Icon> = { anniversary: HeartIcon, nameday: SparkleIcon, jubilee: ConfettiIcon, event: PushPinIcon, custom: CalendarStarIcon }
 
-/* ---------- статус отношений ---------- */
+/* ---------- relationship status ---------- */
 
 export function StatusBanner({ p }: { p: Person }) {
   const open = useUI(s => s.open)
@@ -50,7 +50,7 @@ export function StatusBanner({ p }: { p: Person }) {
   )
 }
 
-/* ---------- ритм и режим «каждый день рядом» ---------- */
+/* ---------- rhythm and the "around every day" mode ---------- */
 
 export function RhythmMode({ p }: { p: Person }) {
   const toast = useUI(s => s.toast)
@@ -83,7 +83,7 @@ export function EverydayToggle({ p }: { p: Person }) {
   )
 }
 
-/** Подсказка Астры: ритм не совпадает с реальной жизнью. */
+/** Astra's hint: the rhythm does not match real life. */
 export function CadenceHint({ p, ints }: { p: Person; ints: Interaction[] }) {
   const toast = useUI(s => s.toast)
   const s = useMemo(() => suggestCadence(p, ints), [p, ints])
@@ -106,7 +106,7 @@ export function CadenceHintCard({ s, onApply, onDismiss, who }: { s: CadenceSugg
   )
 }
 
-/* ---------- семья ---------- */
+/* ---------- family ---------- */
 
 export function FamilySection({ p }: { p: Person }) {
   const all = useAllPeople()
@@ -158,7 +158,7 @@ export function FamilySection({ p }: { p: Person }) {
   )
 }
 
-/* ---------- важные даты ---------- */
+/* ---------- important dates ---------- */
 
 export function DatesSection({ p, now }: { p: Person; now: number }) {
   const open = useUI(s => s.open)
@@ -188,7 +188,7 @@ export function DatesSection({ p, now }: { p: Person; now: number }) {
   )
 }
 
-/* ---------- предпочтения ---------- */
+/* ---------- preferences ---------- */
 
 export function PrefsSection({ p }: { p: Person }) {
   const open = useUI(s => s.open)
@@ -229,7 +229,7 @@ export function PrefsSection({ p }: { p: Person }) {
   )
 }
 
-/* ---------- тепло по годам и взаимность ---------- */
+/* ---------- warmth by year and reciprocity ---------- */
 
 const TREND = { up: { get t() { return t('Connection is warming') }, c: '#ff9a52', a: '↗' }, down: { get t() { return t('Connection is cooling') }, c: '#74a6ff', a: '↘' }, flat: { get t() { return t('Steady') }, c: '#ffd27a', a: '→' } } as const
 
@@ -322,7 +322,7 @@ export function ReciprocitySection({ p, ints }: { p: Person; ints: Interaction[]
   )
 }
 
-/* ---------- списки ---------- */
+/* ---------- lists ---------- */
 
 export function CollectionsSection({ p }: { p: Person }) {
   const cs = useCollections()
@@ -344,7 +344,7 @@ export function CollectionsSection({ p }: { p: Person }) {
   )
 }
 
-/* ---------- мелочи ---------- */
+/* ---------- small things ---------- */
 
 export function StatusPill({ p }: { p: Person }) {
   if (p.lifeStatus) { const m = STATUS_META[p.lifeStatus]; return <Pill color={m.color}><m.icon size={12} weight="fill" className="-ml-0.5" />{m.short}</Pill> }

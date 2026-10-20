@@ -2,7 +2,7 @@ import type { Person } from './types'
 import { fullName } from '@/lib/format'
 import { nameScore } from '@/lib/names'
 
-/** Всё, по чему можно найти человека: имя, работа, город, заметки, теги, предпочтения, важные даты. */
+/** Everything a person can be found by: name, work, city, notes, tags, preferences, important dates. */
 export const haystack = (p: Person) =>
   [fullName(p), p.nickname, p.company, p.role, p.city, p.metPlace, p.notes, p.family, p.canHelpMe, p.iCanHelp, p.lookingFor,
     ...p.tags, ...p.facts.map(f => f.text), ...p.channels.map(c => c.value),
@@ -10,8 +10,8 @@ export const haystack = (p: Person) =>
     .filter(Boolean).join(' ').toLowerCase()
 
 /**
- * Каждое слово запроса должно найтись либо в тексте карточки, либо в имени с учётом
- * транслита и уменьшительных: «Alexey» находит «Алексея», «Саша» — «Александра».
+ * Every word of the query must be found either in the card's text or in the name, taking into account
+ * transliteration and short forms: "Alexey" finds "Алексей", "Sasha" finds "Alexander".
  */
 export function personMatches(query: string, p: Person, hay: string = haystack(p)): boolean {
   const query2 = query.trim().toLowerCase()

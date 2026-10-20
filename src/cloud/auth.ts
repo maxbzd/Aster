@@ -4,14 +4,14 @@ import { t, msg } from '@/i18n'
 
 let clientPromise: Promise<SupabaseClient> | null = null
 
-/** Библиотека Supabase тяжёлая, поэтому подгружается лениво — только когда облако действительно нужно. */
+/** The Supabase library is heavy, so it is loaded lazily, only when the cloud is really needed. */
 export function getClient(): Promise<SupabaseClient> {
   clientPromise ??= import('@supabase/supabase-js').then(({ createClient }) =>
     createClient(SUPABASE_URL, SUPABASE_KEY, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        // ссылки из писем разбираем сами (parseAuthHash): у приложения HashRouter, и # занят маршрутами
+        // links from emails are parsed by us (parseAuthHash): the app uses a HashRouter and # is taken by the routes
         detectSessionInUrl: false,
         flowType: 'implicit',
         storageKey: 'aster-auth',
@@ -21,7 +21,7 @@ export function getClient(): Promise<SupabaseClient> {
   return clientPromise
 }
 
-/** Есть ли сохранённая сессия — проверяется без загрузки библиотеки. */
+/** Whether there is a saved session; checked without loading the library. */
 export function hasStoredSession(): boolean {
   try { return !!localStorage.getItem('aster-auth') } catch { return false }
 }
@@ -41,7 +41,7 @@ const MESSAGES: Array<[RegExp, string]> = [
   [/jwt expired|invalid jwt|refresh token/i, msg('Session expired — sign in again')],
 ]
 
-/** Понятное человеку сообщение об ошибке входа и синхронизации. */
+/** An error message about sign-in and sync that a person can understand. */
 export function friendlyCloudError(e: unknown): string {
   const raw = e instanceof Error ? e.message : typeof e === 'object' && e && 'message' in e ? String((e as { message: unknown }).message) : String(e)
   for (const [re, item] of MESSAGES) if (re.test(raw)) return t(item, { MIN_PASSWORD })
@@ -52,7 +52,7 @@ export const validEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s.
 
 export interface AuthHash { type: 'recovery' | 'signup' | 'magiclink' | 'invite' | 'email_change' | 'unknown'; accessToken?: string; refreshToken?: string; error?: string }
 
-/** Разбирает #access_token=…&type=recovery из ссылки в письме. Обычные маршруты (#/people) не трогает. */
+/** Parses #access_token=…&type=recovery from a link in an email. Ordinary routes (#/people) are left alone. */
 export function parseAuthHash(hash: string): AuthHash | null {
   const h = hash.replace(/^#\/?/, '')
   if (!/(^|&)(access_token|error_description|error_code)=/.test(h)) return null

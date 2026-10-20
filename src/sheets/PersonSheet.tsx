@@ -102,7 +102,7 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
         </div>
       }
     >
-      {/* Фото и имя */}
+      {/* Photo and name */}
       <div className="flex items-center gap-4 pt-1">
         <button type="button" aria-label={t('Photo')} className="press relative shrink-0" onClick={async () => { const f = await pickFile('image/*'); if (f) set('photo', await fileToAvatar(f)) }}>
           <Avatar person={{ id: draft.id, firstName: draft.firstName || '?', lastName: draft.lastName, photo: draft.photo }} size={84} />
@@ -115,7 +115,7 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
         {draft.photo && <button type="button" aria-label={t('Remove photo')} onClick={() => set('photo', undefined)} className="press self-start text-fg-4"><XIcon size={16} /></button>}
       </div>
 
-      {/* Знакомство */}
+      {/* How you met */}
       <FormGroup title={t('Where you met')}>
         <Field label={t('A place or event')}>
           <TextInput value={draft.metPlace ?? ''} onChange={e => set('metPlace', e.target.value)} placeholder={t("Web Summit, dinner at friends', Telegram…")} />
@@ -130,7 +130,7 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
         </Field>
       </FormGroup>
 
-      {/* Круги и близость */}
+      {/* Circles and closeness */}
       <div className="mt-5">
         <div className="micro mb-2 px-1 text-fg-3">{t('Circles')}</div>
         <div className="flex flex-wrap gap-1.5">
@@ -150,13 +150,13 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
         <div className="mt-1.5 px-2 text-[12px] text-fg-4">{t('Default rhythm: every')}{' '}{CLOSENESS[draft.closeness].cadence}{' '}{t('days')}</div>
       </div>
 
-      {/* Работа */}
+      {/* Work */}
       <FormGroup title={t('What they do')}>
         <Field label={t('Role')}><TextInput value={draft.role ?? ''} onChange={e => set('role', e.target.value)} placeholder={t('Founder, designer, investor…')} /></Field>
         <Field label={t('Company')}><TextInput value={draft.company ?? ''} onChange={e => set('company', e.target.value)} placeholder={t('Where they work')} /></Field>
       </FormGroup>
 
-      {/* Контакты */}
+      {/* Contacts */}
       <FormGroup title={t('Contacts')}>
         {draft.channels.map((c, i) => {
           const meta = CHANNELS[c.type]
@@ -185,7 +185,7 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
         </div>
       </FormGroup>
 
-      {/* Дополнительные секции */}
+      {/* Additional sections */}
       <AnimatePresence initial={false}>
         {[...shown].map(k => (
           <motion.div key={k} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">

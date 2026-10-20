@@ -4,7 +4,7 @@ import { DAY } from '@/lib/format'
 import { download } from '@/lib/ics'
 import { getLocale, t } from '@/i18n'
 
-/** Типы, которые считаются живым контактом (заметка — нет). */
+/** Types that count as real contact (a note does not). */
 export const CONTACT_TYPES: InteractionType[] = ['meeting', 'call', 'message', 'event', 'favor_given', 'favor_got', 'gift']
 
 export function blankPerson(partial: Partial<Person> = {}): Person {
@@ -37,7 +37,7 @@ export async function patchPerson(id: ID, patch: Partial<Person>) {
 
 export async function deletePerson(rootId: ID) {
   await db.transaction('rw', db.people, db.interactions, db.reminders, db.collections, async () => {
-    // семья человека уходит вместе с ним: это его карточки, отдельно они не живут
+    // a person's family goes with them: these are their cards and do not live on their own
     const ids = [rootId, ...(await db.people.filter(x => x.familyOf === rootId).toArray()).map(x => x.id)]
     for (const id of ids) {
       await db.people.delete(id)
@@ -49,7 +49,7 @@ export async function deletePerson(rootId: ID) {
         if (rest.length) await db.interactions.update(it.id, { personIds: rest })
         else await db.interactions.delete(it.id)
       }
-      // убираем ссылки из чужих карточек
+      // remove the links from other people's cards
       const linked = await db.people.filter(p => p.links.some(l => l.personId === id) || p.introducedBy === id).toArray()
       for (const p of linked) {
         await db.people.update(p.id, {
@@ -77,7 +77,7 @@ export async function logInteraction(data: Omit<Interaction, 'id' | 'createdAt'>
   return it.id
 }
 
-/** Правка записи общения: дата, участники, тип, название, заметка, место, кто начал. Последний контакт пересчитывается у всех, кого это касается. */
+/** Editing an interaction: date, participants, type, title, note, place, who started. The last contact is recalculated for everyone it concerns. */
 export async function updateInteraction(id: ID, patch: Partial<Omit<Interaction, 'id' | 'createdAt'>>) {
   const before = await db.interactions.get(id)
   if (!before) return
@@ -110,7 +110,7 @@ export async function toggleReminder(id: ID) {
   await db.reminders.update(id, { done: !r.done, doneAt: !r.done ? Date.now() : undefined, updatedAt: Date.now() })
 }
 
-/** Удаляет напоминание. Если это отражение обязательства из Орбиты, мост не воссоздаст его заново. */
+/** Deletes a reminder. If it is the mirror of a commitment from Orbita, the bridge will not recreate it. */
 export async function deleteReminder(id: ID) {
   const r = await db.reminders.get(id)
   await db.transaction('rw', db.reminders, db.settings, async () => {
@@ -136,8 +136,8 @@ export async function saveSettings(patch: Partial<Settings>) {
 }
 
 /**
- * Изменить настройки Астры атомарно: читаем свежие значения внутри транзакции.
- * Так быстрые подряд правки (ввод ключа, затем согласие) не затирают друг друга устаревшей копией из экрана.
+ * Change Astra's settings atomically: fresh values are read inside the transaction.
+ * So quick consecutive edits (entering a key, then consent) do not overwrite each other with a stale copy from the screen.
  */
 export async function patchAi(patch: Partial<AiSettings>, defaults: AiSettings) {
   await db.transaction('rw', db.settings, async () => {
@@ -168,19 +168,19 @@ export async function wipeAll() {
   })
 }
 
-/** Очистка данных людей без потери настроек (имя, подключение Астры). */
+/** Clears people's data without losing the settings (the name, Astra's connection). */
 export async function wipeNetwork() {
   await db.transaction('rw', [db.people, db.interactions, db.reminders, db.circles, db.intros, db.events, db.captures, db.aiCache, db.leads, db.collections, db.chat], async () => {
     await Promise.all([db.people.clear(), db.interactions.clear(), db.reminders.clear(), db.circles.clear(), db.intros.clear(), db.events.clear(), db.captures.clear(), db.aiCache.clear(), db.leads.clear(), db.collections.clear(), db.chat.clear()])
   })
 }
 
-/* ---------- Резервная копия ---------- */
+/* ---------- Backup ---------- */
 export async function exportBackup() {
   const [people, interactions, reminders, circles, settings, intros, events, leads, collections] = await Promise.all([
     db.people.toArray(), db.interactions.toArray(), db.reminders.toArray(), db.circles.toArray(), db.settings.toArray(), db.intros.toArray(), db.events.toArray(), db.leads.toArray(), db.collections.toArray(),
   ])
-  // ключи (Астра, расшифровка речи) не попадают в резервную копию
+  // keys (Astra, speech recognition) do not go into the backup
   const safeSettings = settings.map(s => {
     const { stt: _stt, ...rest } = s
     return rest.ai ? { ...rest, ai: { ...rest.ai, apiKey: undefined, proxyToken: undefined } } : rest
@@ -188,7 +188,7 @@ export async function exportBackup() {
   return { app: 'aster', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), people, interactions, reminders, circles, settings: safeSettings, intros, events, leads, collections }
 }
 
-/** Скачать резервную копию файлом и запомнить дату — по ней приложение напоминает о копиях. */
+/** Download a backup as a file and remember the date: the app uses it to remind about backups. */
 export async function backupToFile() {
   const data = await exportBackup()
   download(`aster-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data), 'application/json')
@@ -202,7 +202,7 @@ export class BackupError extends Error {}
 const TABLES = ['people', 'interactions', 'reminders', 'circles', 'settings', 'intros', 'events', 'leads', 'collections'] as const
 type BackupTable = (typeof TABLES)[number]
 
-/** Проверяем файл ДО того, как что-то трогать в базе: битая копия не должна стереть живые данные. */
+/** The file is validated BEFORE anything in the database is touched: a broken backup must not erase live data. */
 export function validateBackup(data: unknown): asserts data is { app: 'aster'; version?: number } & Partial<Record<BackupTable, Record<string, unknown>[]>> {
   const d = data as Record<string, unknown> | null
   if (!d || typeof d !== 'object' || d.app !== 'aster') throw new BackupError(t('This is not an Aster backup'))
@@ -224,18 +224,18 @@ export function validateBackup(data: unknown): asserts data is { app: 'aster'; v
 }
 
 export interface ImportOptions {
-  /** replace — заменить всё; merge — добавить из копии, не удаляя имеющееся (при совпадении id побеждает копия) */
+  /** replace: replace everything; merge: add from the backup without deleting what exists (on an id clash the backup wins) */
   mode?: 'replace' | 'merge'
 }
 
-/** Возвращает, сколько записей загружено. */
+/** Returns how many records were loaded. */
 export async function importBackup(data: unknown, { mode = 'replace' }: ImportOptions = {}) {
   validateBackup(data)
   const current = await db.settings.get('me')
   let loaded = 0
   await db.transaction('rw', [db.people, db.interactions, db.reminders, db.circles, db.settings, db.intros, db.events, db.leads, db.collections], async () => {
     if (mode === 'replace') {
-      // таблицы, которых в копии нет (старая версия без резерва), не трогаем — иначе потеряем то, чего копия не знала
+      // tables that are not in the backup (an old version without the reserve) are left alone, otherwise we would lose what the backup did not know about
       for (const item2 of TABLES) if (data[item2] !== undefined || item2 === 'settings') await db.table(item2).clear()
     }
     for (const item3 of TABLES) {
@@ -244,7 +244,7 @@ export async function importBackup(data: unknown, { mode = 'replace' }: ImportOp
       await db.table(item3).bulkPut(rows)
       loaded += rows.length
     }
-    // подключение Астры и дата копии принадлежат этому устройству — из файла их не берём
+    // Astra's connection and the backup date belong to this device: they are not taken from the file
     if (mode === 'replace') {
       const fromFile = ((data.settings as unknown as Settings[] | undefined) ?? [])[0]
       const merged: Settings = { ...(fromFile ?? { id: 'me', name: current?.name ?? '', createdAt: current?.createdAt ?? Date.now() }), id: 'me', onboarded: true }

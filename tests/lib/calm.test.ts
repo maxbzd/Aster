@@ -1,10 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { installCalm } from '@/lib/calm'
 
-describe('тишина на время прокрутки', () => {
+describe('quiet during scrolling', () => {
   afterEach(() => vi.useRealTimers())
 
-  it('ставит метку при прокрутке и снимает через 160 мс покоя', () => {
+  it('sets the mark on scroll and removes it after 160 ms of rest', () => {
     vi.useFakeTimers()
     const off = installCalm()
     window.dispatchEvent(new Event('scroll'))
@@ -18,7 +18,7 @@ describe('тишина на время прокрутки', () => {
     off()
   })
 
-  it('после отключения метку не ставит', () => {
+  it('after it is turned off it does not set the mark', () => {
     const off = installCalm()
     off()
     window.dispatchEvent(new Event('scroll'))

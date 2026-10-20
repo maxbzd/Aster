@@ -46,16 +46,16 @@ export const STOP = new Set([
 
 export const stems = (s: string) => words(s).filter(w => !STOP.has(w)).map(stem)
 
-/** Регэксп «слово целиком» для кириллицы (\b не работает с кириллицей). */
+/** A "whole word" regexp for Cyrillic (\b does not work with Cyrillic). */
 export const wordRe = (body: string, flags = 'i') => new RegExp(`(?<![а-яёa-z0-9])(?:${body})(?![а-яёa-z0-9])`, flags)
 
 
 export const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1) : s)
 export const trimPunct = (s: string) => s.replace(/^[\s,—–-]+|[\s,.;:!?—–-]+$/g, '').trim()
 
-/* ---------- Имена ---------- */
+/* ---------- Names ---------- */
 
-/** «с Артёмом» → «Артём», «Анной» → «Анна», «Сергеем» → «Сергей». */
+/** "с Артёмом" → "Артём", "Анной" → "Анна", "Сергеем" → "Сергей" (Russian case endings). */
 export function nameToNominative(w: string) {
   const rules: [RegExp, string][] = [
     [/еем$/, 'ей'], [/аем$/, 'ай'], [/ием$/, 'ий'], [/ьей$/, 'ья'], [/ией$/, 'ия'], [/([лрн])ем$/, '$1ь'],
@@ -89,7 +89,7 @@ export function personNameRe(p: Pick<Person, 'firstName' | 'nickname'>) {
   return wordRe(forms.join('|'))
 }
 
-/** Найти упомянутых в тексте людей из сети. */
+/** Find the people from the network mentioned in the text. */
 export function findMentioned(text: string, people: Person[]) {
   const query = lower(text)
   const hits: { p: Person; index: number; pos: number }[] = []
@@ -97,11 +97,11 @@ export function findMentioned(text: string, people: Person[]) {
     if (p.archived || p.firstName.length < 2) continue
     const m = personNameRe(p).exec(query)
     if (!m) continue
-    // если в тексте есть фамилия — уверенность выше
+    // if the text has a last name, the confidence is higher
     const lastOk = p.lastName ? wordRe(nameStem(p.lastName) + '\\w{0,3}').test(query) : false
     hits.push({ p, index: m.index - (lastOk ? 10_000 : 0), pos: m.index })
   }
-  // одинаковые имена: оставляем того, у кого совпала фамилия, иначе самого «тёплого»
+  // identical names: keep the one whose last name matched, otherwise the "warmest"
   const byName = new Map<string, { p: Person; index: number; pos: number }[]>()
   for (const h of hits) byName.set(lower(h.p.firstName), [...(byName.get(lower(h.p.firstName)) ?? []), h])
   const out: { p: Person; pos: number }[] = []
@@ -109,11 +109,11 @@ export function findMentioned(text: string, people: Person[]) {
     group.sort((a, b) => a.index - b.index || (b.p.lastContactAt ?? 0) - (a.p.lastContactAt ?? 0))
     out.push({ p: group[0].p, pos: group[0].pos })
   }
-  // в порядке упоминания в тексте: «ужинали с Даниилом и Алиной» — главный герой Даниил
+  // in the order of mention in the text: in "had dinner with Daniil and Alina" the main character is Daniil
   return out.sort((a, b) => a.pos - b.pos).map(x => x.p)
 }
 
-/* ---------- Даты ---------- */
+/* ---------- Dates ---------- */
 
 const NUM: Record<string, number> = {
   один: 1, одну: 1, одна: 1, два: 2, две: 2, пару: 2, три: 3, четыре: 4, пять: 5, шесть: 6, семь: 7, восемь: 8, девять: 9, десять: 10,

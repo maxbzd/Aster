@@ -15,7 +15,7 @@ import { ago, fullName } from '@/lib/format'
 import { useUI } from '@/app/store'
 import { t } from '@/i18n'
 
-/** Сводник: кого с кем стоит познакомить. */
+/** The matchmaker: whom to introduce to whom. */
 export function Intros() {
   const nav = useNavigate()
   const open = useUI(s => s.open)

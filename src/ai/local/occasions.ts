@@ -15,7 +15,7 @@ export interface Occasion {
   title: string
   detail: string
   priority: number
-  /** данные для черновика */
+  /** data for the draft */
   data: Record<string, string>
 }
 
@@ -53,7 +53,7 @@ export function computeOccasions(
   for (const p of people) {
     if (p.archived || p.lifeStatus === 'irrelevant') continue
 
-    // член семьи: поводы адресуем тому, чья это семья — писать нужно ему
+    // a family member: reasons are addressed to the owner of the family, since it is they who should be written to
     if (p.familyOf) {
       const owner = byId.get(p.familyOf)
       if (!owner || owner.archived) continue
@@ -81,7 +81,7 @@ export function computeOccasions(
     const push = (kind: OccasionKind, title: string, detail: string, priority: number, data: Record<string, string> = {}) =>
       out.push({ id: `${kind}-${p.id}`, personId: p.id, kind, title, detail, priority, data })
 
-    // день рождения
+    // birthday
     const b = nextBirthday(p.birthday, now)
     if (b && b.days <= 7) {
       push('birthday', b.days === 0 ? t('Birthday today') : t('Birthday {inDays}', { inDays: inDays(b.days) }),
@@ -89,7 +89,7 @@ export function computeOccasions(
         100 - b.days * 5, { days: String(b.days) })
     }
 
-    // важные даты человека: годовщины, именины, юбилеи
+    // the person's important dates: anniversaries, name days, jubilees
     for (const d of p.importantDates ?? []) {
       const o = nextOccurrence(d.date, d.yearly !== false, now)
       if (o && o.days <= (d.remindDays ?? 3)) {
@@ -98,7 +98,7 @@ export function computeOccasions(
       }
     }
 
-    // годовщина знакомства
+    // anniversary of meeting
     if (p.metAt) {
       const met = fromISODate(p.metAt)
       const years = date.getFullYear() - new Date(met).getFullYear()
@@ -107,7 +107,7 @@ export function computeOccasions(
       if (years >= 1 && d >= -1 && d <= 2) {
         push('anniversary', tn(years, '{n} year of acquaintance', '{n} years of acquaintance'), p.metPlace ? t('You met: {metPlace}', { metPlace: p.metPlace }) : t('A great reason to get back in touch'), 62, { years: String(years) })
       }
-      // свежее знакомство без продолжения
+      // a fresh acquaintance with no follow-up
       const since = daysBetween(met, now)
       const after = ints.filter(i => startOfDay(i.date) > startOfDay(met) && i.type !== 'note')
       if (since >= 0 && since <= 4 && after.length === 0) {
@@ -116,30 +116,30 @@ export function computeOccasions(
       }
     }
 
-    // обещания
+    // promises
     const promise = reminders.find(r => r.personId === p.id && !r.done && PROMISE_RE.test(r.text) && daysBetween(now, r.dueAt) <= 3)
     if (promise) push('promise', daysBetween(now, promise.dueAt) < 0 ? t('Promise overdue') : t('Promise'), promise.text, daysBetween(now, promise.dueAt) < 0 ? 92 : 80, { promise: promise.text })
 
-    // ответная благодарность
+    // a thank-you in return
     const got = ints.find(i => i.type === 'favor_got')
     if (got && now - got.date < 60 * DAY && !ints.some(i => (i.type === 'favor_given' || i.type === 'gift') && i.date > got.date)) {
       push('favor', t('You were helped'), got.title ?? t('Say thanks and offer help in return'), 56, { favor: got.title ?? t('help') })
     }
 
-    // можно помочь знакомством
+    // can help with an introduction
     const m = matches.find(x => x.a.id === p.id)
     if (m && p.lookingFor) push('need', t('You can help'), t('Looking for “{need}” — {name} fits', { need: p.lookingFor, name: m.b.firstName }), 74, { need: p.lookingFor, helperId: m.b.id })
 
-    // открытая тема при остывающей связи
+    // an open topic while the connection is cooling
     const topic = p.topics.find(topic2 => !topic2.done)
     if (topic && w.level !== 'none' && w.ratio >= 0.8) push('topic', t('Something to talk about'), topic.text, 48 + Math.min(w.ratio * 8, 20), { topic: topic.text })
 
-    // давно не общались
+    // have not been in touch for a long time
     if (p.closeness <= 2 && w.level !== 'none' && w.ratio >= 1.3) {
       push('silence', t("Haven't talked in a while"), tn(w.daysSince, '{n} day without contact', '{n} days without contact'), Math.min(40 + w.ratio * 6, 70))
     }
 
-    // Новый год
+    // New Year
     const md = date.getMonth() * 100 + date.getDate()
     if ((md >= 1124 || md <= 2) && p.closeness <= 3) push('holiday', t('Holiday season'), t('A warm greeting strengthens the connection for the whole year'), 46)
   }
@@ -147,7 +147,7 @@ export function computeOccasions(
   return out.sort((a, b) => b.priority - a.priority)
 }
 
-/** Лучший повод на человека. */
+/** The best reason for a person. */
 export function topOccasionByPerson(list: Occasion[]) {
   const m = new Map<string, Occasion>()
   for (const o of list) if (!m.has(o.personId)) m.set(o.personId, o)

@@ -23,7 +23,7 @@ const EXAMPLES = [
   msg('Met Katie Smith at a conference, a designer at Spotify, lives in Berlin…'),
 ]
 
-/** «Наговори встречу» — голос или текст → Астра раскладывает по полям. */
+/** "Dictate a meeting": voice or text → Astra sorts it into fields. */
 export function Capture() {
   const nav = useNavigate()
   const [params] = useSearchParams()
@@ -43,7 +43,7 @@ export function Capture() {
   const [saving, setSaving] = useState(false)
   const example = useMemo(() => EXAMPLES[Math.floor(Math.random() * EXAMPLES.length)], [])
 
-  // автостарт записи при входе в голосовой режим
+  // autostart of recording when entering voice mode
   useEffect(() => {
     if (mode === 'voice' && speech.supported && params.get('autostart') !== '0') speech.start()
     return () => speech.stop()
@@ -86,7 +86,7 @@ export function Capture() {
     setMode('text')
   }
 
-  /** Расшифровка из файла — просто текст. */
+  /** A transcript from a file is just text. */
   const addTranscript = async () => {
     const f = await pickFile(TRANSCRIPT_EXT.join(',') + ',text/plain')
     if (!f) return
@@ -96,7 +96,7 @@ export function Capture() {
     toast(t('Transcript loaded: {v} characters', { v: query.length.toLocaleString(intlTag()) }))
   }
 
-  /** Запись встречи: настоящее распознавание речи на сервере с ключом пользователя. */
+  /** A meeting recording: real speech recognition on a server with the user's key. */
   const addRecording = async () => {
     if (!sttReady(settings?.stt)) { toast(t("First add a recognition key in Astra's settings"), 'info'); open({ kind: 'astra' }); return }
     const f = await pickFile(AUDIO_ACCEPT)
@@ -119,7 +119,7 @@ export function Capture() {
   const addPhoto = async () => {
     const f = await pickFile('image/*')
     if (!f) return
-    setPhotos(p => [...p, '']) // мгновенный плейсхолдер
+    setPhotos(p => [...p, '']) // an instant placeholder
     const img = await fileToPhoto(f, 1400)
     setPhotos(p => [...p.filter(Boolean), img])
   }
@@ -128,7 +128,7 @@ export function Capture() {
     <div className="relative flex min-h-[100dvh] flex-col overflow-hidden">
       <Aurora colors={['rgb(255 150 90 / 0.45)', 'rgb(124 92 255 / 0.45)', 'rgb(255 110 160 / 0.25)']} intensity={stage === 'input' && speech.listening ? 1.4 : 1} />
 
-      {/* верхняя панель */}
+      {/* top bar */}
       <div className="relative z-10 mx-auto flex w-full max-w-[560px] items-center justify-between px-4 pt-[calc(14px+var(--safe-top))]">
         <button type="button" aria-label={t('Close')} onClick={() => (stage === 'review' ? setStage('input') : nav(-1))} className="press glass grid h-10 w-10 place-items-center rounded-full"><XIcon size={18} weight="bold" /></button>
         <div className="flex items-center gap-2 text-[15px] font-semibold"><AstraStar size={18} thinking={stage === 'thinking'} /> {stage === 'review' ? t('Review and save') : t('Dictate the meeting')}</div>
@@ -183,7 +183,7 @@ export function Capture() {
               </div>
             )}
 
-            {/* нижняя панель */}
+            {/* bottom bar */}
             <div className="flex items-center justify-between gap-3 pb-[calc(24px+var(--safe-bottom))] pt-3">
               <div className="flex gap-2">
                 <button type="button" aria-label={t('Photo of a business card or badge')} title={t('Photo of a business card or badge')} onClick={addPhoto} className="press glass grid h-12 w-12 place-items-center rounded-full"><CameraIcon size={20} /></button>
@@ -253,7 +253,7 @@ export function Capture() {
   )
 }
 
-/** Сфера, которая дышит в такт голосу. */
+/** An orb that breathes in time with the voice. */
 function VoiceOrb({ level, active }: { level: number; active: boolean }) {
   const s = 1 + (active ? level * 0.35 : 0)
   return (

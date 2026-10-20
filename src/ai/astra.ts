@@ -22,7 +22,7 @@ const schemas = () => import('./schemas')
 export type Source = 'ai' | 'local'
 export interface Result<T> { data: T; source: Source; error?: string }
 
-/* ---------- кеш ответов модели ---------- */
+/* ---------- cache of model answers ---------- */
 
 async function cached<T>(key: string, maxAgeMs: number, make: () => Promise<T>, force = false): Promise<T> {
   if (!force) {
@@ -45,7 +45,7 @@ async function snapshot() {
 const dismissedSet = (intros: { aId: string; bId: string; status: string }[]) =>
   new Set(intros.filter(i => i.status !== 'suggested').map(i => `${i.aId}:${i.bId}`))
 
-/* ---------- 🎙 Голосовой разбор ---------- */
+/* ---------- 🎙 Parsing dictation ---------- */
 
 function sanitizePlan(plan: CapturePlan, people: Person[]): CapturePlan {
   const ids = new Set(people.map(p => p.id))
@@ -81,7 +81,7 @@ const joinText = (a?: string, b?: string | null) => (!b ? a : !a ? b : a.toLower
 
 export interface ApplyOptions { metAt?: string; metPlace?: string; circleIds?: string[]; closeness?: Closeness; photos?: Record<string, string>; interactionDate?: number }
 
-/** Применить разобранный план к базе. Возвращает id созданных/обновлённых людей по ref. */
+/** Apply a parsed plan to the database. Returns the ids of created/updated people by ref. */
 export async function applyPlan(plan: CapturePlan, opt: ApplyOptions = {}) {
   const refToId: Record<string, string> = {}
   let created = 0
@@ -155,7 +155,7 @@ export async function applyPlan(plan: CapturePlan, opt: ApplyOptions = {}) {
   return { refToId, created, updated }
 }
 
-/* ---------- 🗂 Бриф перед встречей ---------- */
+/* ---------- 🗂 Pre-meeting brief ---------- */
 
 export async function astraBrief(personId: string, force = false): Promise<Result<Brief>> {
   const { people, interactions, reminders, intros, settings } = await snapshot()
@@ -182,7 +182,7 @@ export async function astraBrief(personId: string, force = false): Promise<Resul
   }
 }
 
-/* ---------- 🔍 Спроси сеть ---------- */
+/* ---------- 🔍 Ask the network ---------- */
 
 export async function astraAsk(question: string, signal?: AbortSignal): Promise<Result<AskResult>> {
   const { people, circles, interactions } = await snapshot()
@@ -202,7 +202,7 @@ export async function astraAsk(question: string, signal?: AbortSignal): Promise<
   }
 }
 
-/* ---------- 💬 Диалог с памятью ---------- */
+/* ---------- 💬 Chat with memory ---------- */
 
 export async function astraChat(question: string, history: ChatMessage[], signal?: AbortSignal): Promise<Result<ChatReply>> {
   const [snap, collections] = await Promise.all([snapshot(), db.collections.toArray()])
@@ -239,7 +239,7 @@ ${memoryBlock(interactions, people, mentioned, ai.shareNotes)}`,
   }
 }
 
-/* ---------- 🧠 Предложения из заметок ---------- */
+/* ---------- 🧠 Suggestions from notes ---------- */
 
 export function quickNoteSuggestions(text: string, person: Person, people: Person[]) {
   return localNoteSuggest(text, person, people)
@@ -263,7 +263,7 @@ export async function astraNoteSuggest(text: string, personId: string): Promise<
   }
 }
 
-/* ---------- ⚡ Поводы и черновики ---------- */
+/* ---------- ⚡ Reasons and drafts ---------- */
 
 export function occasionsFrom(people: Person[], interactions: Interaction[], reminders: { personId?: string; text: string; done: boolean; dueAt: number; id: string; createdAt: number }[], matches: MatchPair[], now = Date.now()) {
   const list = computeOccasions(people, interactions, reminders, matches, now)
@@ -301,7 +301,7 @@ export async function astraDrafts(personId: string, occasion: Occasion | null, f
   }
 }
 
-/** Первое сообщение человеку из резерва: «с чего начать, если не знаю, что писать». */
+/** The first message to a person from the reserve: "how to start if I do not know what to write". */
 export async function astraLeadDrafts(leadId: string, force = false): Promise<Result<Drafts>> {
   const lead = await db.leads.get(leadId)
   if (!lead) throw new Error(t('Contact not found'))
@@ -328,7 +328,7 @@ export async function astraLeadDrafts(leadId: string, force = false): Promise<Re
   }
 }
 
-/** Свежая новость о человеке/компании через веб-поиск (только с моделью и разрешением). */
+/** A fresh piece of news about a person/company through web search (only with a model and permission). */
 export async function astraNews(personId: string): Promise<string | null> {
   const ai = await activeAi()
   if (!ai?.webSearch) return null
@@ -343,7 +343,7 @@ export async function astraNews(personId: string): Promise<string | null> {
   }
 }
 
-/* ---------- 🤝 Сводник ---------- */
+/* ---------- 🤝 Matchmaker ---------- */
 
 export async function astraMatches(force = false): Promise<Result<MatchPair[]>> {
   const { people, circles, intros } = await snapshot()
@@ -406,7 +406,7 @@ export async function setIntroStatus(m: { a: Person; b: Person; reason: string }
   if (existing) await db.intros.update(existing.id, { status, updatedAt: now })
   else await db.intros.put({ id: uid(), aId: m.a.id, bId: m.b.id, reason: m.reason, status, createdAt: now, updatedAt: now })
   if (status === 'done' && existing?.status !== 'done') {
-    // знакомство состоялось (повторное нажатие не плодит записи «я помог»): связь между ними + «я помог» обоим
+    // the introduction happened (pressing again does not create more "I helped" records): a link between them plus "I helped" for both
     const [a, b] = await Promise.all([db.people.get(m.a.id), db.people.get(m.b.id)])
     if (a && b) {
       await db.people.update(a.id, { links: [...a.links.filter(l => l.personId !== b.id), { personId: b.id, label: t('introduction through me') }] })
@@ -416,7 +416,7 @@ export async function setIntroStatus(m: { a: Person; b: Person; reason: string }
   }
 }
 
-/* ---------- 🪐 Бриф недели ---------- */
+/* ---------- 🪐 Weekly brief ---------- */
 
 export async function astraWeekly(force = false): Promise<WeeklyData> {
   const { people, circles, interactions, reminders, intros } = await snapshot()
@@ -447,7 +447,7 @@ export async function astraWeekly(force = false): Promise<WeeklyData> {
   }
 }
 
-/* ---------- Проверка подключения ---------- */
+/* ---------- Connection check ---------- */
 
 export async function testConnection(): Promise<{ ok: boolean; message: string }> {
   const ai = await activeAi()
