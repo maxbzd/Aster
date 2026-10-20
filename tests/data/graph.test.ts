@@ -6,7 +6,7 @@ import { interaction, NOW, person } from '../helpers'
 
 const link = (to: string) => ({ personId: to, label: 'знакомы' })
 
-/** Две компании по 3 человека и один «мост» между ними. */
+/** Two companies of 3 people each and one "bridge" between them. */
 const world = () => [
   person({ id: 'a1', firstName: 'Анна', links: [link('a2'), link('a3')], company: 'Акме' }),
   person({ id: 'a2', firstName: 'Антон', links: [link('a3')], company: 'Акме' }),
@@ -18,8 +18,8 @@ const world = () => [
   person({ id: 'solo', firstName: 'Сергей', links: [] }),
 ]
 
-describe('граф связей', () => {
-  it('собирает рёбра из связей, «кто познакомил», знакомств и общих встреч; дубли не плодит', () => {
+describe('connection graph', () => {
+  it('builds edges from links, "who introduced", acquaintances and shared meetings; makes no duplicates', () => {
     const ps = [
       person({ id: 'a', links: [link('b')] }),
       person({ id: 'b', links: [link('a')], introducedBy: 'c' }),
@@ -33,13 +33,13 @@ describe('граф связей', () => {
     expect(e.find(x => x.a === 'a' && x.b === 'b')?.kinds).toEqual(['link'])
   })
 
-  it('общие встречи считаются только для небольших компаний: на большом событии знакомы не все', () => {
+  it('shared meetings count only for small groups: at a big event not everyone knows each other', () => {
     const ps = Array.from({ length: 9 }, (_, i) => person({ id: `p${i}` }))
     const e = buildEdges(ps, [], [interaction({ personIds: ps.map(p => p.id), type: 'event' })])
     expect(e).toHaveLength(0)
   })
 
-  it('делит на группы по связям', () => {
+  it('splits into groups by links', () => {
     const g = analyzeGraph(world())
     const cluster = (id: string) => g.clusterOf.get(id)
     expect(cluster('a1')).toBe(cluster('a2'))
@@ -49,14 +49,14 @@ describe('граф связей', () => {
     expect(g.isolated.map(p => p.id)).toEqual(['solo'])
   })
 
-  it('мост — тот, кто соединяет группы, и он на первом месте', () => {
+  it('a bridge is the one who connects groups, and they are first', () => {
     const g = analyzeGraph(world())
     expect(g.bridges[0]?.person.id).toBe('m')
     expect(g.bridges[0]?.clusters.length).toBeGreaterThanOrEqual(2)
     expect(g.bridges.map(b => b.person.id)).not.toContain('a3')
   })
 
-  it('посредничество: у центра цепочки оно максимальное, у краёв — нулевое', () => {
+  it('betweenness: the centre of a chain has the maximum, the ends zero', () => {
     const ps = ['x', 'y', 'z'].map(id => person({ id }))
     const b = betweenness(['x', 'y', 'z'], [{ a: 'x', b: 'y', w: 1, kinds: ['link'] }, { a: 'y', b: 'z', w: 1, kinds: ['link'] }])
     expect(b.get('y')).toBe(1)
@@ -64,7 +64,7 @@ describe('граф связей', () => {
     expect(ps).toHaveLength(3)
   })
 
-  it('группы называются по общему кругу, а при его отсутствии — по компании', () => {
+  it('groups are named after the shared circle, or after the company if there is none', () => {
     const ps = world().map(p => (p.id.startsWith('a') ? { ...p, circleIds: ['c1'] } : p))
     const g = analyzeGraph(ps, [], [], id => (id === 'c1' ? 'Друзья' : undefined))
     const names = g.clusters.map(c => c.name)
@@ -72,7 +72,7 @@ describe('граф связей', () => {
     expect(names).toContain('Бета')
   })
 
-  it('номера групп идут от самой большой; результат одинаковый при любом порядке людей', () => {
+  it('group numbers start from the biggest; the result is the same in any order of people', () => {
     const w = world()
     const a = detectClusters(w.map(p => p.id), buildEdges(w))
     const shuffled = [...w].reverse()
@@ -80,7 +80,7 @@ describe('граф связей', () => {
     expect([...a.entries()].sort()).toEqual([...b.entries()].sort())
   })
 
-  it('раскладка укладывает всех в рамку и детерминирована', () => {
+  it('the layout fits everyone into the frame and is deterministic', () => {
     const w = world()
     const g = analyzeGraph(w)
     const ids = g.connected.map(p => p.id)
@@ -91,26 +91,26 @@ describe('граф связей', () => {
       expect(x).toBeGreaterThanOrEqual(0); expect(x).toBeLessThanOrEqual(360)
       expect(y).toBeGreaterThanOrEqual(0); expect(y).toBeLessThanOrEqual(420)
     }
-    // члены одной группы ближе друг к другу, чем к чужой
+    // members of one group are closer to each other than to an outsider
     const d = (a: string, b: string) => Math.hypot(l1.get(a)!.x - l1.get(b)!.x, l1.get(a)!.y - l1.get(b)!.y)
     expect(d('a2', 'a3')).toBeLessThan(d('a2', 'b2'))
   })
 
-  it('пустой и одиночный граф не ломаются', () => {
+  it('an empty and a single-node graph do not break', () => {
     expect(layoutGraph([], [], new Map(), 300, 300).size).toBe(0)
     expect(layoutGraph(['x'], [], new Map(), 300, 300).get('x')).toEqual({ x: 150, y: 150 })
     expect(analyzeGraph([]).clusters).toEqual([])
   })
 
-  it('семья и архив в графе не участвуют', () => {
+  it('family and archived people do not take part in the graph', () => {
     const g = analyzeGraph([person({ id: 'a', links: [link('f')] }), person({ id: 'f', familyOf: 'a' }), person({ id: 'z', archived: true, links: [link('a')] })])
     expect(g.edges).toHaveLength(0)
   })
 })
 
-describe('слабые связи', () => {
+describe('weak ties', () => {
   const at = (d: number) => NOW - d * DAY
-  it('в списке дальние знакомые с потенциалом; близкие и люди со статусом не попадают', () => {
+  it('the list holds distant acquaintances with potential; close ones and people with a status are not included', () => {
     const ps = [
       ...world().map(p => ({ ...p, closeness: 3 as const, lastContactAt: at(200) })),
       person({ id: 'near', closeness: 1, links: [link('a3')] }),
@@ -125,7 +125,7 @@ describe('слабые связи', () => {
     expect(list[0]?.score).toBeGreaterThanOrEqual(list.at(-1)!.score)
   })
 
-  it('учитывает редкий город, влиятельную роль и давнее молчание — и объясняет это словами', () => {
+  it('accounts for a rare city, an influential role and a long silence, and explains it in words', () => {
     const ps = [
       person({ id: 'a', closeness: 4, city: 'Дубай', role: 'Managing Partner', canHelpMe: 'интро к фондам', lastContactAt: at(300) }),
       person({ id: 'b', closeness: 4, city: 'Москва' }),
@@ -140,7 +140,7 @@ describe('слабые связи', () => {
     expect(top!.score).toBeGreaterThan(40)
   })
 
-  it('«почти близкий» без контактов за год тоже считается слабой связью, а с регулярным общением — нет', () => {
+  it('an "almost close" person with no contact in a year also counts as a weak tie, one with regular contact does not', () => {
     const base = person({ id: 'x', closeness: 2, city: 'Тбилиси', role: 'CEO', canHelpMe: 'интро', lastContactAt: at(250) })
     const regular = person({ id: 'y', closeness: 2, city: 'Тбилиси', role: 'CEO', canHelpMe: 'интро', lastContactAt: at(5) })
     const ints = [at(5), at(40), at(80), at(120)].map(d => interaction({ personIds: ['y'], date: d }))

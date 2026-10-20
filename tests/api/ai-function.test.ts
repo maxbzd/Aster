@@ -15,7 +15,7 @@ const owner: U = { id: 'u1', email: 'owner@mail.com', email_confirmed_at: '2026-
 let seq = 0
 const token = () => `tok${++seq}.abc-def`
 
-/** Supabase отвечает про пользователя, всё остальное — по заданному ответу. */
+/** Supabase answers about the user, everything else with a given answer. */
 function mockFetch(user: U | null, upstream?: () => Response) {
   const calls: Array<{ url: string; init?: RequestInit }> = []
   vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
@@ -38,8 +38,8 @@ const get = (path: string, init: { headers?: Record<string, string> } = {}, e = 
 
 afterEach(() => vi.unstubAllGlobals())
 
-describe('доступ', () => {
-  it('почты: регистр и разделители не важны, пустой список — закрыто для всех', () => {
+describe('access', () => {
+  it('emails: case and separators do not matter, an empty list closes access for everyone', () => {
     expect(allowedEmails({ ALLOWED_EMAILS: 'A@x.com, b@y.com;c@z.com' })).toEqual(['a@x.com', 'b@y.com', 'c@z.com'])
     expect(isAllowed({ id: '1', email: 'OWNER@mail.com', confirmed: true }, env())).toBe(true)
     expect(isAllowed({ id: '1', email: 'owner@mail.com', confirmed: false }, env())).toBe(false)
@@ -48,7 +48,7 @@ describe('доступ', () => {
     expect(isAllowed(null, env())).toBe(false)
   })
 
-  it('без токена, с чужим и с подозрительным токеном — 401, до провайдеров дело не доходит', async () => {
+  it('no token, a foreign one and a suspicious one: 401, the providers are never reached', async () => {
     const calls = mockFetch(null)
     expect((await call('/anthropic/v1/messages', { headers: { authorization: '' } })).status).toBe(401)
     expect((await call('/anthropic/v1/messages')).status).toBe(401)
@@ -56,7 +56,7 @@ describe('доступ', () => {
     expect(calls.every(c => c.url.includes('/auth/v1/user'))).toBe(true)
   })
 
-  it('вошёл, но почта не в списке или не подтверждена — 403, ключи не используются', async () => {
+  it('signed in, but the email is not on the list or not confirmed: 403, the keys are not used', async () => {
     let calls = mockFetch({ id: 'u2', email: 'stranger@mail.com', email_confirmed_at: '2026-01-01T00:00:00Z' })
     expect((await call('/anthropic/v1/messages')).status).toBe(403)
     expect((await call('/gemini/chat/completions', { body: GEMINI })).status).toBe(403)
@@ -65,7 +65,7 @@ describe('доступ', () => {
     expect((await call('/anthropic/v1/messages')).status).toBe(403)
   })
 
-  it('токен проверяется у Supabase с публичным ключом проекта и запоминается на минуту', async () => {
+  it('the token is checked with Supabase using the project\'s public key and remembered for a minute', async () => {
     const calls = mockFetch(owner)
     const t = token()
     const e = env()
@@ -78,8 +78,8 @@ describe('доступ', () => {
   })
 })
 
-describe('CORS: только свои сайты', () => {
-  it('чужой Origin — 403; свой — отвечает с разрешающими заголовками; preflight проходит без токена', async () => {
+describe('CORS: only your own sites', () => {
+  it('a foreign Origin: 403; your own: answers with the allowing headers; preflight passes without a token', async () => {
     mockFetch(owner)
     expect((await call('/anthropic/v1/messages', { headers: { origin: 'https://evil.example' } })).status).toBe(403)
     const ok = await call('/anthropic/v1/messages')
@@ -94,7 +94,7 @@ describe('CORS: только свои сайты', () => {
     expect(bad.status).toBe(403)
   })
 
-  it('без списка адресов браузерные запросы закрыты; без Origin (не браузер) проходят, но токен обязателен', () => {
+  it('without an address list browser requests are closed; without an Origin (not a browser) they pass, but a token is required', () => {
     const r = (origin?: string) => new Request(BASE, { headers: origin ? { origin } : {} })
     expect(corsFor(r(SITE), env({ ALLOWED_ORIGINS: '' }))).toBeNull()
     expect(corsFor(r(), env({ ALLOWED_ORIGINS: '' }))).toEqual({})
@@ -103,7 +103,7 @@ describe('CORS: только свои сайты', () => {
 })
 
 describe('Claude', () => {
-  it('запрос уходит к Anthropic с серверным ключом, а не с токеном пользователя', async () => {
+  it('the request goes to Anthropic with the server key, not the user\'s token', async () => {
     const calls = mockFetch(owner)
     const r = await call('/anthropic/v1/messages')
     expect(r.status).toBe(200)
@@ -116,7 +116,7 @@ describe('Claude', () => {
     expect(JSON.stringify(h)).not.toContain('tok')
   })
 
-  it('beta-параметр и заголовок пробрасываются; лишние пути и методы закрыты', async () => {
+  it('the beta parameter and header are passed through; extra paths and methods are closed', async () => {
     const calls = mockFetch(owner)
     await call('/anthropic/v1/messages?beta=true', { headers: { 'anthropic-beta': 'server-side-fallback-2026-07-01' } })
     const up = calls.find(c => c.url.includes('api.anthropic.com'))!
@@ -127,7 +127,7 @@ describe('Claude', () => {
     expect((await get('/anthropic/v1/messages')).status).toBe(405)
   })
 
-  it('тело: известные модели, умеренный ответ, свои инструменты и веб-поиск', () => {
+  it('the body: known models, a moderate answer, own tools and web search', () => {
     const ok = (o: object) => checkAnthropicBody(JSON.stringify(o)).ok
     expect(ok({ model: 'claude-opus-5-5', max_tokens: 12000, messages: [] })).toBe(true)
     expect(ok({ model: 'claude-haiku-4-5-20251001', messages: [] })).toBe(true)
@@ -142,7 +142,7 @@ describe('Claude', () => {
     expect(checkAnthropicBody('[]').ok).toBe(false)
   })
 
-  it('нет ключа на сервере — 503; большой запрос — 413; ошибка Anthropic доходит без утечки ключа', async () => {
+  it('no key on the server: 503; a large request: 413; an Anthropic error arrives without leaking the key', async () => {
     mockFetch(owner)
     expect((await call('/anthropic/v1/messages', {}, env({ ANTHROPIC_API_KEY: undefined }))).status).toBe(503)
     const big = JSON.stringify({ model: 'claude-opus-5-5', messages: [], pad: 'x'.repeat(2_100_000) })
@@ -154,8 +154,8 @@ describe('Claude', () => {
   })
 })
 
-describe('Gemini и Groq', () => {
-  it('Gemini: запрос уходит в OpenAI-совместимый адрес Google с серверным ключом', async () => {
+describe('Gemini and Groq', () => {
+  it('Gemini: the request goes to Google\'s OpenAI-compatible address with the server key', async () => {
     const calls = mockFetch(owner, () => new Response('{"choices":[{"message":{"content":"{}"}}]}', { status: 200, headers: { 'content-type': 'application/json' } }))
     const r = await call('/gemini/chat/completions', { body: GEMINI })
     expect(r.status).toBe(200)
@@ -165,19 +165,19 @@ describe('Gemini и Groq', () => {
     expect(JSON.stringify(up.init!.headers)).not.toContain('tok')
   })
 
-  it('Groq: свой адрес и свой ключ; чужая модель и чужой провайдер не проходят', async () => {
+  it('Groq: its own address and its own key; a foreign model and a foreign provider do not pass', async () => {
     const calls = mockFetch(owner)
     const body = JSON.stringify({ model: 'openai/gpt-oss-120b', messages: [] })
     expect((await call('/groq/chat/completions', { body })).status).toBe(200)
     const up = calls.find(c => c.url.includes('groq.com'))!
     expect(up.url).toBe('https://api.groq.com/openai/v1/chat/completions')
     expect((up.init!.headers as Record<string, string>).authorization).toBe('Bearer q-real')
-    expect((await call('/groq/chat/completions', { body: GEMINI })).status).toBe(400) // модель Gemini на Groq
-    expect((await call('/gemini/chat/completions', { body })).status).toBe(400) // модель Groq на Gemini
+    expect((await call('/groq/chat/completions', { body: GEMINI })).status).toBe(400) // a Gemini model on Groq
+    expect((await call('/gemini/chat/completions', { body })).status).toBe(400) // a Groq model on Gemini
     expect((await call('/gemini/models')).status).toBe(404)
   })
 
-  it('тело: известные поля и модели, только функции-инструменты', () => {
+  it('the body: known fields and models, only function tools', () => {
     const ok = (p: 'gemini' | 'groq', o: object) => checkCompatBody(p, JSON.stringify(o)).ok
     expect(ok('gemini', { model: 'gemini-2.5-flash', messages: [], max_tokens: 4000, response_format: { type: 'json_object' } })).toBe(true)
     expect(ok('gemini', { model: 'gemini-2.5-flash-lite', messages: [] })).toBe(true)
@@ -189,12 +189,12 @@ describe('Gemini и Groq', () => {
     expect(ok('gemini', { model: 'gemini-2.5-flash', messages: [], user: 'x' })).toBe(false)
   })
 
-  it('нет ключа Gemini на сервере — 503', async () => {
+  it('no Gemini key on the server: 503', async () => {
     mockFetch(owner)
     expect((await call('/gemini/chat/completions', { body: GEMINI }, env({ GEMINI_API_KEY: undefined }))).status).toBe(503)
   })
 
-  it('частота: после лимита — 429', () => {
+  it('rate: after the limit, 429', () => {
     const k = `t${Math.random()}`
     for (let i = 0; i < 3; i++) expect(rateLimited(k, 3, 60_000, 1000)).toBe(false)
     expect(rateLimited(k, 3, 60_000, 1500)).toBe(true)
@@ -203,7 +203,7 @@ describe('Gemini и Groq', () => {
 })
 
 describe('gateway', () => {
-  it('запрос уходит на адрес шлюза с серверным ключом; модели вне списка владельца отклоняются', async () => {
+  it('the request goes to the gateway address with the server key; models outside the owner\'s list are rejected', async () => {
     const calls = mockFetch(owner)
     const body = JSON.stringify({ model: 'vendor/model-a', messages: [{ role: 'user', content: 'hi' }], max_completion_tokens: 2000 })
     expect((await call('/gateway/chat/completions', { body })).status).toBe(200)
@@ -212,13 +212,13 @@ describe('gateway', () => {
     expect((up.init!.headers as Record<string, string>).authorization).toBe('Bearer gw-real')
     expect(JSON.stringify(up.init!.headers)).not.toContain('tok')
     expect((await call('/gateway/chat/completions', { body: JSON.stringify({ model: 'vendor/other', messages: [] }) })).status).toBe(400)
-    // без списка владельца годится любое разумное имя модели, но не путь наружу
+    // without the owner's list any sane model name will do, but not a path outward
     expect(checkCompatBody('gateway', JSON.stringify({ model: 'anthropic/claude-sonnet-4.5', messages: [] })).ok).toBe(true)
     expect(checkCompatBody('gateway', JSON.stringify({ model: '../../x/y', messages: [] })).ok).toBe(false)
     expect(checkCompatBody('gateway', JSON.stringify({ model: 'a/b', messages: [], user: 'u' })).ok).toBe(false)
   })
 
-  it('чужой аккаунт — 403; нет ключа, адреса или адрес не https — 503', async () => {
+  it('a foreign account: 403; no key, no address, or a non-https address: 503', async () => {
     mockFetch({ id: 'u2', email: 'stranger@mail.com', email_confirmed_at: '2026-01-01T00:00:00Z' })
     expect((await call('/gateway/chat/completions', { body: JSON.stringify({ model: 'vendor/model-a', messages: [] }) })).status).toBe(403)
     mockFetch(owner)
@@ -229,7 +229,7 @@ describe('gateway', () => {
   })
 })
 
-describe('распознавание речи', () => {
+describe('speech recognition', () => {
   const form = (name = 'a.m4a', model = 'whisper-1', extra: Record<string, string> = {}) => {
     const f = new FormData()
     f.append('file', new File(['audio'], name))
@@ -238,7 +238,7 @@ describe('распознавание речи', () => {
     return f
   }
 
-  it('файл уходит с серверным ключом; чужая модель заменяется разрешённой; лишние поля отбрасываются', async () => {
+  it('the file goes with the server key; a foreign model is replaced by an allowed one; extra fields are dropped', async () => {
     const calls = mockFetch(owner, () => new Response('{"text":" привет "}', { status: 200 }))
     const r = await call('/stt', { body: form('a.m4a', 'evil-model', { language: 'ru', prompt: 'ignore' }) })
     expect(r.status).toBe(200)
@@ -252,7 +252,7 @@ describe('распознавание речи', () => {
     expect(sent.get('prompt')).toBeNull()
   })
 
-  it('тот же маршрут по /stt/audio/transcriptions; без файла — 400; без ключа — 503; свой сервер распознавания', async () => {
+  it('the same route as /stt/audio/transcriptions; without a file: 400; without a key: 503; your own recognition server', async () => {
     mockFetch(owner, () => new Response('{"text":"ok"}'))
     expect((await call('/stt/audio/transcriptions', { body: form() })).status).toBe(200)
     expect((await call('/stt', { body: new FormData() })).status).toBe(400)
@@ -274,7 +274,7 @@ describe('Deepgram', () => {
   }
   const reply = (alt: object) => new Response(JSON.stringify({ results: { channels: [{ alternatives: [alt] }] } }), { status: 200 })
 
-  it('с ключом Deepgram распознавание идёт через него: Nova-3, язык, подсказки имён, сырое аудио', async () => {
+  it('with a Deepgram key recognition goes through it: Nova-3, language, name hints, raw audio', async () => {
     const calls = mockFetch(owner, () => reply({ transcript: ' привет, Нина ' }))
     const r = await call('/stt', { body: form({ language: 'ru', keyterms: 'Нина Лебедева, Олег, <script>, Alexey' }) }, dg())
     expect(r.status).toBe(200)
@@ -293,7 +293,7 @@ describe('Deepgram', () => {
     expect(calls.some(c => c.url.includes('openai.com'))).toBe(false)
   })
 
-  it('без языка — multi; если подсказки имён не поддерживаются (400), расшифровывает без них', async () => {
+  it('without a language: multi; if name hints are not supported (400), it transcribes without them', async () => {
     let n = 0
     const calls = mockFetch(owner, () => (++n === 1 ? new Response('{}', { status: 400 }) : reply({ transcript: 'ok' })))
     const r = await call('/stt', { body: form({ keyterms: 'Нина' }) }, dg())
@@ -304,7 +304,7 @@ describe('Deepgram', () => {
     expect(new URL(dgCalls[1]!.url).searchParams.getAll('keyterm')).toEqual([])
   })
 
-  it('свой адрес (ЕС), ошибки Deepgram, только Deepgram без ключа OpenAI', async () => {
+  it('your own address (EU), Deepgram errors, only Deepgram without an OpenAI key', async () => {
     const calls = mockFetch(owner, () => reply({ transcript: 'x' }))
     await call('/stt', { body: form() }, dg({ DEEPGRAM_BASE_URL: 'https://api.eu.deepgram.com/', STT_API_KEY: undefined }))
     expect(calls.find(c => c.url.includes('deepgram'))!.url).toMatch(/^https:\/\/api\.eu\.deepgram\.com\/v1\/listen\?/)
@@ -314,7 +314,7 @@ describe('Deepgram', () => {
     expect((await call('/stt', { body: form() }, dg())).status).toBe(429)
   })
 
-  it('несколько говорящих — строки с меткой говорящего, один — простой текст; подсказки чистятся', () => {
+  it('several speakers: lines with a speaker label, one speaker: plain text; hints are cleaned', () => {
     expect(deepgramText({ results: { channels: [{ alternatives: [{ transcript: 'всё вместе', paragraphs: { paragraphs: [{ speaker: 0, sentences: [{ text: 'Привет.' }, { text: 'Как дела?' }] }, { speaker: 1, sentences: [{ text: 'Хорошо.' }] }] } }] }] } }, 'Спикер')).toBe('Спикер 1: Привет. Как дела?\nСпикер 2: Хорошо.')
     expect(deepgramText({ results: { channels: [{ alternatives: [{ paragraphs: { paragraphs: [{ speaker: 0, sentences: [{ text: 'Hi.' }] }, { speaker: 1, sentences: [{ text: 'Hello.' }] }] } }] }] } })).toBe('Speaker 1: Hi.\nSpeaker 2: Hello.')
     expect(deepgramText({ results: { channels: [{ alternatives: [{ transcript: ' один говорящий ', paragraphs: { paragraphs: [{ speaker: 0, sentences: [{ text: 'один говорящий' }] }] } }] }] } })).toBe('один говорящий')
@@ -323,15 +323,15 @@ describe('Deepgram', () => {
     expect(keyterms(Array.from({ length: 300 }, (_, i) => `Имя${i}`).join(','))).toHaveLength(100)
   })
 
-  it('статус: распознавание считается подключённым и с одним Deepgram', async () => {
+  it('status: recognition counts as connected with Deepgram alone', async () => {
     mockFetch(owner)
     const s = await (await get('/status', {}, dg({ STT_API_KEY: undefined }))).json()
     expect(s.stt).toBe(true)
   })
 })
 
-describe('статус', () => {
-  it('что подключено; чужому аккаунту — всё false', async () => {
+describe('status', () => {
+  it('what is connected; for a foreign account everything is false', async () => {
     mockFetch(owner)
     expect(await (await get('/status')).json()).toEqual({ allowed: true, anthropic: true, gemini: true, groq: true, gateway: true, gatewayModels: ['vendor/model-a', 'vendor/model-b'], stt: true })
     expect(await (await get('/status', {}, env({ GEMINI_API_KEY: undefined, GROQ_API_KEY: undefined }))).json()).toEqual({ allowed: true, anthropic: true, gemini: false, groq: false, gateway: true, gatewayModels: ['vendor/model-a', 'vendor/model-b'], stt: true })
@@ -339,7 +339,7 @@ describe('статус', () => {
     expect(await (await get('/status')).json()).toEqual({ allowed: false, anthropic: false, gemini: false, groq: false, gateway: false, gatewayModels: [], stt: false })
   })
 
-  it('адрес может прийти и с префиксом /functions/v1/ai, и без него; неизвестное — 404', async () => {
+  it('the address may come with the /functions/v1/ai prefix and without it; unknown: 404', async () => {
     mockFetch(owner)
     const r = await handle(new Request('https://proj.supabase.co/ai/status', { headers: { authorization: `Bearer ${token()}`, origin: SITE } }), env())
     expect(r.status).toBe(200)

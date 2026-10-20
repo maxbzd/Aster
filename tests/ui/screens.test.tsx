@@ -14,10 +14,10 @@ vi.mock('@/lib/image', async orig => ({ ...(await orig<typeof import('@/lib/imag
 const dialog = () => screen.findByRole('dialog')
 const firstDue = async () => dueContacts(await db.people.toArray())[0].p
 
-describe('главный экран: быстрые действия', () => {
+describe('home screen: quick actions', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('«Отметить» записывает контакт и убирает карточку из «ждут»', async () => {
+  it('"Mark" logs a contact and removes the card from "waiting"', async () => {
     const { user } = renderApp('/')
     const due = await firstDue()
     const before = (await db.interactions.where('personIds').equals(due.id).count())
@@ -26,7 +26,7 @@ describe('главный экран: быстрые действия', () => {
     await waitFor(async () => expect((await db.people.get(due.id))?.lastContactAt).toBeGreaterThan(Date.now() - 60_000))
   })
 
-  it('«Отложить на неделю» прячет человека из очереди', async () => {
+  it('"Snooze for a week" hides the person from the queue', async () => {
     const { user } = renderApp('/')
     const due = await firstDue()
     await user.click((await screen.findAllByRole('button', { name: 'Отложить на неделю' }))[0])
@@ -34,7 +34,7 @@ describe('главный экран: быстрые действия', () => {
     expect(dueContacts(await db.people.toArray()).some(x => x.p.id === due.id)).toBe(false)
   })
 
-  it('плитки ведут на «Разбор» и «Пульс»; карточка Астры — в бриф недели', async () => {
+  it('the tiles lead to "Review" and "Pulse"; Astra\'s card leads to the weekly brief', async () => {
     const { user } = renderApp('/')
     await user.click(await screen.findByText('ждут контакта'))
     expect(await screen.findByText('Разбор связей')).toBeInTheDocument()
@@ -43,7 +43,7 @@ describe('главный экран: быстрые действия', () => {
     expect(await screen.findByText(/БРИФ НЕДЕЛИ|Бриф недели/i)).toBeInTheDocument()
   })
 
-  it('кнопки Астры: «Наговорить», «Диалог», «Событие»', async () => {
+  it('Astra\'s buttons: "Dictate", "Chat", "Event"', async () => {
     const { user } = renderApp('/')
     await user.click(await screen.findByRole('button', { name: 'Наговорить' }))
     expect(await screen.findByText(/Наговори встречу/)).toBeInTheDocument()
@@ -55,7 +55,7 @@ describe('главный экран: быстрые действия', () => {
     expect(await screen.findByText('Куда идёшь?')).toBeInTheDocument()
   })
 
-  it('поиск: имя, компания, Esc закрывает', async () => {
+  it('search: a name, a company, Esc closes', async () => {
     const { user } = renderApp('/')
     await screen.findByText(/тонус сети/i)
     await user.click(screen.getByRole('button', { name: 'Поиск' }))
@@ -67,10 +67,10 @@ describe('главный экран: быстрые действия', () => {
   })
 })
 
-describe('«Разбор связей»: колода', () => {
+describe('"Connection review": the deck', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('«Был контакт», «Позже», «Напомнить» меняют данные и двигают колоду до конца', async () => {
+  it('"Was in touch", "Later", "Remind" change the data and move the deck to the end', async () => {
     const { user } = renderApp('/review')
     const queue = dueContacts(await db.people.toArray()).map(x => x.p)
     expect(queue.length).toBeGreaterThan(3)
@@ -87,10 +87,10 @@ describe('«Разбор связей»: колода', () => {
   })
 })
 
-describe('режим события', () => {
+describe('event mode', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('от старта до сохранения: люди, общие напоминания «фоллоу-ап», событие закрывается', async () => {
+  it('from start to saving: people, shared "follow-up" reminders, the event closes', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/event')
     const peopleBefore = await db.people.count()
@@ -116,7 +116,7 @@ describe('режим события', () => {
     expect(bad).toEqual([])
   })
 
-  it('можно убрать запись из «плёнки» и отключить человека на проверке', async () => {
+  it('a record can be removed from the "film strip" and a person turned off on the review', async () => {
     const { user } = renderApp('/event')
     await user.type(await screen.findByPlaceholderText('Web Summit 2026'), 'Ужин')
     await user.click(screen.getByRole('button', { name: 'Начать событие' }))
@@ -126,16 +126,16 @@ describe('режим события', () => {
     await waitFor(async () => expect(await db.captures.count()).toBe(0))
   })
 
-  it('«Начать событие» недоступно без названия', async () => {
+  it('"Start the event" is unavailable without a name', async () => {
     renderApp('/event')
     expect(await screen.findByRole('button', { name: 'Начать событие' })).toBeDisabled()
   })
 })
 
-describe('профиль: данные и настройки', () => {
+describe('profile: data and settings', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('имя меняется по Enter и сохраняется', async () => {
+  it('the name changes on Enter and is saved', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Макс'))
     const input = await screen.findByDisplayValue('Макс')
@@ -144,14 +144,14 @@ describe('профиль: данные и настройки', () => {
     await waitFor(async () => expect((await db.settings.get('me'))?.name).toBe('Максим'))
   })
 
-  it('фото профиля: выбор файла сохраняет аватар', async () => {
+  it('profile photo: choosing a file saves the avatar', async () => {
     vi.mocked(pickFile).mockResolvedValueOnce(new File(['x'], 'me.jpg', { type: 'image/jpeg' }))
     const { user } = renderApp('/me')
     await user.click(await screen.findByRole('button', { name: 'Сменить фото' }))
     await waitFor(async () => expect((await db.settings.get('me'))?.photo).toBe('data:image/jpeg;base64,AVATAR'))
   })
 
-  it('«Добавить из копии» объединяет, «Восстановить из копии» заменяет', async () => {
+  it('"Add from a backup" merges, "Restore from a backup" replaces', async () => {
     const backup = JSON.parse(JSON.stringify(await exportBackup()))
     const extra = { id: 'only-in-db', firstName: 'Лишний', circleIds: [], tags: [], closeness: 3, channels: [], facts: [], topics: [], links: [], createdAt: 1, updatedAt: 1 }
     await db.people.put(extra as never)
@@ -166,7 +166,7 @@ describe('профиль: данные и настройки', () => {
     await waitFor(async () => expect(await db.people.get('only-in-db')).toBeUndefined())
   })
 
-  it('битый файл копии — сообщение, данные целы', async () => {
+  it('a broken backup file: a message, the data is intact', async () => {
     const before = await db.people.count()
     vi.mocked(pickFile).mockResolvedValueOnce(new File(['это не json'], 'x.json'))
     const { user } = renderApp('/me')
@@ -175,7 +175,7 @@ describe('профиль: данные и настройки', () => {
     expect(await db.people.count()).toBe(before)
   })
 
-  it('экспорт контактов (.vcf) и резерва (.csv)', async () => {
+  it('export of contacts (.vcf) and the reserve (.csv)', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Экспорт контактов (.vcf)'))
     expect(vi.mocked(download).mock.calls.at(-1)?.[0]).toBe('aster-contacts.vcf')
@@ -184,7 +184,7 @@ describe('профиль: данные и настройки', () => {
     await waitFor(() => expect(vi.mocked(download).mock.calls.at(-1)?.[0]).toBe('aster-reserve.csv'))
   })
 
-  it('«Удалить все данные» требует второго нажатия и возвращает на онбординг', async () => {
+  it('"Delete all data" requires a second press and returns to onboarding', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Удалить все данные'))
     expect(await db.people.count()).toBe(32)
@@ -193,14 +193,14 @@ describe('профиль: данные и настройки', () => {
     expect(await screen.findByRole('button', { name: 'Начать' })).toBeInTheDocument()
   })
 
-  it('«Загрузить демо-данные» заменяет текущие', async () => {
+  it('"Load demo data" replaces the current data', async () => {
     await db.people.clear()
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Загрузить демо-данные'))
     await waitFor(async () => expect(await db.people.count()).toBe(32), { timeout: 8000 })
   })
 
-  it('«Круги», «Пульс» и «Астра» открываются из профиля', async () => {
+  it('"Circles", "Pulse" and "Astra" open from the profile', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Пульс сети'))
     expect(await screen.findByText('Сегодня против обычного')).toBeInTheDocument()
@@ -211,10 +211,10 @@ describe('профиль: данные и настройки', () => {
   })
 })
 
-describe('орбита, пульс, бриф недели', () => {
+describe('orbit, pulse, weekly brief', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('орбита: фильтр по кругу, выбор человека, «Профиль», режим «Созвездия»', async () => {
+  it('orbit: filter by circle, choosing a person, "Profile", the "Constellations" mode', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/orbit')
     await screen.findByText(/ЧЕЛОВЕК|человек/i)
@@ -229,7 +229,7 @@ describe('орбита, пульс, бриф недели', () => {
     expect(bad).toEqual([])
   })
 
-  it('пульс: метрики, круги, кольцо ближнего круга', async () => {
+  it('pulse: metrics, circles, the inner circle ring', async () => {
     renderApp('/pulse')
     expect(await screen.findByText('Контакты за неделю')).toBeInTheDocument()
     expect(screen.getByText('Новые знакомства за месяц')).toBeInTheDocument()
@@ -238,7 +238,7 @@ describe('орбита, пульс, бриф недели', () => {
     expect(await screen.findByText('Орбиты')).toBeInTheDocument()
   })
 
-  it('бриф недели: заголовок, статистика, приоритеты ведут к людям', async () => {
+  it('weekly brief: the title, statistics, priorities lead to people', async () => {
     const { user } = renderApp('/weekly')
     expect(await screen.findByText('Главное на неделе')).toBeInTheDocument()
     expect(screen.getByText('Дни рождения')).toBeInTheDocument()

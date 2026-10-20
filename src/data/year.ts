@@ -10,7 +10,7 @@ const MONTHS = [msg('January'), msg('February'), msg('March'), msg('April'), msg
 
 export interface YearReview {
   year: number
-  /** год ещё не закончился */
+  /** the year is not over yet */
   partial: boolean
   hasData: boolean
   total: number
@@ -28,9 +28,9 @@ export interface YearReview {
   reciprocity: Reciprocity
   monthly: number[]
   busiestMonth: { index: number; name: string; count: number } | null
-  /** самая длинная серия недель подряд, когда ты с кем-то общался */
+  /** the longest run of consecutive weeks in which you were in touch with someone */
   weekStreak: number
-  /** изменение числа контактов к прошлому году, % (null — прошлого года нет) */
+  /** change in the number of contacts against last year, % (null: there is no last year) */
   deltaPct: number | null
   title: string
   subtitle: string
@@ -38,7 +38,7 @@ export interface YearReview {
 
 export const monthName = (i: number) => MONTHS[i] ?? ''
 
-/** Годы, в которых что-то было: для переключателя. Новые — первыми; текущий год показываем всегда. */
+/** Years in which something happened: for the switcher. Newest first; the current year is always shown. */
 export function yearsWithData(ints: Interaction[], now = Date.now()): number[] {
   const ys = new Set<number>([new Date(now).getFullYear()])
   for (const i of ints) if (CONTACT.has(i.type)) ys.add(new Date(i.date).getFullYear())
@@ -56,7 +56,7 @@ export function yearReview(year: number, people: Person[], allInts: Interaction[
   const byId = new Map(net.map(p => [p.id, p]))
   const isIn = (value2: number) => value2 >= start && value2 <= endOfYear
 
-  // общение только с семьёй в итоги сети не входит: оно каждый день и исказило бы картину
+  // contact with family alone is not part of the network recap: it happens every day and would distort the picture
   const counts = (i: Interaction) => CONTACT.has(i.type) && i.personIds.some(id => byId.has(id))
   const ints = allInts.filter(i => counts(i) && isIn(i.date))
   const countOf = (types: string[]) => ints.filter(i => types.includes(i.type)).length
@@ -96,7 +96,7 @@ export function yearReview(year: number, people: Person[], allInts: Interaction[
     .sort((a, b) => b.score - a.score || b.count - a.count)
     .slice(0, 3)
 
-  // потеряли: раньше общались регулярно, а последние полгода — тишина
+  // lost: you used to be in touch regularly, but the last six months are silent
   const cutoff = end - 180 * DAY
   const lost: YearReview['lost'] = []
   for (const p of net) {
@@ -124,7 +124,7 @@ export function yearReview(year: number, people: Person[], allInts: Interaction[
   weeks.forEach((w, k) => { cur = k > 0 && w === weeks[k - 1]! + 1 ? cur + 1 : 1; streak = Math.max(streak, cur) })
 
   const prev = allInts.filter(i => counts(i) && i.date >= new Date(year - 1, 0, 1).getTime() && i.date < start).length
-  // сравниваем честно: у неоконченного года берём тот же отрезок прошлого года
+  // compare fairly: for an unfinished year, take the same stretch of last year
   const prevSame = partial
     ? allInts.filter(i => counts(i) && i.date >= new Date(year - 1, 0, 1).getTime() && i.date <= new Date(year - 1, new Date(end).getMonth(), new Date(end).getDate(), 23, 59, 59).getTime()).length
     : prev

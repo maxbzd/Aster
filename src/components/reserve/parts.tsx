@@ -6,7 +6,7 @@ import { PALETTES, PALETTE_KEYS, hashString } from '@/lib/colors'
 import type { Channel } from '@/data/types'
 import { t } from '@/i18n'
 
-/** У каждого тега — свой оттенок, одинаковый везде. */
+/** Every tag has its own shade, the same everywhere. */
 export const tagColor = (tag: string) => PALETTES[PALETTE_KEYS[hashString(tag.toLowerCase()) % PALETTE_KEYS.length]].to
 
 export function TagPill({ tag, className = '' }: { tag: string; className?: string }) {
@@ -18,7 +18,7 @@ export function TagPill({ tag, className = '' }: { tag: string; className?: stri
   )
 }
 
-/** Теги: выбранные + поле ввода + подсказки одним тапом. */
+/** Tags: the selected ones plus an input field plus one-tap suggestions. */
 export function TagInput({ value, onChange, suggestions = [], placeholder = t('Investor, lawyer… Enter') }: { value: string[]; onChange: (v: string[]) => void; suggestions?: string[]; placeholder?: string }) {
   const [text, setText] = useState('')
   const add = (raw: string) => {
@@ -55,7 +55,7 @@ export function TagInput({ value, onChange, suggestions = [], placeholder = t('I
 
 const QUICK: Channel['type'][] = ['telegram', 'phone', 'email', 'linkedin', 'instagram', 'whatsapp']
 
-/** Контакты: по строке на канал. */
+/** Contacts: a row per channel. */
 export function ChannelsEditor({ value, onChange }: { value: Channel[]; onChange: (v: Channel[]) => void }) {
   return (
     <>
@@ -84,7 +84,7 @@ export function ChannelsEditor({ value, onChange }: { value: Channel[]; onChange
   )
 }
 
-/** Переключатель в стиле iOS — как в напоминаниях. */
+/** An iOS-style switch, like in Reminders. */
 export function Switch({ on }: { on: boolean }) {
   return (
     <span className={`relative h-[30px] w-[50px] shrink-0 rounded-full transition-colors ${on ? 'bg-mint' : 'bg-white/15'}`}>

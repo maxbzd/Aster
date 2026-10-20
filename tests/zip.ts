@@ -1,4 +1,4 @@
-/** Мини-упаковщик zip для тестов: собираем настоящий .xlsx без внешних библиотек. */
+/** A mini zip packer for tests: builds a real .xlsx without external libraries. */
 
 async function deflateRaw(data: Uint8Array): Promise<Uint8Array> {
   const stream = new Blob([data as BlobPart]).stream().pipeThrough(new CompressionStream('deflate-raw'))
@@ -40,7 +40,7 @@ export async function makeZip(files: Record<string, string>, opts: { store?: boo
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
 const colLetter = (i: number) => String.fromCharCode(65 + i)
 
-/** Таблица значений → содержимое xlsx. Числа пишутся числами, строки — через sharedStrings (как делает Excel). */
+/** A table of values → xlsx content. Numbers are written as numbers, strings through sharedStrings (as Excel does). */
 export async function makeXlsx(rows: (string | number | null)[][], opts: { inline?: boolean; store?: boolean } = {}): Promise<Uint8Array> {
   const shared: string[] = []
   const idx = (s: string) => { const i = shared.indexOf(s); if (i >= 0) return i; shared.push(s); return shared.length - 1 }

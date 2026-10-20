@@ -8,15 +8,15 @@ import { connectUrl, disconnect as apiDisconnect, getStatus, sync, type TickStat
 import { buildPayload, idOf } from './payload'
 import { t } from '@/i18n'
 
-/* Связка с TickTick: напоминания Aster уходят в TickTick, «выполнено» ходит в обе стороны. Работает, пока приложение открыто. */
+/* The TickTick link: Aster's reminders go to TickTick, and "done" travels both ways. Works while the app is open. */
 
 export interface TickState {
   phase: 'off' | 'checking' | 'idle' | 'syncing' | 'error'
   status: TickStatus | null
-  /** нужно подключиться заново (токен недействителен) */
+  /** the person must connect again (the token is invalid) */
   expired: boolean
   lastSyncAt?: number
-  /** сколько задач ушло в TickTick за последний обмен */
+  /** how many tasks went to TickTick in the last exchange */
   created: number
   error?: string
 }
@@ -30,7 +30,7 @@ export const useTick = () => useSyncExternalStore(cb => { listeners.add(cb); ret
 let running = false
 let again = false
 
-/** Один обмен: узнать состояние, отправить новые напоминания и «выполнено», применить «выполнено» из TickTick. */
+/** One exchange: learn the state, send new reminders and "done", apply "done" from TickTick. */
 export async function syncNow(): Promise<void> {
   if (running) { again = true; return }
   running = true
@@ -40,7 +40,7 @@ export async function syncNow(): Promise<void> {
     if (!status) { set({ phase: 'error', error: t('No connection to the server') }); return }
     set({ status })
     if (!status.configured || !status.connected) { set({ phase: 'idle' }); return }
-    // демо-данные в TickTick не отправляем: это выдуманные напоминания
+    // demo data is not sent to TickTick: these are made-up reminders
     if ((await db.settings.get('me'))?.demo) { set({ phase: 'idle' }); return }
     const [reminders, people] = await Promise.all([db.reminders.toArray(), db.people.toArray()])
     set({ phase: 'syncing' })
@@ -75,7 +75,7 @@ export async function disconnect(): Promise<void> {
   set({ status: state.status ? { ...state.status, connected: false } : null, expired: false })
 }
 
-/** Возврат из TickTick: в адресе стоит ?ticktick=ok. Адрес очищается, результат отдаётся вызывающему. */
+/** The return from TickTick: the address contains ?ticktick=ok. The address is cleaned and the result is handed to the caller. */
 export function takeReturnResult(): string | null {
   const url = new URL(location.href)
   const r = url.searchParams.get('ticktick')
@@ -95,7 +95,7 @@ const RETURN_TEXT: Record<string, string> = {
 export const returnText = (r: string) => RETURN_TEXT[r] ?? t("Couldn't connect TickTick")
 
 let installed = false
-/** Запускается один раз при старте: после входа в облако следит за напоминаниями и раз в минуту сверяется с TickTick. */
+/** Runs once at startup: after the cloud sign-in it watches the reminders and checks with TickTick once a minute. */
 export function installTickTick(): void {
   if (installed || typeof window === 'undefined' || !cloudEnabled()) return
   installed = true
@@ -108,7 +108,7 @@ export function installTickTick(): void {
   const start = () => {
     void syncNow()
     timer = setInterval(() => { if (!document.hidden && navigator.onLine) void syncNow() }, 60_000)
-    // любая правка напоминаний уходит в TickTick через пару секунд
+    // any edit of reminders goes to TickTick in a couple of seconds
     let first = true
     sub = liveQuery(() => db.reminders.toArray()).subscribe({ next: () => { if (first) { first = false; return } schedule(2500) }, error: () => undefined })
     document.addEventListener('visibilitychange', onVisible)

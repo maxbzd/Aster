@@ -11,7 +11,7 @@ import { haptic, useUI } from '@/app/store'
 import type { ID, Person } from '@/data/types'
 import { t, tn } from '@/i18n'
 
-/** Возможные дубли: выбираешь главную карточку, остальные вливаются в неё вместе с историей. */
+/** Possible duplicates: you pick the main card and the others merge into it together with their history. */
 export function DedupeSheet({ onClose }: { onClose: () => void }) {
   const all = useAllPeople()
   const groups = useMemo(() => findDuplicates(all ?? []), [all])
@@ -76,7 +76,7 @@ function Group({ group, onSkip }: { group: DuplicateGroup; onSkip: () => void })
   )
 }
 
-/** Главной по умолчанию делаем карточку с большей историей, а при равенстве — ту, что дополнялась позже. */
+/** By default the card with more history is the main one, and on a tie the one that was updated later. */
 function richest(people: Person[], interactions: { personIds: ID[] }[]): Person {
   const n = (p: Person) => interactions.filter(i => i.personIds.includes(p.id)).length
   return [...people].sort((a, b) => n(b) - n(a) || b.updatedAt - a.updatedAt)[0]!

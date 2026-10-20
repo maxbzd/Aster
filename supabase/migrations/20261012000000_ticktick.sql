@@ -1,5 +1,5 @@
--- Связка с TickTick: токен доступа и соответствие «запись приложения ↔ задача TickTick».
--- Обоими таблицами пользуется только Edge Function `ticktick` (ключ сервиса). Для клиентов таблицы закрыты полностью.
+-- The TickTick link: the access token and the mapping "app record ↔ TickTick task".
+-- Only the Edge Function `ticktick` (the service key) uses both tables. They are fully closed to clients.
 
 create table if not exists public.ticktick_tokens (
   user_id       uuid primary key references auth.users (id) on delete cascade,
@@ -13,7 +13,7 @@ create table if not exists public.ticktick_tokens (
 create table if not exists public.ticktick_links (
   user_id    uuid not null references auth.users (id) on delete cascade,
   key        text not null check (char_length(key) between 3 and 160),
-  -- 'pending' — ключ занят, задача в TickTick ещё создаётся
+  -- 'pending': the key is claimed, the task is still being created in TickTick
   task_id    text not null,
   project_id text not null default '',
   completed  boolean not null default false,

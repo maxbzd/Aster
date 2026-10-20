@@ -24,7 +24,7 @@ const TONES: { value: Tone; label: string }[] = [
   { value: 'business', get label() { return t('To the point') } },
 ]
 
-/** Повод → черновик в трёх тонах → отправка в один тап. */
+/** A reason → a draft in three tones → sending in one tap. */
 export function DraftSheet({ personId, occasion: given, onClose }: { personId: string; occasion?: Occasion | null; onClose: () => void }) {
   const p = usePerson(personId)
   const { byPerson } = useOccasions()

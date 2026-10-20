@@ -8,11 +8,11 @@ import { t, tn } from '@/i18n'
 const W = 360
 const H = 210
 const PAD = { l: 6, r: 6, t: 14, b: 30 }
-const PLOT_H = H - PAD.t - PAD.b - 20 // сверху линия, снизу полоса активности
+const PLOT_H = H - PAD.t - PAD.b - 20 // the line above, the activity strip below
 const BAR_H = 16
 
 
-/** Монотонная кубическая интерполяция: линия плавная и не «перелетает» за значения. */
+/** Monotone cubic interpolation: the line is smooth and does not "overshoot" the values. */
 function smooth(pts: Array<{ x: number; y: number }>): string {
   if (pts.length < 2) return ''
   const n = pts.length
@@ -33,8 +33,8 @@ export const warmthColorOf = (score: number) => (score >= 80 ? WARMTH_COLORS.hot
 export const warmthWord = (score: number) => (score >= 80 ? t('hot') : score >= 55 ? t('warm') : score >= 25 ? t('cooling') : t('cold'))
 
 /**
- * Как менялась связь: линия теплоты по месяцам, под ней — полоски общения. Проведи пальцем, чтобы увидеть месяц.
- * Градиент линии идёт от тёплого оранжевого вверху к холодному синему внизу, поэтому «остывшие» периоды видны цветом.
+ * How the connection changed: a warmth line by month with contact bars beneath it. Slide a finger to see a month.
+ * The line's gradient runs from warm orange at the top to cold blue at the bottom, so "cooled" periods show in colour.
  */
 export function WarmthChart({ points }: { points: WarmthPoint[] }) {
   const id = useId().replace(/:/g, '')
@@ -85,7 +85,7 @@ export function WarmthChart({ points }: { points: WarmthPoint[] }) {
           <filter id={`glow-${id}`} x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5" /></filter>
         </defs>
 
-        {/* уровни */}
+        {/* levels */}
         {[100, 75, 50, 25].map(s => (
           <g key={s}>
             <line x1={PAD.l} x2={W - PAD.r} y1={geo.y(s)} y2={geo.y(s)} stroke="rgb(255 255 255 / 0.06)" strokeDasharray={s === 75 ? '0' : '2 6'} />
@@ -93,7 +93,7 @@ export function WarmthChart({ points }: { points: WarmthPoint[] }) {
         ))}
         <text x={W - PAD.r} y={geo.y(75) - 4} textAnchor="end" fontSize="9" fill="rgb(235 235 245 / 0.32)">{t('on rhythm')}</text>
 
-        {/* полоски общения */}
+        {/* contact bars */}
         {points.map((p, i) => {
           if (p.activity <= 0) return null
           const h = Math.max(4, (p.activity / geo.maxAct) * BAR_H)
@@ -112,7 +112,7 @@ export function WarmthChart({ points }: { points: WarmthPoint[] }) {
           </>
         )}
 
-        {/* оси: годы */}
+        {/* axes: years */}
         {geo.years.map(({ p, i }) => (
           <g key={p.t}>
             <line x1={geo.x(i)} x2={geo.x(i)} y1={PAD.t} y2={H - PAD.b + 2} stroke="rgb(255 255 255 / 0.07)" />
@@ -120,7 +120,7 @@ export function WarmthChart({ points }: { points: WarmthPoint[] }) {
           </g>
         ))}
 
-        {/* текущее значение */}
+        {/* the current value */}
         {geo.xy.length > 0 && last?.score != null && (
           <g>
             <circle className="pulse-dot ambient" cx={geo.xy.at(-1)!.x} cy={geo.xy.at(-1)!.y} r="6" fill={warmthColorOf(last.score)} opacity="0.25" />
@@ -128,7 +128,7 @@ export function WarmthChart({ points }: { points: WarmthPoint[] }) {
           </g>
         )}
 
-        {/* указатель */}
+        {/* pointer */}
         {point && (
           <g pointerEvents="none">
             <line x1={geo.x(hover!)} x2={geo.x(hover!)} y1={PAD.t} y2={H - PAD.b + 2} stroke="rgb(255 255 255 / 0.35)" strokeDasharray="3 4" />

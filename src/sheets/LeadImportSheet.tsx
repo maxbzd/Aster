@@ -29,7 +29,7 @@ const uniq = (a: string[]) => [...new Set(a)]
 const colName = (i: number) => String.fromCharCode(65 + (i % 26))
 const ACCEPT = '.xlsx,.xlsm,.csv,.tsv,.txt,.vcf,.json,text/csv,text/plain,text/vcard'
 
-/** Импорт списка: файл (xlsx, csv, vcf, json, txt) или вставленный текст → разбор → проверка → «добавить всех». */
+/** List import: a file (xlsx, csv, vcf, json, txt) or pasted text → parsing → review → "add everyone". */
 export function LeadImportSheet({ file: file0, text: text0, onClose }: { file?: File; text?: string; onClose: () => void }) {
   const leads = useLeads()
   const people = usePeople()
@@ -43,12 +43,12 @@ export function LeadImportSheet({ file: file0, text: text0, onClose }: { file?: 
   const [label, setLabel] = useState('')
   const [fromFile, setFromFile] = useState('')
   const [paste, setPaste] = useState(text0 ?? '')
-  // данные
+  // data
   const [rows, setRows] = useState<string[][] | null>(null)
   const [hasHeader, setHasHeader] = useState(true)
   const [roles, setRoles] = useState<Role[]>([])
   const [flat, setFlat] = useState<ParsedLead[] | null>(null)
-  // параметры
+  // parameters
   const [tags, setTags] = useState<string[]>([])
   const [source, setSource] = useState('')
   const [auto, setAuto] = useState(true)
@@ -99,7 +99,7 @@ export function LeadImportSheet({ file: file0, text: text0, onClose }: { file?: 
   useEffect(() => { if (file0) readFile(file0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (text0) analyzePaste() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // смена заголовка пересчитывает роли
+  // changing the header recomputes the roles
   const toggleHeader = (v: boolean) => {
     if (!rows) return
     setHasHeader(v)

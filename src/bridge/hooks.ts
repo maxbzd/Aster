@@ -7,7 +7,7 @@ import { listSuggestions, type Suggestion } from './suggestions'
 
 export const useSuggestions = (): Suggestion[] => useLiveQuery(() => listSuggestions(), []) ?? []
 
-/** Что про этого человека знает Орбита (если он связан). */
+/** What Orbita knows about this person (if linked). */
 export function usePeerStats(personId?: string): PersonStatsData | undefined {
   return useLiveQuery(async () => {
     if (!personId) return undefined

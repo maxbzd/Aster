@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { BridgeError, type Connection, type FeedItem, type LinkRow, type Scope } from './protocol'
 import { t } from '@/i18n'
 
-/** Всё, что мост делает в СВОЁМ проекте Supabase (с входом в аккаунт этого приложения). */
+/** Everything the bridge does in YOUR OWN Supabase project (signed in to this app's account). */
 export interface OwnBridge {
   listConnections(): Promise<Connection[]>
   listLinks(): Promise<LinkRow[]>

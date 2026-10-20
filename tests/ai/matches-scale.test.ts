@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { localMatches } from '@/ai/local/matches'
 import { blankPerson } from '@/data/actions'
 
-describe('подбор знакомств в большой сети', () => {
-  it('600 человек считаются быстро, а результат тот же, что и в маленькой сети', () => {
+describe('matching introductions in a large network', () => {
+  it('600 people are processed quickly, and the result is the same as in a small network', () => {
     const roles = ['инвестор', 'дизайнер', 'юрист', 'разработчик', 'журналист', 'ментор']
     const people = Array.from({ length: 600 }, (_, i) => blankPerson({
       id: `p${i}`, firstName: `Имя${i}`, role: roles[i % roles.length], city: ['Москва', 'Дубай', 'Берлин'][i % 3], company: `Компания ${i}`,

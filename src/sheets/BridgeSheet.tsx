@@ -43,7 +43,7 @@ export function BridgeSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-/* ---------- подключение ---------- */
+/* ---------- connection ---------- */
 
 function Connect() {
   const [mode, setMode] = useState<'menu' | 'show' | 'enter'>('menu')
@@ -159,7 +159,7 @@ function ConnectionCard({ c, phase, lastCycleAt, error }: { c: Connection; phase
   )
 }
 
-/* ---------- люди ---------- */
+/* ---------- people ---------- */
 
 function People() {
   const ov = usePeopleOverview()
@@ -210,7 +210,7 @@ function People() {
   )
 }
 
-/* ---------- предложения ---------- */
+/* ---------- suggestions ---------- */
 
 function Suggestions() {
   const list = useSuggestions()

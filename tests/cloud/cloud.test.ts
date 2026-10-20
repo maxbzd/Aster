@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/data/db'
 import { resetDb } from '../helpers'
 
-/** Поддельный клиент Supabase: достаточно, чтобы проверить нашу логику входа, выхода и очереди. */
+/** A fake Supabase client: enough to test our sign-in, sign-out and queue logic. */
 const fake = vi.hoisted(() => {
   const state = {
     session: null as null | { user: { id: string; email: string } },
@@ -62,13 +62,13 @@ beforeEach(async () => {
   useCloud.setState({ phase: 'off', email: undefined, userId: undefined, pending: 0, error: undefined, recovery: false, expired: false, notice: undefined })
 })
 afterEach(async () => {
-  // отключаем контроллер и сбрасываем «устройство»
+  // disconnect the controller and reset the "device"
   fake.state.session = null
   await cloud.signOut({ force: true }).catch(() => undefined)
 })
 
-describe('вход', () => {
-  it('успешный вход запускает синхронизацию и обновляет состояние', async () => {
+describe('sign-in', () => {
+  it('a successful sign-in starts sync and updates the state', async () => {
     await cloud.signIn('  max@mail.com ', 'secret-pass-1')
     expect(fake.client.auth.signInWithPassword).toHaveBeenCalledWith({ email: 'max@mail.com', password: 'secret-pass-1' })
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
@@ -76,35 +76,35 @@ describe('вход', () => {
     expect(await db.syncMeta.get('userId')).toMatchObject({ value: 'u1' })
   })
 
-  it('неверный пароль — человеческое сообщение, состояние не меняется', async () => {
+  it('a wrong password: a human message, the state does not change', async () => {
     fake.state.signInError = { message: 'Invalid login credentials' }
     await expect(cloud.signIn('max@mail.com', 'x')).rejects.toThrow('Неверная почта или пароль')
     expect(useCloud.getState().userId).toBeUndefined()
   })
 })
 
-describe('регистрация', () => {
-  it('нужно подтвердить почту', async () => {
+describe('sign-up', () => {
+  it('the email must be confirmed', async () => {
     expect(await cloud.signUp('new@mail.com', 'long-enough-pass')).toBe('confirm')
     expect(fake.client.auth.signUp).toHaveBeenCalledWith(expect.objectContaining({ email: 'new@mail.com', password: 'long-enough-pass' }))
   })
-  it('почта занята: Supabase отвечает пользователем без identities — сообщаем честно', async () => {
+  it('the email is taken: Supabase answers with a user without identities, and we say so honestly', async () => {
     fake.state.signUpResult = { data: { user: { identities: [] }, session: null }, error: null }
     await expect(cloud.signUp('taken@mail.com', 'long-enough-pass')).rejects.toThrow('уже зарегистрирована')
   })
-  it('короткий пароль отклоняется до обращения к серверу', async () => {
+  it('a short password is rejected before calling the server', async () => {
     await expect(cloud.signUp('a@b.io', 'short')).rejects.toThrow('не короче 8')
     expect(fake.client.auth.signUp).not.toHaveBeenCalled()
   })
-  it('если подтверждение почты выключено — сразу вошли', async () => {
+  it('if email confirmation is off, you are signed in at once', async () => {
     fake.state.signUpResult = { data: { user: { identities: [{}] }, session: { user: { id: 'u1', email: 'new@mail.com' } } }, error: null }
     expect(await cloud.signUp('new@mail.com', 'long-enough-pass')).toBe('signed-in')
     await vi.waitFor(() => expect(useCloud.getState().userId).toBe('u1'))
   })
 })
 
-describe('пароль', () => {
-  it('письмо для сброса и смена пароля', async () => {
+describe('password', () => {
+  it('a reset email and a password change', async () => {
     await cloud.resetPassword(' max@mail.com ')
     expect(fake.client.auth.resetPasswordForEmail).toHaveBeenCalledWith('max@mail.com', expect.objectContaining({ redirectTo: expect.any(String) }))
     useCloud.setState({ recovery: true })
@@ -115,8 +115,8 @@ describe('пароль', () => {
   })
 })
 
-describe('выход', () => {
-  it('всё отправлено: выход стирает данные с устройства и сбрасывает состояние', async () => {
+describe('sign-out', () => {
+  it('all sent: sign-out erases the data from the device and resets the state', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
     await db.people.add({ id: 'p1', firstName: 'Анна' } as never)
@@ -126,11 +126,11 @@ describe('выход', () => {
     expect(await db.outbox.count()).toBe(0)
     expect(fake.state.signOutCalls).toBeGreaterThan(0)
     expect(useCloud.getState()).toMatchObject({ phase: 'off', userId: undefined })
-    // правка попала на сервер до выхода
+    // the edit reached the server before sign-out
     expect(fake.state.rpcCalls.some(c => c.fn === 'sync_push' && JSON.stringify(c.args).includes('"id":"p1"'))).toBe(true)
   })
 
-  it('не отправлено — выход отказывает и ничего не стирает; force — стирает', async () => {
+  it('not sent: sign-out refuses and erases nothing; force erases', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
     fake.state.pushError = { message: 'Failed to fetch' }
@@ -144,8 +144,8 @@ describe('выход', () => {
   })
 })
 
-describe('удаление аккаунта', () => {
-  it('вызывает серверную функцию, чистит сессию и метки, данные на устройстве остаются', async () => {
+describe('account deletion', () => {
+  it('calls the server function, clears the session and stamps, the data on the device stays', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
     await db.people.add({ id: 'keep', firstName: 'Остаётся' } as never)
@@ -158,7 +158,7 @@ describe('удаление аккаунта', () => {
     expect(useCloud.getState().userId).toBeUndefined()
   })
 
-  it('ошибка сервера не оставляет приложение «наполовину вышедшим»', async () => {
+  it('a server error does not leave the app "half signed out"', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
     fake.state.rpcError = { message: 'Failed to fetch' }
@@ -167,8 +167,8 @@ describe('удаление аккаунта', () => {
   })
 })
 
-describe('события авторизации', () => {
-  it('SIGNED_OUT из-за просроченной сессии: данные целы, показываем «войди снова»', async () => {
+describe('auth events', () => {
+  it('SIGNED_OUT because of an expired session: the data is intact, we show "sign in again"', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
     await db.people.add({ id: 'p1', firstName: 'Анна' } as never)
@@ -178,7 +178,7 @@ describe('события авторизации', () => {
     expect(await db.people.count()).toBe(1)
   })
 
-  it('обновление токена не перезапускает синхронизацию', async () => {
+  it('a token refresh does not restart sync', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     await vi.waitFor(() => expect(useCloud.getState().phase).toBe('idle'))
     const before = fake.state.rpcCalls.length
@@ -188,7 +188,7 @@ describe('события авторизации', () => {
     expect(fake.state.rpcCalls.length).toBe(before)
   })
 
-  it('PASSWORD_RECOVERY включает режим смены пароля', async () => {
+  it('PASSWORD_RECOVERY turns on the password change mode', async () => {
     await cloud.signIn('max@mail.com', 'secret-pass-1')
     fake.state.authCb?.('PASSWORD_RECOVERY', { user: { id: 'u1', email: 'max@mail.com' } })
     await flush()

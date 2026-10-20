@@ -14,7 +14,7 @@ import { t } from '@/i18n'
 const KINDS: DateKind[] = ['anniversary', 'nameday', 'jubilee', 'event', 'custom']
 const REMIND = [{ d: 1, get l() { return t('1 day before') } }, { d: 3, get l() { return t('3 days before') } }, { d: 7, get l() { return t('1 week before') } }, { d: 14, get l() { return t('2 weeks before') } }, { d: 30, get l() { return t('1 month before') } }]
 
-/** Годовщины, именины, юбилеи и любые значимые события в жизни человека. */
+/** Anniversaries, name days, jubilees and any significant events in a person's life. */
 export function DateSheet({ personId, id, onClose }: { personId: string; id?: string; onClose: () => void }) {
   const toast = useUI(s => s.toast)
   const [kind, setKind] = useState<DateKind>('anniversary')

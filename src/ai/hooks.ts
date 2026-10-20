@@ -9,7 +9,7 @@ import type { Intro, Person } from '@/data/types'
 import { reserveMatches } from './local/reserve'
 import { occasionsFrom } from './astra'
 
-/** Статус Астры: подключена ли облачная модель. */
+/** Astra's status: whether a cloud model is connected. */
 export function useAstraStatus() {
   const s = useLiveQuery(async () => {
     const ai = await activeAi()
@@ -22,7 +22,7 @@ export function useIntros() {
   return useLiveQuery(() => db.intros.toArray(), []) ?? []
 }
 
-/** Результат последнего подсчёта: несколько экранов спрашивают одно и то же, считать надо один раз. */
+/** The result of the last computation: several screens ask for the same thing, so it should be computed once. */
 let matchCache: { key: string; value: MatchPair[] } = { key: '', value: [] }
 const NO_MATCHES: MatchPair[] = []
 
@@ -33,8 +33,8 @@ function matchKey(people: Person[], intros: Intro[]) {
 }
 
 /**
- * Локальные пары для знакомства. Пересчёт идёт при изменении данных, а не при каждом заходе на экран;
- * в больших сетях — в простое браузера, чтобы не тормозить переход.
+ * Local pairs for introductions. They are recomputed when data changes, not on every visit to the screen;
+ * in large networks during the browser's idle time, so as not to slow the transition.
  */
 export function useLocalMatches() {
   const people = usePeople()
@@ -45,7 +45,7 @@ export function useLocalMatches() {
     const excluded = new Set(intros.filter(i => i.status !== 'suggested').map(i => `${i.aId}:${i.bId}`))
     matchCache = { key, value: localMatches(list, excluded) }
   }
-  // небольшая сеть считается сразу, при отрисовке: это доли миллисекунды и без мигания
+  // a small network is computed at once, during rendering: it takes fractions of a millisecond and does not flicker
   if (people && people.length <= 120 && matchCache.key !== key) compute(people)
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export function useLocalMatches() {
   return matchCache.key === key ? matchCache.value : NO_MATCHES
 }
 
-/** Поводы написать — пересчитываются вживую. */
+/** Reasons to write are recomputed live. */
 export function useOccasions() {
   const people = useAllPeople()
   const ints = useAllInteractions()
@@ -70,7 +70,7 @@ export function useOccasions() {
   return useMemo(() => occasionsFrom(people ?? [], ints, rems, matches, now), [people, ints, rems, matches, now])
 }
 
-/** Кто в сети что-то ищет — и у кого в резерве это уже есть. */
+/** Who in the network is looking for something, and who in the reserve already has it. */
 export function useReserveMatches() {
   const people = usePeople()
   const leads = useLeads()

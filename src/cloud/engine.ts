@@ -3,13 +3,13 @@ import { db as appDb, type AsterDB } from '@/data/db'
 import type { Settings } from '@/data/types'
 
 /**
- * Движок синхронизации «локально-первый»: приложение всегда работает с Dexie,
- * а облако — это копия, которая догоняет в фоне.
+ * The local-first sync engine: the app always works with Dexie,
+ * and the cloud is a copy that catches up in the background.
  *
- *   изменение в Dexie → хук кладёт ключ в outbox → push отправляет строки целиком
- *   облако → pull по курсору seq → применяем в Dexie (без повторной отправки)
+ *   a change in Dexie → a hook puts the key in the outbox → push sends whole rows
+ *   the cloud → pull by the seq cursor → applied to Dexie (without sending it back)
  *
- * Конфликты решает «побеждает новейшая правка» (client_ts), как и на сервере (sync_push).
+ * Conflicts are resolved by "the newest edit wins" (client_ts), the same as on the server (sync_push).
  */
 
 export const SYNC_TABLES = ['people', 'interactions', 'reminders', 'circles', 'settings', 'intros', 'events', 'captures', 'leads', 'collections'] as const
@@ -22,11 +22,11 @@ export interface Remote {
   pull(afterSeq: number, limit: number): Promise<RemoteRecord[]>
 }
 
-/** Поля настроек, которые живут только на этом устройстве (ключи API, дата последней копии в файл). */
+/** Settings fields that live only on this device (API keys, the date of the last backup file). */
 export const DEVICE_ONLY_SETTINGS = ['ai', 'stt', 'voice', 'lastBackupAt', 'backupSnoozeUntil'] as const
 const isDeviceOnly = (path: string) => DEVICE_ONLY_SETTINGS.some(k => path === k || path.startsWith(`${k}.`))
 
-/** Сервер отклонил запись насовсем (неверный формат, слишком большая): повтор не поможет, это не сбой сети. */
+/** The server rejected a record for good (bad format, too large): retrying will not help, and it is not a network failure. */
 export class PermanentRemoteError extends Error {}
 
 export interface RejectedEntry { key: string; error: string; at: number }
@@ -34,19 +34,19 @@ export interface RejectedEntry { key: string; error: string; at: number }
 export const PUSH_BATCH = 100
 export const PULL_PAGE = 500
 /**
- * Курсор отступает назад на это число номеров: транзакции других устройств могли зафиксироваться
- * позже, чем уже виденные. Применение идемпотентно, поэтому повторное чтение безвредно.
- * Должно быть больше PUSH_BATCH.
+ * The cursor steps back by this many numbers: transactions from other devices may have been committed
+ * later than ones already seen. Applying is idempotent, so reading twice is harmless.
+ * Must be greater than PUSH_BATCH.
  */
 export const PULL_OVERLAP = 250
 
 type TrackedTx = Transaction & { _asterRemote?: boolean; _asterDirty?: Map<string, { table: SyncTable; id: string }> }
 
 let lastTs = 0
-/** Монотонные метки времени: две правки одного устройства никогда не получат одинаковый ts. */
+/** Monotonic timestamps: two edits on one device never get the same ts. */
 export const nextTs = () => (lastTs = Math.max(Date.now(), lastTs + 1))
 
-/** Ключи в алфавитном порядке: jsonb в Postgres меняет порядок, а сравнивать надо содержимое. */
+/** Keys in alphabetical order: Postgres jsonb reorders them, and it is the content that must be compared. */
 export function stable(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`
   if (v && typeof v === 'object') {
@@ -56,7 +56,7 @@ export function stable(v: unknown): string {
   return JSON.stringify(v) ?? 'null'
 }
 
-/** Строка в том виде, в каком она уходит в облако (без полей, принадлежащих только устройству). */
+/** A row in the form in which it goes to the cloud (without the fields that belong to the device only). */
 export function serialize(name: SyncTable, row: object): Record<string, unknown> {
   const plain = JSON.parse(JSON.stringify(row)) as Record<string, unknown>
   if (name === 'settings') for (const k of DEVICE_ONLY_SETTINGS) delete plain[k]
@@ -70,13 +70,13 @@ function mergeIncoming(name: SyncTable, local: object | undefined, incoming: Rec
   return { ...incoming, ...keep }
 }
 
-/** Движок, привязанный к конкретной базе. В приложении база одна; в тестах «устройств» может быть несколько. */
+/** An engine bound to one database. The app has one; tests may have several "devices". */
 export function createEngine(db: AsterDB) {
   const table = (name: SyncTable) => db.table(name) as Table<{ id: string }, string>
   const listeners = new Set<() => void>()
   let installed = false
 
-  /* ---------- отслеживание изменений ---------- */
+  /* ---------- tracking changes ---------- */
 
   const onLocalChange = (fn: () => void) => {
     listeners.add(fn)
@@ -89,7 +89,7 @@ export function createEngine(db: AsterDB) {
     if (!dirty) {
       const batch = new Map<string, { table: SyncTable; id: string }>()
       dirty = trans._asterDirty = batch
-      // outbox пишем после фиксации основной транзакции: она может не включать эту таблицу
+      // the outbox is written after the main transaction commits: it may not include this table
       trans.on('complete', () => {
         const ts = nextTs()
         db.outbox
@@ -101,7 +101,7 @@ export function createEngine(db: AsterDB) {
     dirty.set(`${name}:${id}`, { table: name, id })
   }
 
-  /** Подписывается на создание, правку и удаление в синхронизируемых таблицах. Безопасно вызывать повторно. */
+  /** Subscribes to create, update and delete in the synced tables. Safe to call again. */
   function installTracking() {
     if (installed) return
     installed = true
@@ -109,7 +109,7 @@ export function createEngine(db: AsterDB) {
       const value2 = db.table(name)
       value2.hook('creating', (_pk, obj, trans) => { mark(trans as TrackedTx, name, (obj as { id?: string }).id) })
       value2.hook('updating', (mods, pk, _obj, trans) => {
-        // правка только локальных полей (например, ключа API) в облако не уходит
+        // an edit of local-only fields (for example the API key) does not go to the cloud
         if (name === 'settings' && Object.keys(mods).every(isDeviceOnly)) return
         mark(trans as TrackedTx, name, String(pk))
       })
@@ -117,20 +117,20 @@ export function createEngine(db: AsterDB) {
     }
   }
 
-  /* ---------- служебное состояние ---------- */
+  /* ---------- bookkeeping ---------- */
 
   const getMeta = async <T>(key: string): Promise<T | undefined> => (await db.syncMeta.get(key))?.value as T | undefined
   const setMeta = (key: string, value: unknown) => db.syncMeta.put({ key, value })
   const delMeta = (key: string) => db.syncMeta.delete(key)
   const pendingCount = () => db.outbox.count()
 
-  /* ---------- отправка ---------- */
+  /* ---------- sending ---------- */
 
   const rejectedList = async () => (await getMeta<RejectedEntry[]>('rejected')) ?? []
   const rejectedCount = async () => (await rejectedList()).length
   const clearRejected = () => delMeta('rejected')
 
-  /** Строки собираются из текущего состояния базы: отправляется то, что есть сейчас, а не то, что было при правке. */
+  /** Rows are built from the current state of the database: what is sent is what exists now, not what it was at the time of the edit. */
   async function buildPayload(entries: Array<{ key: string; table: string; rowId: string; ts: number }>): Promise<PushRow[]> {
     const byTable = new Map<SyncTable, string[]>()
     for (const e of entries) {
@@ -152,7 +152,7 @@ export function createEngine(db: AsterDB) {
     })
   }
 
-  /** Убирает отправленные записи из очереди; запись, изменённую за время отправки, оставляет. */
+  /** Removes sent entries from the queue; an entry changed while it was being sent stays. */
   async function release(entries: Array<{ key: string; ts: number }>) {
     await db.transaction('rw', db.outbox, async () => {
       for (const e of entries) {
@@ -168,7 +168,7 @@ export function createEngine(db: AsterDB) {
     }
   }
 
-  /** Запись, которую сервер не принимает, откладывается, чтобы не блокировать всю очередь. */
+  /** A record the server does not accept is set aside so that it does not block the whole queue. */
   async function quarantine(entry: { key: string; ts: number }, error: string) {
     await db.transaction('rw', db.outbox, db.syncMeta, async () => {
       const cur = await db.outbox.get(entry.key)
@@ -179,7 +179,7 @@ export function createEngine(db: AsterDB) {
     })
   }
 
-  /** Отправляет пачку; если сервер отклонил её целиком, делит пополам, пока не найдёт виновника. */
+  /** Sends a batch; if the server rejects it as a whole, splits it in half until the culprit is found. */
   async function sendEntries(remote: Remote, entries: Array<{ key: string; table: string; rowId: string; ts: number }>): Promise<number> {
     try {
       await remote.push(await buildPayload(entries))
@@ -196,7 +196,7 @@ export function createEngine(db: AsterDB) {
     return entries.length
   }
 
-  /** Отправляет всё из outbox пачками. При сетевой ошибке ничего не теряется: записи остаются в очереди. */
+  /** Sends everything in the outbox in batches. On a network error nothing is lost: the entries stay in the queue. */
   async function pushPending(remote: Remote): Promise<{ pushed: number }> {
     let pushed = 0
     for (;;) {
@@ -206,9 +206,9 @@ export function createEngine(db: AsterDB) {
     }
   }
 
-  /* ---------- получение ---------- */
+  /* ---------- receiving ---------- */
 
-  /** Применяет записи из облака. Свои несинхронизированные правки, которые новее, не затираются. */
+  /** Applies records from the cloud. Your own unsynced edits that are newer are not overwritten. */
   async function applyRemote(records: RemoteRecord[]): Promise<number> {
     if (!records.length) return 0
     const byTable = new Map<SyncTable, RemoteRecord[]>()
@@ -230,7 +230,7 @@ export function createEngine(db: AsterDB) {
         const supersede: string[] = []
         recs.forEach((r, i) => {
           const p = pending[i]
-          if (p && p.ts > r.client_ts) return // локальная правка новее — она уйдёт в облако
+          if (p && p.ts > r.client_ts) return // the local edit is newer: it will go to the cloud
           if (p) supersede.push(p.key)
           const local = locals[i]
           if (r.deleted) {
@@ -249,7 +249,7 @@ export function createEngine(db: AsterDB) {
     return changed
   }
 
-  /** Забирает новое из облака; возвращает число изменённых строк. */
+  /** Fetches what is new from the cloud; returns the number of changed rows. */
   async function pullAll(remote: Remote, opts: { full?: boolean } = {}): Promise<number> {
     const cursor = opts.full ? 0 : ((await getMeta<number>('cursor')) ?? 0)
     let pos = Math.max(0, cursor - PULL_OVERLAP)
@@ -267,7 +267,7 @@ export function createEngine(db: AsterDB) {
     return changed
   }
 
-  /** Один полный цикл: сначала отправка, потом получение. */
+  /** One full cycle: send first, then receive. */
   async function syncOnce(remote: Remote, opts: { full?: boolean } = {}) {
     const { pushed } = await pushPending(remote)
     const pulled = await pullAll(remote, opts)
@@ -275,9 +275,9 @@ export function createEngine(db: AsterDB) {
     return { pushed, pulled }
   }
 
-  /* ---------- первое подключение и смена аккаунта ---------- */
+  /* ---------- first connection and switching accounts ---------- */
 
-  /** Ставит в очередь все локальные строки (их метка — время последней правки, чтобы не затереть более свежее облако). */
+  /** Queues every local row (its stamp is the time of the last edit, so a fresher cloud is not overwritten). */
   async function enqueueAll(): Promise<number> {
     let n = 0
     for (const name of SYNC_TABLES) {
@@ -289,7 +289,7 @@ export function createEngine(db: AsterDB) {
     return n
   }
 
-  /** Стирает локальные данные синхронизируемых таблиц, не отправляя удаления в облако. */
+  /** Erases the local data of the synced tables without sending the deletions to the cloud. */
   async function clearLocalData() {
     await db.transaction('rw', [...SYNC_TABLES.map(n => db.table(n)), db.outbox, db.syncMeta, db.bridgeMeta, db.aiCache, db.aiUsage, db.chat], async () => {
       ;(Dexie.currentTransaction as TrackedTx)._asterRemote = true
@@ -297,7 +297,7 @@ export function createEngine(db: AsterDB) {
     })
   }
 
-  /** Демо-данные вымышленные: их нельзя отправлять в настоящий аккаунт. */
+  /** Demo data is fictional: it must not be sent to a real account. */
   async function hasDemoData() {
     return (await db.settings.get('me'))?.demo === true
   }
@@ -312,6 +312,6 @@ export function createEngine(db: AsterDB) {
 
 export type Engine = ReturnType<typeof createEngine>
 
-/** Движок приложения, привязанный к основной базе. */
+/** The app's engine, bound to the main database. */
 export const engine: Engine = createEngine(appDb)
 export const { installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData } = engine

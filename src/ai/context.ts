@@ -9,8 +9,8 @@ export const todayLine = (now = Date.now()) => t('Today: {weekday}, {dateLong} {
 const clean = (s?: string) => (s ?? '').replace(/\s+/g, ' ').trim()
 
 /**
- * Компактный индекс сети для модели. Без телефонов, почт и заметок — только то,
- * что нужно для сопоставления людей. Порядок стабилен (по id), чтобы работал кеш.
+ * A compact index of the network for the model. No phones, emails or notes: only what
+ * is needed to match people. The order is stable (by id) so that the cache works.
  */
 export function networkIndex(people: Person[], circles: Circle[], now = Date.now()) {
   const cname = new Map(circles.map(c => [c.id, c.name]))
@@ -37,7 +37,7 @@ export function networkIndex(people: Person[], circles: Circle[], now = Date.now
   return t("USER'S NETWORK ({count} people)\n{v}", { count: lines.length, v: lines.join('\n') })
 }
 
-/** Короткий список для сопоставления имён при разборе заметок. */
+/** A short list for matching names when parsing notes. */
 export function namesIndex(people: Person[]) {
   return t('PEOPLE IN THE NETWORK:\n') + [...people]
     .filter(p => !p.archived)
@@ -46,7 +46,7 @@ export function namesIndex(people: Person[]) {
     .join('\n')
 }
 
-/** Подробное досье одного человека. */
+/** A detailed dossier of one person. */
 export function dossier(p: Person, ints: Interaction[], rems: Reminder[], byId: Map<string, Person>, shareNotes: boolean, now = Date.now()) {
   const w = warmthOf(p, now)
   const out: string[] = [
@@ -83,9 +83,9 @@ export function dossier(p: Person, ints: Interaction[], rems: Reminder[], byId: 
 }
 
 /**
- * «Память» для диалога: записи общения, которые могут пригодиться для ответа.
- * Для названных людей берём их историю целиком, иначе — недавние записи по всей сети.
- * Заметки уходят в модель только с согласия пользователя (shareNotes).
+ * The "memory" for the chat: interaction records that may be useful for the answer.
+ * For named people their whole history is taken, otherwise recent records across the whole network.
+ * Notes go to the model only with the user's consent (shareNotes).
  */
 export function memoryBlock(ints: Interaction[], people: Person[], focusIds: string[], shareNotes: boolean, now = Date.now()) {
   const byId = new Map(people.map(p => [p.id, p]))

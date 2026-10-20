@@ -25,7 +25,7 @@ async function login(email: string, password: string) {
   return { c, uid: data.user.id }
 }
 
-describe.skipIf(!live)('облако: живой Supabase', () => {
+describe.skipIf(!live)('cloud: live Supabase', () => {
   let A: SupabaseClient, B: SupabaseClient, other: SupabaseClient
   let uid1 = ''
   const devs: Device[] = []
@@ -33,7 +33,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
   beforeAll(async () => {
     const [a, b, o] = await Promise.all([login(e1, p1), login(e1, p1), login(e2, p2)])
     A = a.c; B = b.c; other = o.c; uid1 = a.uid
-    // чистое начало
+    // a clean start
     await A.rpc('delete_my_data')
     await other.rpc('delete_my_data')
   }, 30_000)
@@ -47,7 +47,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
   const device = () => { const d = makeDevice(); devs.push(d); return d }
   const names = async (d: Device) => (await d.db.people.toArray()).map(p => p.firstName).sort()
 
-  it('два устройства одного аккаунта обмениваются данными через сервер', async () => {
+  it('two devices of one account exchange data through the server', async () => {
     const a = device()
     const b = device()
     await a.db.people.bulkAdd([personOf('p1', { firstName: 'Анна' }), personOf('p2', { firstName: 'Борис' })])
@@ -62,11 +62,11 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     expect((await b.db.settings.get('me'))?.name).toBe('Макс')
     expect((await b.db.settings.get('me'))?.ai).toBeUndefined()
 
-    // ключ Астры не добрался до сервера
+    // Astra's key did not reach the server
     const { data } = await A.from('records').select('data').eq('tbl', 'settings').eq('id', 'me').single()
     expect(JSON.stringify(data)).not.toContain('СЕКРЕТ')
 
-    // правка и удаление в обе стороны
+    // an edit and a deletion both ways
     await b.db.people.update('p1', { firstName: 'Анна-Мария' })
     await b.db.people.delete('p2')
     await until(async () => (await b.db.outbox.count()) === 2)
@@ -75,10 +75,10 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     expect(await names(a)).toEqual(['Анна-Мария'])
   }, 60_000)
 
-  it('Realtime: правка с другого устройства появляется без ручной синхронизации', async () => {
+  it('Realtime: an edit from another device appears without a manual sync', async () => {
     const a = device()
     const b = device()
-    await a.engine.syncOnce(supabaseRemote(A)) // подтянуть текущее
+    await a.engine.syncOnce(supabaseRemote(A)) // pull what is current
     let ready!: () => void
     const subscribed = new Promise<void>(r => { ready = r })
     const trace: string[] = []
@@ -92,7 +92,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     try {
       await ctl.start()
       await Promise.race([subscribed, new Promise((_, rej) => setTimeout(() => rej(new Error('Realtime не подключился')), 15_000))])
-      await new Promise(r => setTimeout(r, 1000)) // сразу после SUBSCRIBED сервер ещё дорегистрирует подписку
+      await new Promise(r => setTimeout(r, 1000)) // right after SUBSCRIBED the server is still finishing registering the subscription
       await b.engine.syncOnce(supabaseRemote(B))
       await b.db.people.add(personOf('rt1', { firstName: 'Реалтайм' }))
       await until(async () => (await b.db.outbox.count()) === 1)
@@ -103,22 +103,22 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     }
   }, 60_000)
 
-  it('данные другого аккаунта недоступны ни на чтение, ни на запись', async () => {
+  it('another account\'s data is unavailable for both reading and writing', async () => {
     const { data, error } = await other.from('records').select('*')
     expect(error).toBeNull()
     expect(data).toEqual([])
-    // тот же id у другого пользователя — независимая запись
+    // the same id for another user is an independent record
     const r = await other.rpc('sync_push', { rows: [{ tbl: 'people', id: 'p1', data: { id: 'p1', firstName: 'Чужой' }, deleted: false, client_ts: 1 }] })
     expect(r.error).toBeNull()
     const mine = await A.from('records').select('data').eq('tbl', 'people').eq('id', 'p1').single()
     expect((mine.data?.data as { firstName: string } | undefined)?.firstName).toBe('Анна-Мария')
-    // и стирание своего не задевает чужое
+    // and erasing your own does not touch the other's
     await other.rpc('delete_my_data')
     const still = await A.from('records').select('id').eq('tbl', 'people')
     expect((still.data ?? []).length).toBeGreaterThan(0)
   }, 30_000)
 
-  it('без входа облако закрыто', async () => {
+  it('without signing in the cloud is closed', async () => {
     const anon = fresh()
     const read = await anon.from('records').select('*')
     expect(read.data ?? []).toEqual([])
@@ -130,7 +130,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     expect(upd.data ?? []).toEqual([])
   }, 30_000)
 
-  it('300 записей: пачками уходят и целиком приходят на чистое устройство', async () => {
+  it('300 records: go out in batches and arrive whole on a clean device', async () => {
     const a = device()
     const fresh1 = device()
     await a.db.people.bulkAdd(Array.from({ length: 300 }, (_, i) => personOf(`bulk${i}`, { firstName: `Человек ${i}` })))
@@ -142,7 +142,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     expect(Date.now() - t0).toBeLessThan(30_000)
   }, 90_000)
 
-  it('устаревшая правка не затирает новую на сервере', async () => {
+  it('a stale edit does not overwrite a new one on the server', async () => {
     const r1 = await A.rpc('sync_push', { rows: [{ tbl: 'people', id: 'lww', data: { id: 'lww', firstName: 'Новое' }, deleted: false, client_ts: 2_000 }] })
     expect(r1.data).toEqual({ applied: 1, stale: 0 })
     const r2 = await A.rpc('sync_push', { rows: [{ tbl: 'people', id: 'lww', data: { id: 'lww', firstName: 'Старое' }, deleted: false, client_ts: 1_000 }] })
@@ -151,7 +151,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     expect((row.data?.data as { firstName: string } | undefined)?.firstName).toBe('Новое')
   }, 30_000)
 
-  it('сервер отклоняет плохую запись, и клиент откладывает её, а остальные уходят', async () => {
+  it('the server rejects a bad record, and the client sets it aside while the others go through', async () => {
     const d = device()
     await d.db.people.bulkAdd([personOf('ok1'), personOf('x'.repeat(150)), personOf('ok2')])
     await until(async () => (await d.db.outbox.count()) === 3)
@@ -162,7 +162,7 @@ describe.skipIf(!live)('облако: живой Supabase', () => {
     expect((data ?? []).length).toBe(2)
   }, 30_000)
 
-  it('метка правки из далёкого будущего зажимается серверным временем', async () => {
+  it('an edit stamp from the far future is clamped to the server time', async () => {
     const far = Date.now() + 10 * 365 * 86_400_000
     await A.rpc('sync_push', { rows: [{ tbl: 'people', id: 'future', data: { id: 'future' }, deleted: false, client_ts: far }] })
     const { data } = await A.from('records').select('client_ts').eq('id', 'future').single()

@@ -31,8 +31,8 @@ beforeEach(async () => {
   await seed({ demo: false })
 })
 
-describe('Орбита: подключение', () => {
-  it('без входа в облако предлагает сначала войти', async () => {
+describe('Orbita: connecting', () => {
+  it('without a cloud sign-in it offers to sign in first', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Приложение «Орбита»'))
     const d = within(await dialog())
@@ -41,7 +41,7 @@ describe('Орбита: подключение', () => {
     expect(await within(await dialog()).findByLabelText('Почта')).toBeInTheDocument()
   })
 
-  it('«Показать код»: код виден целиком и копируется', async () => {
+  it('"Show code": the code is fully visible and can be copied', async () => {
     useCloud.setState({ userId: 'u1', email: 'max@mail.com', phase: 'idle' })
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Приложение «Орбита»'))
@@ -54,7 +54,7 @@ describe('Орбита: подключение', () => {
     expect(await d.findByRole('button', { name: /Скопировано/ })).toBeInTheDocument()
   })
 
-  it('«Ввести код»: неверный код — понятная ошибка; верный — подключено', async () => {
+  it('"Enter code": a wrong code gives a clear error; a right one connects', async () => {
     useCloud.setState({ userId: 'u1', email: 'max@mail.com', phase: 'idle' })
     svc.enterCode.mockRejectedValueOnce(new BridgeError('code-expired', 'Код неверный или уже просрочен. Создай новый.'))
     const { user } = renderApp('/me')
@@ -71,7 +71,7 @@ describe('Орбита: подключение', () => {
     expect(svc.enterCode).toHaveBeenLastCalledWith('bridge1.WRONG')
   })
 
-  it('ошибка создания кода показывается, а не молчит', async () => {
+  it('a code creation error is shown, not swallowed', async () => {
     useCloud.setState({ userId: 'u1', email: 'max@mail.com', phase: 'idle' })
     svc.makeCode.mockRejectedValueOnce(new BridgeError('offline', 'Нет связи с интернетом'))
     const { user } = renderApp('/me')
@@ -82,13 +82,13 @@ describe('Орбита: подключение', () => {
   })
 })
 
-describe('Орбита: подключена', () => {
+describe('Orbita: connected', () => {
   beforeEach(() => {
     useCloud.setState({ userId: 'u1', email: 'max@mail.com', phase: 'idle' })
     useBridge.setState({ connections: [conn()], phase: 'idle', lastCycleAt: Date.now() - 120_000 })
   })
 
-  it('карточка в профиле и статус в шторке', async () => {
+  it('the card in the profile and the status in the sheet', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/me')
     expect(await screen.findByText('Подключена · обязательства, записи и люди')).toBeInTheDocument()
@@ -99,7 +99,7 @@ describe('Орбита: подключена', () => {
     expect(bad).toEqual([])
   })
 
-  it('переключатели разрешений сохраняются на сервере', async () => {
+  it('the permission toggles are saved on the server', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Приложение «Орбита»'))
     const d = within(await dialog())
@@ -109,7 +109,7 @@ describe('Орбита: подключена', () => {
     await waitFor(() => expect(svc.changeScopes).toHaveBeenCalledWith(expect.objectContaining({ id: 'c1' }), ['people', 'commitments', 'facts']))
   })
 
-  it('отключение требует подтверждения', async () => {
+  it('disconnecting requires confirmation', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Приложение «Орбита»'))
     const d = within(await dialog())
@@ -123,21 +123,21 @@ describe('Орбита: подключена', () => {
     await waitFor(() => expect(svc.disconnect).toHaveBeenCalledTimes(1))
   })
 
-  it('если Орбита отключила подключение — предупреждение', async () => {
+  it('if Orbita disconnected, a warning', async () => {
     useBridge.setState({ revoked: true })
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Приложение «Орбита»'))
     expect(await within(await dialog()).findByRole('alert')).toHaveTextContent('Орбита отключила подключение')
   })
 
-  it('кнопка «Синхронизировать сейчас»', async () => {
+  it('the "Sync now" button', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Приложение «Орбита»'))
     await user.click(within(await dialog()).getByRole('button', { name: 'Синхронизировать сейчас' }))
     await waitFor(() => expect(svc.runBridge).toHaveBeenCalled())
   })
 
-  it('люди: предложение «Тот же» и «Нет», разрыв связи', async () => {
+  it('people: the "Same one" and "No" suggestion, breaking a link', async () => {
     await db.people.bulkAdd([person({ id: 'a1', firstName: 'Борис' }), person({ id: 'a2', firstName: 'Алина', lastName: 'Воронцова' })])
     await db.bridgeMeta.bulkPut([
       { key: 'peerPeople', value: { 'o-boris': { name: 'Борис Катин', aliases: [], ms: 1 }, 'o-alina': { name: 'Алина Воронцова', aliases: [], ms: 1 } } },
@@ -158,7 +158,7 @@ describe('Орбита: подключена', () => {
   })
 })
 
-describe('Орбита: предложения', () => {
+describe('Orbita: suggestions', () => {
   beforeEach(async () => {
     useCloud.setState({ userId: 'u1', email: 'max@mail.com', phase: 'idle' })
     useBridge.setState({ connections: [conn()] })
@@ -171,7 +171,7 @@ describe('Орбита: предложения', () => {
     ])
   })
 
-  it('на «Сегодня» появляется карточка, в шторке можно добавить и скрыть', async () => {
+  it('a card appears on "Today", and in the sheet you can add and hide', async () => {
     const { user } = renderApp('/')
     expect(await screen.findByText(/Орбита предлагает добавить 2 записи/)).toBeInTheDocument()
     await user.click(screen.getByText('Открыть'))
@@ -185,7 +185,7 @@ describe('Орбита: предложения', () => {
     await waitFor(() => expect(d.queryByText('Любит бег')).not.toBeInTheDocument())
   })
 
-  it('«Добавить все» принимает всё сразу', async () => {
+  it('"Add all" accepts everything at once', async () => {
     const { user } = renderApp('/')
     await user.click(await screen.findByText('Открыть'))
     await user.click(await within(await dialog()).findByRole('button', { name: 'Добавить все' }))
@@ -193,14 +193,14 @@ describe('Орбита: предложения', () => {
     await waitFor(async () => expect((await db.people.get('a1'))?.facts.map(f => f.text)).toEqual(['Любит бег']))
   })
 
-  it('карточка на «Сегодня» не показывается, когда предлагать нечего', async () => {
+  it('the card on "Today" is not shown when there is nothing to suggest', async () => {
     await db.bridgeMeta.clear()
     renderApp('/')
     await screen.findByText(/тонус сети/i, undefined, { timeout: 4000 }).catch(() => undefined)
     expect(screen.queryByText(/Орбита предлагает/)).not.toBeInTheDocument()
   })
 
-  it('профиль человека: статистика из Орбиты', async () => {
+  it('a person\'s profile: statistics from Orbita', async () => {
     await db.bridgeMeta.put({ key: 'peerStats', value: { 'o-alina': { mentions: 7, lastMentionAt: NOW - DAY, openOwedToMe: 2, openIOwe: 1 } } })
     renderApp('/person/a1?tab=links')
     expect(await screen.findByText('В Орбите')).toBeInTheDocument()

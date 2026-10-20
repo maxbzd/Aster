@@ -3,7 +3,7 @@ import { t } from '@/i18n'
 
 export interface Palette { name: string; from: string; to: string; glow: string }
 
-/** Палитры кругов — у каждого круга свой «жидкий» градиент (Revolut-style). */
+/** Circle palettes: every circle has its own "liquid" gradient (Revolut-style). */
 export const PALETTES: Record<PaletteKey, Palette> = {
   aurora: { get name() { return t('Aurora') }, from: '#7c5cff', to: '#45c8ff', glow: 'rgb(124 92 255 / 0.45)' },
   ember:  { get name() { return t('Ember') },    from: '#ff5e3a', to: '#ffb547', glow: 'rgb(255 110 60 / 0.42)' },
@@ -16,7 +16,7 @@ export const PALETTES: Record<PaletteKey, Palette> = {
 }
 export const PALETTE_KEYS = Object.keys(PALETTES) as PaletteKey[]
 
-/** Пары для аватаров и шапок профиля — у каждого человека свой цвет. */
+/** Pairs for avatars and profile headers: every person has their own colour. */
 const PERSON_GRADIENTS: [string, string, string][] = [
   ['#6d4dff', '#ff6fd8', '#2a1a8a'],
   ['#ff6a3d', '#ffc14d', '#7a1f0a'],

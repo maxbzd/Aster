@@ -16,7 +16,7 @@ export const prefsEmpty = (p?: Prefs) => !p || !(p.food || p.allergies || p.alco
 
 const HOBBY_HINTS = [msg('Running'), msg('Yoga'), msg('Tennis'), msg('Travel'), msg('Coffee'), msg('Wine'), msg('Books'), msg('Movies'), msg('Music'), msg('Mountains'), msg('Cooking'), msg('Chess')]
 
-/** Как с человеком лучше общаться и что он любит. Всё необязательное: заполняется по мере знакомства. */
+/** How it is best to communicate with a person and what they like. Everything is optional: filled in as you get to know them. */
 export function PrefsSheet({ personId, onClose }: { personId: string; onClose: () => void }) {
   const toast = useUI(s => s.toast)
   const [prefs, setPrefs] = useState<Prefs>({})

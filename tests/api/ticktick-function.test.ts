@@ -31,7 +31,7 @@ class MemDb implements Db {
 
 interface Call { url: string; method: string; body?: string; auth?: string }
 
-/** Supabase отвечает про пользователя; TickTick — по сценарию. */
+/** Supabase answers about the user; TickTick follows a scenario. */
 function mockWorld(opts: { user?: typeof owner | null; tt?: (c: Call) => Response | undefined } = {}) {
   const calls: Call[] = []
   vi.stubGlobal('fetch', vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
@@ -53,16 +53,16 @@ const json = async (r: Response) => (await r.json()) as Record<string, unknown>
 
 afterEach(() => vi.unstubAllGlobals())
 
-describe('время', () => {
-  it('формат дат TickTick', () => {
+describe('time', () => {
+  it('TickTick\'s date format', () => {
     expect(ttDate(new Date('2026-10-12T07:30:00.000Z'))).toBe('2026-10-12T07:30:00+0000')
   })
-  it('начало местного дня в часовом поясе', () => {
+  it('the start of a local day in a time zone', () => {
     expect(startOfZonedDay('2026-10-12', 'Europe/Moscow').toISOString()).toBe('2026-10-11T21:00:00.000Z')
     expect(startOfZonedDay('2026-10-12', 'America/New_York').toISOString()).toBe('2026-10-12T04:00:00.000Z')
     expect(startOfZonedDay('2026-10-12', 'UTC').toISOString()).toBe('2026-10-12T00:00:00.000Z')
   })
-  it('тело задачи: срок моментом и целым днём, приоритет', () => {
+  it('the task body: a due moment and a whole day, priority', () => {
     expect(taskBody({ key: 'orbita:item:1', title: 'Позвонить', dueAt: '2026-10-12T07:30:00Z', priority: 'high' }, 'Europe/Moscow'))
       .toMatchObject({ title: 'Позвонить', dueDate: '2026-10-12T07:30:00+0000', isAllDay: false, priority: 5, timeZone: 'Europe/Moscow' })
     expect(taskBody({ key: 'orbita:item:1', title: 'Оплатить', dueDay: '2026-10-12' }, 'Europe/Moscow'))
@@ -71,8 +71,8 @@ describe('время', () => {
   })
 })
 
-describe('разбор запроса', () => {
-  it('принимает нормальные записи и отбрасывает мусор', () => {
+describe('parsing the request', () => {
+  it('accepts normal records and drops garbage', () => {
     expect(parseSync({ open: [{ key: 'aster:reminder:r1', title: '  Написать Олегу ', notes: 'про договор', dueAt: '2026-10-12T07:00:00Z' }], done: ['aster:reminder:r0'], tz: 'Europe/Moscow' }))
       .toEqual({ open: [{ key: 'aster:reminder:r1', title: 'Написать Олегу', notes: 'про договор', dueAt: '2026-10-12T07:00:00Z' }], done: ['aster:reminder:r0'], tz: 'Europe/Moscow' })
     expect(parseSync({ open: [{ key: 'bad key', title: 'x' }], done: [] })).toBe('Invalid record key')
@@ -82,8 +82,8 @@ describe('разбор запроса', () => {
   })
 })
 
-describe('вход и доступ', () => {
-  it('без сессии — 401, чужая почта — 403, чужой сайт — 403', async () => {
+describe('sign-in and access', () => {
+  it('no session: 401, a foreign email: 403, a foreign site: 403', async () => {
     mockWorld({ user: null })
     expect((await handle(req('/status'), env(), { db: new MemDb() })).status).toBe(401)
     mockWorld({ user: { ...owner, email: 'stranger@mail.com' } })
@@ -92,7 +92,7 @@ describe('вход и доступ', () => {
     expect((await handle(req('/status', { token: tok(), headers: { origin: 'https://evil.example' } }), env(), { db: new MemDb() })).status).toBe(403)
   })
 
-  it('статус: не настроено, не подключено, подключено', async () => {
+  it('status: not configured, not connected, connected', async () => {
     mockWorld()
     const db = new MemDb()
     expect(await json(await handle(req('/status', { token: tok() }), env({ TICKTICK_CLIENT_ID: undefined }), { db }))).toMatchObject({ configured: false, connected: false })
@@ -104,8 +104,8 @@ describe('вход и доступ', () => {
   })
 })
 
-describe('подключение', () => {
-  it('ссылка на согласие содержит id приложения, область и подписанный state; адрес возврата проверяется', async () => {
+describe('connecting', () => {
+  it('the consent link contains the app id, the scope and a signed state; the return address is checked', async () => {
     mockWorld()
     const r = await handle(post('/connect', { returnTo: `${SITE}/#/me` }), env(), { db: new MemDb() })
     const { url } = (await json(r)) as { url: string }
@@ -121,7 +121,7 @@ describe('подключение', () => {
     expect((await handle(post('/connect', { returnTo: 'https://evil.example/' }), env(), { db: new MemDb() })).status).toBe(400)
   })
 
-  it('state нельзя подделать и он живёт десять минут', async () => {
+  it('state cannot be forged and lives for ten minutes', async () => {
     const s = await signState({ uid: 'u1', exp: Date.now() + 1000, ret: SITE }, 'csecret')
     expect(await readState(s, 'csecret')).not.toBeNull()
     expect(await readState(s, 'other')).toBeNull()
@@ -130,7 +130,7 @@ describe('подключение', () => {
     expect(safeReturn('javascript:alert(1)', env())).toBeNull()
   })
 
-  it('возврат из TickTick: меняет код на токен, сохраняет его и возвращает человека в приложение', async () => {
+  it('the return from TickTick: exchanges the code for a token, saves it and returns the person to the app', async () => {
     const calls = mockWorld({ tt: c => (c.url === 'https://ticktick.com/oauth/token' ? new Response(JSON.stringify({ access_token: 'AT', expires_in: 1000 }), { status: 200 }) : undefined) })
     const db = new MemDb()
     const state = await signState({ uid: 'u1', exp: Date.now() + 60_000, ret: `${SITE}/#/me` }, 'csecret')
@@ -147,7 +147,7 @@ describe('подключение', () => {
     expect(t.body).toContain('code=CODE')
   })
 
-  it('возврат с чужим state или без согласия ничего не сохраняет', async () => {
+  it('a return with a foreign state or without consent saves nothing', async () => {
     mockWorld({ tt: () => new Response(JSON.stringify({ access_token: 'AT' }), { status: 200 }) })
     const db = new MemDb()
     expect((await handle(new Request(`${BASE}/callback?code=C&state=bad.state`), env(), { db })).status).toBe(400)
@@ -157,7 +157,7 @@ describe('подключение', () => {
     expect(db.token).toBeNull()
   })
 
-  it('отключение стирает токен', async () => {
+  it('disconnecting erases the token', async () => {
     mockWorld()
     const db = new MemDb()
     db.token = { user_id: 'u1', access_token: 'a' }
@@ -166,7 +166,7 @@ describe('подключение', () => {
   })
 })
 
-describe('синхронизация', () => {
+describe('sync', () => {
   const connected = () => { const db = new MemDb(); db.token = { user_id: 'u1', access_token: 'AT', expires_at: new Date(Date.now() + 1e9).toISOString() }; return db }
   const tasks = (list: Array<{ id: string; projectId?: string }>) => (c: Call) => {
     if (c.method === 'POST' && c.url.endsWith('/open/v1/task')) return new Response(JSON.stringify({ id: `tt-${JSON.parse(c.body!).title}`, projectId: 'inbox1' }), { status: 200 })
@@ -174,14 +174,14 @@ describe('синхронизация', () => {
     return undefined
   }
 
-  it('без подключения — 409 not_connected', async () => {
+  it('without a connection: 409 not_connected', async () => {
     mockWorld()
     const r = await handle(post('/sync', { open: [], done: [] }), env(), { db: new MemDb() })
     expect(r.status).toBe(409)
     expect(await json(r)).toMatchObject({ error: 'not_connected' })
   })
 
-  it('новая запись становится задачей TickTick один раз; повторный запрос её не дублирует', async () => {
+  it('a new record becomes a TickTick task once; a repeated request does not duplicate it', async () => {
     const calls = mockWorld({ tt: tasks([{ id: 'tt-Позвонить' }]) })
     const db = connected()
     const body = { open: [{ key: 'orbita:item:i1', title: 'Позвонить', dueAt: '2026-10-12T07:00:00Z' }], done: [], tz: 'Europe/Moscow' }
@@ -195,7 +195,7 @@ describe('синхронизация', () => {
     expect(calls.filter(c => c.url.endsWith('/open/v1/task')).length).toBe(1)
   })
 
-  it('два устройства одновременно: задача создаётся один раз', async () => {
+  it('two devices at once: the task is created once', async () => {
     const calls = mockWorld({ tt: tasks([]) })
     const db = connected()
     const body = { open: [{ key: 'aster:reminder:r1', title: 'Написать' }], done: [] }
@@ -203,7 +203,7 @@ describe('синхронизация', () => {
     expect(calls.filter(c => c.url.endsWith('/open/v1/task')).length).toBe(1)
   })
 
-  it('выполнено в приложении — закрывается в TickTick, второй раз не закрывается', async () => {
+  it('done in the app: closed in TickTick, not closed a second time', async () => {
     const calls = mockWorld({ tt: c => (c.url.endsWith('/complete') ? new Response('', { status: 200 }) : tasks([])(c)) })
     const db = connected()
     db.links.set('aster:reminder:r1', { user_id: 'u1', key: 'aster:reminder:r1', task_id: 'T1', project_id: 'inbox1', completed: false, gone: false })
@@ -215,7 +215,7 @@ describe('синхронизация', () => {
     expect(r2).toMatchObject({ closed: 0 })
   })
 
-  it('выполнено в TickTick — приложению сообщают ключ записи', async () => {
+  it('done in TickTick: the app is told the record key', async () => {
     mockWorld({
       tt: c => {
         if (c.url.endsWith('/project/inbox1/data')) return new Response(JSON.stringify({ tasks: [{ id: 'T2' }] }), { status: 200 })
@@ -229,12 +229,12 @@ describe('синхронизация', () => {
     expect(r.completed).toEqual(['orbita:item:a'])
     expect(db.links.get('orbita:item:a')?.completed).toBe(true)
     expect(db.links.get('orbita:item:b')?.completed).toBe(false)
-    // приложение не успело применить — следующий запрос напомнит
+    // the app did not manage to apply it: the next request will remind it
     const again = await json(await handle(post('/sync', { open: [{ key: 'orbita:item:a', title: 'A' }], done: [] }), env(), { db }))
     expect(again.completed).toEqual(['orbita:item:a'])
   })
 
-  it('задача удалена в TickTick — связь помечается и больше не опрашивается', async () => {
+  it('a task deleted in TickTick: the link is marked and no longer polled', async () => {
     const calls = mockWorld({
       tt: c => {
         if (c.url.endsWith('/project/inbox1/data')) return new Response(JSON.stringify({ tasks: [] }), { status: 200 })
@@ -251,7 +251,7 @@ describe('синхронизация', () => {
     expect(calls.slice(before).filter(c => c.url.includes('api.ticktick.com')).length).toBe(0)
   })
 
-  it('сбой создания освобождает ключ, чтобы попытка повторилась', async () => {
+  it('a creation failure releases the key so that the attempt repeats', async () => {
     mockWorld({ tt: c => (c.url.endsWith('/open/v1/task') ? new Response('boom', { status: 500 }) : undefined) })
     const db = connected()
     const r = await json(await handle(post('/sync', { open: [{ key: 'aster:reminder:r1', title: 'Написать' }], done: [] }), env(), { db }))
@@ -260,7 +260,7 @@ describe('синхронизация', () => {
     expect(db.links.size).toBe(0)
   })
 
-  it('токен отклонён TickTick — токен стирается, приложению сообщают expired', async () => {
+  it('the token is rejected by TickTick: the token is erased, the app is told expired', async () => {
     mockWorld({ tt: c => (c.url.endsWith('/open/v1/task') ? new Response('unauthorized', { status: 401 }) : undefined) })
     const db = connected()
     const r = await handle(post('/sync', { open: [{ key: 'aster:reminder:r1', title: 'Написать' }], done: [] }), env(), { db })
@@ -269,7 +269,7 @@ describe('синхронизация', () => {
     expect(db.token).toBeNull()
   })
 
-  it('просроченный токен без refresh_token — expired; с refresh_token — обновляется', async () => {
+  it('an expired token without a refresh_token: expired; with a refresh_token: refreshed', async () => {
     mockWorld()
     const db = new MemDb()
     db.token = { user_id: 'u1', access_token: 'old', expires_at: new Date(Date.now() - 1000).toISOString() }

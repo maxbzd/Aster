@@ -6,7 +6,7 @@ import { buildLinkMap } from './cycle'
 import { matchPeople, type Candidate } from './match'
 import type { LinkRow } from './protocol'
 
-/** Состояние сопоставления людей для экрана: связи, предложения и «не нашли пары». */
+/** The state of people matching for the screen: links, suggestions and "no match found". */
 export async function peopleOverview() {
   const [peers, stats, linksRows, people] = await Promise.all([
     bridgeMeta.get<PeerPeople>(META.people),

@@ -3,11 +3,11 @@ import { lazy, Suspense, type ComponentType } from 'react'
 import { useUI } from '@/app/store'
 
 /**
- * Шторки грузятся по требованию — старт приложения легче, — а после первой отрисовки
- * все они подгружаются в фоне (prefetchSheets), поэтому на тапе открываются мгновенно и офлайн.
+ * Sheets are loaded on demand, which makes the app start lighter, and after the first render
+ * they are all loaded in the background (prefetchSheets), so on a tap they open instantly, even offline.
  */
-// шторки получают разные props из стора; точный тип задаётся при открытии в useUI.open
-// biome-ignore lint/suspicious/noExplicitAny: у каждой шторки свои props
+// sheets get different props from the store; the exact type is set when opening, in useUI.open
+// biome-ignore lint/suspicious/noExplicitAny: each sheet has its own props
 type SheetComponent = ComponentType<any>
 
 const loaders = {
@@ -39,7 +39,7 @@ const loaders = {
 const S = Object.fromEntries(Object.entries(loaders).map(([k, load]) => [k, lazy(load)])) as unknown as Record<keyof typeof loaders, SheetComponent>
 
 export function prefetchSheets() {
-  for (const load of Object.values(loaders)) load().catch(() => { /* офлайн: подгрузится позже */ })
+  for (const load of Object.values(loaders)) load().catch(() => { /* offline: it will load later */ })
 }
 
 export function SheetHost() {

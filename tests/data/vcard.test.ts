@@ -5,7 +5,7 @@ import { person } from '../helpers'
 const card = (body: string) => `BEGIN:VCARD\r\nVERSION:3.0\r\n${body}\r\nEND:VCARD`
 
 describe('parseVCards', () => {
-  it('читает основные поля', () => {
+  it('reads the main fields', () => {
     const [p] = parseVCards(card([
       'N:Петров;Иван;;;', 'FN:Иван Петров', 'ORG:Northwind Capital;Fintech', 'TITLE:Партнёр',
       'TEL;TYPE=CELL:+971 50 123 4567', 'EMAIL;TYPE=INTERNET:ivan@northwind.vc', 'BDAY:1990-05-14', 'NOTE:Любит кофе\\, без молока',
@@ -20,44 +20,44 @@ describe('parseVCards', () => {
       { type: 'linkedin', value: 'https://www.linkedin.com/in/ivan-petrov' },
     ]))
   })
-  it('несколько карточек в одном файле', () => {
+  it('several cards in one file', () => {
     expect(parseVCards(`${card('FN:Анна Ким')}\r\n${card('FN:Борис Лим')}\r\n${card('FN:Вера')}`).map(p => p.firstName)).toEqual(['Анна', 'Борис', 'Вера'])
   })
-  it('берёт имя из FN, если нет N', () => {
+  it('takes the name from FN if there is no N', () => {
     const [p] = parseVCards(card('FN:Мария Анна Иванова'))
     expect([p.firstName, p.lastName]).toEqual(['Мария', 'Анна Иванова'])
   })
-  it('если есть только фамилия — она становится именем', () => {
+  it('if there is only a last name, it becomes the name', () => {
     const [p] = parseVCards(card('N:Сидоров;;;;'))
     expect([p.firstName, p.lastName]).toEqual(['Сидоров', undefined])
   })
-  it('пропускает карточки без имени', () => {
+  it('skips cards without a name', () => {
     expect(parseVCards(card('TEL:+7 900 000 00 00'))).toHaveLength(0)
   })
-  it('разворачивает перенесённые строки (folding)', () => {
+  it('unfolds folded lines', () => {
     const [p] = parseVCards(card('FN:Иван\r\n  Петров\r\nNOTE:Очень длинная\r\n  заметка'))
     expect(p.firstName).toBe('Иван')
     expect(p.lastName).toBe('Петров')
     expect(p.notes).toBe('Очень длинная заметка')
   })
-  it('декодирует quoted-printable в UTF-8', () => {
+  it('decodes quoted-printable in UTF-8', () => {
     const [p] = parseVCards(card('N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:=D0=9F=D0=B5=D1=82=D1=80=D0=BE=D0=B2;=D0=98=D0=B2=D0=B0=D0=BD;;;'))
     expect([p.firstName, p.lastName]).toEqual(['Иван', 'Петров'])
   })
-  it('день рождения без года (--MM-DD и iOS-год 1604)', () => {
+  it('a birthday with no year (--MM-DD and the iOS year 1604)', () => {
     expect(parseVCards(card('FN:А Б\r\nBDAY:--03-08'))[0].birthday).toBe('--03-08')
     expect(parseVCards(card('FN:А Б\r\nBDAY:1604-03-08'))[0].birthday).toBe('--03-08')
     expect(parseVCards(card('FN:А Б\r\nBDAY:19900308'))[0].birthday).toBe('1990-03-08')
   })
-  it('понимает item1.-префиксы Apple и Instagram/X', () => {
+  it('understands Apple\'s item1. prefixes and Instagram/X', () => {
     const [p] = parseVCards(card('FN:А Б\r\nitem1.URL:https://instagram.com/anna.k/\r\nitem2.URL:https://x.com/anna_k'))
     expect(p.channels).toEqual(expect.arrayContaining([{ type: 'instagram', value: 'anna.k' }, { type: 'x', value: 'anna_k' }]))
   })
-  it('фото в base64', () => {
+  it('a photo in base64', () => {
     const b64 = 'A'.repeat(200)
     expect(parseVCards(card(`FN:А Б\r\nPHOTO;ENCODING=b;TYPE=JPEG:${b64}`))[0].photo).toBe(`data:image/jpeg;base64,${b64}`)
   })
-  it('мусор вместо vCard — пустой список без исключений', () => {
+  it('garbage instead of vCard: an empty list with no exceptions', () => {
     expect(parseVCards('')).toEqual([])
     expect(parseVCards('просто текст')).toEqual([])
     expect(parseVCards('BEGIN:VCARD\r\nбез конца')).toBeInstanceOf(Array)
@@ -70,7 +70,7 @@ describe('toVCard', () => {
     channels: [{ type: 'phone', value: '+7 700 1' }, { type: 'email', value: 'a@k.im' }, { type: 'telegram', value: '@anna' }, { type: 'instagram', value: '@anna.k' }, { type: 'website', value: 'https://k.im' }],
   })
   const text = toVCard(p)
-  it('структура и экранирование', () => {
+  it('structure and escaping', () => {
     expect(text.startsWith('BEGIN:VCARD\r\nVERSION:3.0')).toBe(true)
     expect(text.endsWith('END:VCARD')).toBe(true)
     expect(text).toContain('ORG:Acme\\; Inc')
@@ -78,7 +78,7 @@ describe('toVCard', () => {
     expect(text).toContain('URL:https://t.me/anna')
     expect(text).toContain('URL:https://instagram.com/anna.k')
   })
-  it('экспорт → импорт сохраняет ключевые поля', () => {
+  it('export → import keeps the key fields', () => {
     const [back] = parseVCards(text)
     expect(back).toMatchObject({ firstName: 'Анна', lastName: 'Ким', company: 'Acme; Inc', role: 'CTO', city: 'Алматы', birthday: '1990-05-14' })
     expect(back.notes).toBe('Строка 1\nСтрока 2, с запятой')

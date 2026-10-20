@@ -1,7 +1,7 @@
 import { t } from '@/i18n'
 /**
- * Чтение файлов со списками контактов: .xlsx, .csv/.tsv, .json, .vcf, текст.
- * Без внешних библиотек: xlsx — это zip с XML, распаковываем встроенным DecompressionStream.
+ * Reading files with contact lists: .xlsx, .csv/.tsv, .json, .vcf, text.
+ * No external libraries: xlsx is a zip with XML, unpacked with the built-in DecompressionStream.
  */
 
 export type FileRead =
@@ -11,7 +11,7 @@ export type FileRead =
 
 export class FileReadError extends Error {}
 
-/* ---------- Кодировки ---------- */
+/* ---------- Encodings ---------- */
 
 export function decodeText(buf: ArrayBuffer): string {
   const u = new Uint8Array(buf)
@@ -20,7 +20,7 @@ export function decodeText(buf: ArrayBuffer): string {
   try {
     return new TextDecoder('utf-8', { fatal: true }).decode(buf).replace(/^﻿/, '')
   } catch {
-    // Excel на русской Windows сохраняет CSV в windows-1251
+    // Excel on Russian Windows saves CSV in windows-1251
     return new TextDecoder('windows-1251').decode(buf)
   }
 }
@@ -129,12 +129,12 @@ export async function readXlsx(buf: ArrayBuffer): Promise<string[][]> {
   const dir = readZipDirectory(buf)
   if (!dir.has('xl/workbook.xml')) throw new FileReadError(t('No Excel table in the file'))
 
-  // общий словарь строк
+  // the shared strings table
   const shared: string[] = []
   const ss = await zipText(buf, dir, 'xl/sharedStrings.xml')
   if (ss) for (const si of Array.from(xml(ss).getElementsByTagName('si'))) shared.push(textOf(si))
 
-  // первый лист (по порядку в книге), запасной — sheet1
+  // the first sheet (in workbook order), sheet1 as a fallback
   let sheetPath = 'xl/worksheets/sheet1.xml'
   const wb = xml((await zipText(buf, dir, 'xl/workbook.xml')) ?? '')
   const rels = await zipText(buf, dir, 'xl/_rels/workbook.xml.rels')
@@ -186,7 +186,7 @@ function jsonToRows(data: unknown): string[][] {
   return [keys, ...objs.map(o => keys.map(k => flat(o[k])))]
 }
 
-/* ---------- Вход ---------- */
+/* ---------- Input ---------- */
 
 const looksTabular = (text: string) => {
   const lines = text.split(/\r?\n/).filter(Boolean).slice(0, 6)
@@ -205,7 +205,7 @@ export async function readContactsFile(file: File): Promise<FileRead> {
   const buf = await file.arrayBuffer()
   const head = new Uint8Array(buf.slice(0, 4))
   const isZip = head[0] === 0x50 && head[1] === 0x4b
-  const isOle = head[0] === 0xd0 && head[1] === 0xcf // старый .xls
+  const isOle = head[0] === 0xd0 && head[1] === 0xcf // an old .xls
 
   if (isOle || /\.xls$/.test(name)) throw new FileReadError(t('This is the old .xls format — save the spreadsheet as .xlsx or .csv and upload again'))
   if (/\.(numbers|pages|key)$/.test(name)) throw new FileReadError(t('From Numbers, export the table to .csv or .xlsx (File → Export)'))
@@ -230,7 +230,7 @@ export async function readContactsFile(file: File): Promise<FileRead> {
   return c.kind === 'table' ? { ...c, label } : c
 }
 
-/* ---------- Шаблон ---------- */
+/* ---------- Template ---------- */
 
 export const templateCsv = () =>
   t('﻿First name,Last name,Company,Position,Phone,Email,Telegram,City,Tags,Why valuable,Source\n') +

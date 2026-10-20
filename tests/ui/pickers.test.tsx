@@ -13,8 +13,8 @@ function Date1({ onEscape }: { onEscape?: () => void }) {
   )
 }
 
-describe('выбор даты', () => {
-  it('показывает дату словами, открывает календарь и выбирает день', () => {
+describe('date picker', () => {
+  it('shows the date in words, opens the calendar and picks a day', () => {
     render(<Date1 />)
     const trigger = screen.getByRole('button', { name: 'Дата' })
     expect(trigger).toHaveTextContent('10 октября 2026')
@@ -24,7 +24,7 @@ describe('выбор даты', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
   })
 
-  it('листает месяцы и не пускает за max', () => {
+  it('pages through months and does not go past max', () => {
     render(<Date1 />)
     fireEvent.click(screen.getByRole('button', { name: 'Дата' }))
     fireEvent.click(screen.getByRole('button', { name: 'Вперёд' }))
@@ -34,7 +34,7 @@ describe('выбор даты', () => {
     expect(screen.getByRole('gridcell', { name: '1 января 2027' })).toBeDisabled()
   })
 
-  it('«Удалить» очищает, Escape закрывает только календарь', () => {
+  it('"Delete" clears, Escape closes only the calendar', () => {
     const esc = vi.fn()
     render(<Date1 onEscape={esc} />)
     fireEvent.click(screen.getByRole('button', { name: 'Дата' }))
@@ -46,7 +46,7 @@ describe('выбор даты', () => {
     expect(screen.getByRole('button', { name: 'Дата' })).toHaveTextContent('Выбрать дату')
   })
 
-  it('выбор года и месяца через заголовок', () => {
+  it('choosing the year and month through the header', () => {
     render(<Date1 />)
     fireEvent.click(screen.getByRole('button', { name: 'Дата' }))
     fireEvent.click(screen.getByText('Октябрь 2026'))
@@ -55,8 +55,8 @@ describe('выбор даты', () => {
   })
 })
 
-describe('выбор времени', () => {
-  it('меняет часы и минуты', () => {
+describe('time picker', () => {
+  it('changes hours and minutes', () => {
     const t0 = new Date(2026, 9, 10, 19, 0).getTime()
     const onChange = vi.fn()
     render(<DateTimeField value={t0} onChange={onChange} label="Когда" />)
@@ -74,8 +74,8 @@ function within(listLabel: string, text: string) {
   return [...list.querySelectorAll('button')].find(b => b.textContent === text)!
 }
 
-describe('выбор из списка', () => {
-  it('выбирает вариант и показывает его подпись', () => {
+describe('list picker', () => {
+  it('picks an option and shows its label', () => {
     const onChange = vi.fn()
     render(<SelectField value="a" onChange={onChange} label="Роль" options={[{ value: 'a', label: 'Имя' }, { value: 'b', label: 'Компания' }]} />)
     expect(screen.getByRole('button', { name: 'Роль' })).toHaveTextContent('Имя')

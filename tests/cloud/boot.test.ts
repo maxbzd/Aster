@@ -14,22 +14,22 @@ beforeEach(() => {
 })
 
 describe('bootCloud', () => {
-  it('без сессии и ссылки ничего тяжёлого не загружает', async () => {
+  it('with no session and no link nothing heavy is loaded', async () => {
     await bootCloud()
     expect(inner.bootCloud).not.toHaveBeenCalled()
     expect(useCloud.getState().phase).toBe('off')
   })
-  it('есть сохранённая сессия — запускает облако', async () => {
+  it('a saved session: starts the cloud', async () => {
     localStorage.setItem('aster-auth', '{"x":1}')
     await bootCloud()
     expect(inner.bootCloud).toHaveBeenCalledTimes(1)
   })
-  it('пришли по ссылке из письма — тоже запускает', async () => {
+  it('arrived through a link from an email: starts it too', async () => {
     window.location.hash = '#access_token=a&refresh_token=b&type=recovery'
     await bootCloud()
     expect(inner.bootCloud).toHaveBeenCalledTimes(1)
   })
-  it('если облачный код не загрузился (нет сети), приложение остаётся рабочим', async () => {
+  it('if the cloud code did not load (no network), the app stays working', async () => {
     localStorage.setItem('aster-auth', '{"x":1}')
     inner.bootCloud.mockRejectedValueOnce(new Error('chunk failed'))
     await expect(bootCloud()).resolves.toBeUndefined()

@@ -28,7 +28,7 @@ const KIND: Record<Item['kind'], { icon: Icon; label: string; color: string }> =
 
 const keyOf = (i: Item) => `${i.kind}:${i.text}`
 
-/** Предложения из заметки: Астра видит в тексте даты, факты и темы — сохраняешь одним тапом. */
+/** Suggestions from a note: Astra sees dates, facts and topics in the text, and you save them with one tap. */
 export function NoteSuggestions({ text, person }: { text: string; person: Person }) {
   const people = usePeople()
   const status = useAstraStatus()

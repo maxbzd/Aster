@@ -2,24 +2,24 @@ import { describe, expect, it } from 'vitest'
 import { friendlyCloudError, hasStoredSession, parseAuthHash, validEmail } from '@/cloud/auth'
 import { statusLine, syncedAgo } from '@/cloud/status'
 
-describe('parseAuthHash — ссылки из писем', () => {
-  it('сброс пароля: токены и тип', () => {
+describe('parseAuthHash: links from emails', () => {
+  it('password reset: tokens and type', () => {
     expect(parseAuthHash('#access_token=AAA&refresh_token=BBB&expires_in=3600&token_type=bearer&type=recovery')).toEqual({
       type: 'recovery', accessToken: 'AAA', refreshToken: 'BBB', error: undefined,
     })
   })
-  it('подтверждение почты', () => {
+  it('email confirmation', () => {
     expect(parseAuthHash('#access_token=A&refresh_token=B&type=signup')?.type).toBe('signup')
   })
-  it('ошибка в ссылке (просрочена)', () => {
+  it('an error in the link (expired)', () => {
     const r = parseAuthHash('#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired')
     expect(r?.error).toBe('Email link is invalid or has expired')
     expect(r?.accessToken).toBeUndefined()
   })
-  it('обычные маршруты приложения не принимаются за ссылку', () => {
+  it('ordinary app routes are not taken for a link', () => {
     for (const h of ['', '#', '#/', '#/people', '#/person/abc?access=1', '#/me']) expect(parseAuthHash(h)).toBeNull()
   })
-  it('неизвестный тип не ломает разбор', () => {
+  it('an unknown type does not break parsing', () => {
     expect(parseAuthHash('#access_token=A&type=whatever')?.type).toBe('unknown')
   })
 })
@@ -38,24 +38,24 @@ describe('friendlyCloudError', () => {
     expect(friendlyCloudError(new Error(raw))).toBe(human)
     expect(friendlyCloudError({ message: raw })).toBe(human)
   })
-  it('неизвестная ошибка обрезается и не пустая', () => {
+  it('an unknown error is trimmed and not empty', () => {
     expect(friendlyCloudError(new Error('x'.repeat(500))).length).toBeLessThanOrEqual(141)
     expect(friendlyCloudError('')).toBe('Что-то пошло не так')
   })
 })
 
 describe('validEmail', () => {
-  it('принимает обычные адреса и обрезает пробелы', () => {
+  it('accepts ordinary addresses and trims spaces', () => {
     expect(validEmail(' a@b.io ')).toBe(true)
     expect(validEmail('имя@почта.рф')).toBe(true)
   })
-  it('отвергает мусор', () => {
+  it('rejects garbage', () => {
     for (const s of ['', 'a', 'a@b', 'a b@c.io', '@c.io', 'a@.io']) expect(validEmail(s)).toBe(false)
   })
 })
 
 describe('hasStoredSession', () => {
-  it('смотрит в localStorage, не загружая библиотеку', () => {
+  it('looks in localStorage without loading the library', () => {
     localStorage.removeItem('aster-auth')
     expect(hasStoredSession()).toBe(false)
     localStorage.setItem('aster-auth', '{}')
@@ -66,7 +66,7 @@ describe('hasStoredSession', () => {
 
 describe('statusLine', () => {
   const base = { pending: 0 }
-  it('все состояния', () => {
+  it('all states', () => {
     expect(statusLine({ ...base, phase: 'off' })).toEqual({ text: 'Не подключено', tone: 'warn' })
     expect(statusLine({ ...base, phase: 'idle', lastSyncAt: undefined }).tone).toBe('ok')
     expect(statusLine({ pending: 3, phase: 'syncing' }).text).toMatch(/3 изменения/)
@@ -78,7 +78,7 @@ describe('statusLine', () => {
 
 describe('syncedAgo', () => {
   const now = 1_800_000_000_000
-  it('только что, минуты, затем дата', () => {
+  it('just now, minutes, then a date', () => {
     expect(syncedAgo(now - 10_000, now)).toBe('только что')
     expect(syncedAgo(now - 90_000, now)).toBe('2 мин назад')
     expect(syncedAgo(now - 30 * 60_000, now)).toBe('30 мин назад')

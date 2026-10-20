@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 
-/** Крупный заголовок, который при прокрутке «сворачивается» в компактную стеклянную панель (iOS). */
+/** A large title that "collapses" into a compact glass bar on scroll (iOS). */
 export function PageHeader({ title, eyebrow, actions, compactTitle }: { title: ReactNode; eyebrow?: ReactNode; actions?: ReactNode; compactTitle?: string }) {
   const [compact, setCompact] = useState(false)
   useEffect(() => {

@@ -58,7 +58,7 @@ export function PersonProfile() {
   const setTab = (value2: Tab) => setParams(prev => { const n = new URLSearchParams(prev); if (value2 === 'overview') n.delete('tab'); else n.set('tab', value2); return n }, { replace: true })
 
   const byId = useMemo(() => new Map((people ?? []).map(x => [x.id, x])), [people])
-  // у кого из резерва есть то, что этот человек ищет
+  // who in the reserve has what this person is looking for
   const fromReserve = useMemo(() => (p?.lookingFor ? askReserve(p.lookingFor, leads ?? [], 3).filter(h => h.score >= 4) : []), [p?.lookingFor, leads])
 
   if (p === undefined) return <Page><div /></Page>
@@ -92,7 +92,7 @@ export function PersonProfile() {
 
   return (
     <Page>
-      {/* Шапка в цвете человека (Revolut) */}
+      {/* Header in the person's colour (Revolut) */}
       <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[520px]" style={{ left: '-30vw', right: '-30vw' }}>
         <div className="absolute inset-0" style={{
           background: `radial-gradient(45% 55% at 38% 0%, ${g.a}cc, transparent 70%), radial-gradient(40% 50% at 65% 8%, ${g.b}99, transparent 70%), linear-gradient(180deg, ${g.deep} 0%, ${g.deep}66 45%, transparent 100%)`,
@@ -116,7 +116,7 @@ export function PersonProfile() {
         </div>
       </div>
 
-      {/* Герой */}
+      {/* Hero */}
       <div className="relative mt-4 flex flex-col items-center text-center">
         <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}
           className="relative grid h-[168px] w-[168px] place-items-center rounded-full"
@@ -140,7 +140,7 @@ export function PersonProfile() {
         </div>
       </div>
 
-      {/* Быстрые действия */}
+      {/* Quick actions */}
       <div className="relative mt-7 flex justify-center gap-1 sm:gap-3">
         <ActionButton icon={ChatCircleDotsIcon} label={t('Write')} primary onClick={() => open({ kind: 'draft', personId: p.familyOf ?? p.id, occasion: occasion ?? null })} />
         <ActionButton icon={FileTextIcon} label={t('Brief')} onClick={() => open({ kind: 'brief', personId: p.id })} />
@@ -151,7 +151,7 @@ export function PersonProfile() {
 
       <StatusBanner p={p} />
 
-      {/* Вкладки: карточка не должна быть бесконечной лентой */}
+      {/* Tabs: the card must not be an endless feed */}
       <div className="sticky top-[calc(8px+var(--safe-top))] z-20 mt-7">
         <Segmented<Tab> options={TABS} value={tab} onChange={setTab} className="!bg-ink-2/95 shadow-[0_8px_30px_-12px_rgba(0,0,0,0.8)]" />
       </div>
@@ -160,7 +160,7 @@ export function PersonProfile() {
         <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
           {tab === 'overview' && (
             <>
-              {/* Повод написать */}
+              {/* Reason to write */}
               {occasion && occasion.kind !== 'silence' && (
                 <button type="button" onClick={() => open({ kind: 'draft', personId: p.id, occasion })}
                   className="press glass glow-card mt-6 flex w-full items-center gap-3 rounded-[22px] px-4 py-3.5 text-left"
@@ -174,7 +174,7 @@ export function PersonProfile() {
                 </button>
               )}
 
-              {/* Перекидной счётчик (CRED) */}
+              {/* Flip counter (CRED) */}
               <div className="glass relative mt-6 overflow-hidden rounded-[28px] px-5 pb-6 pt-5">
                 <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-24 opacity-60" style={{
                   backgroundImage: 'linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px)',
@@ -197,7 +197,7 @@ export function PersonProfile() {
                 )}
               </div>
 
-              {/* Ритм общения (Opal-шкала) */}
+              {/* Contact rhythm (Opal scale) */}
               {!noRhythm && (
                 <div className="glass mt-3 rounded-[28px] p-5">
                   <button type="button" aria-expanded={cadenceOpen} onClick={() => setCadenceOpen(o => !o)} className="press block w-full text-left">
@@ -238,7 +238,7 @@ export function PersonProfile() {
               <RhythmMode p={p} />
               <CadenceHint p={p} ints={ints} />
 
-              {/* Следующий шаг */}
+              {/* Next step */}
               <SectionTitle action={t('Add')} onAction={() => open({ kind: 'reminder', personId: p.id })}>{t('Next step')}</SectionTitle>
               {openRems.length ? (
                 <Group>{openRems.map(r => <ReminderRow key={r.id} r={r} person={p} showPerson={false} />)}</Group>
@@ -249,7 +249,7 @@ export function PersonProfile() {
                 </button>
               )}
 
-              {/* Контакты */}
+              {/* Contacts */}
               <SectionTitle action={p.channels.length ? t('Edit') : undefined} onAction={() => open({ kind: 'editPerson', id: p.id })}>{t('Contacts')}</SectionTitle>
               {p.channels.length ? (
                 <Group>
@@ -264,7 +264,7 @@ export function PersonProfile() {
                 <EmptyLine text={t('Add a phone, Telegram or email')} onClick={() => open({ kind: 'editPerson', id: p.id })} />
               )}
 
-              {/* Как познакомились */}
+              {/* How you met */}
               {(p.metAt || p.metPlace || p.metStory) && (
                 <>
                   <SectionTitle>{t('How you met')}</SectionTitle>
@@ -276,7 +276,7 @@ export function PersonProfile() {
                 </>
               )}
 
-              {/* Темы для разговора */}
+              {/* Topics to talk about */}
               <SectionTitle>{t('Talking points')}</SectionTitle>
               <Topics p={p} />
             </>

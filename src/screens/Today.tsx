@@ -55,7 +55,7 @@ export function Today() {
   const hl = healthLabel(health.score)
   const due = useMemo(() => dueContacts(people ?? [], now), [people, now])
   const everyone = useAllPeople()
-  // дни рождения (в том числе семьи) и важные даты: годовщины, именины, юбилеи
+  // birthdays (family's included) and important dates: anniversaries, name days, jubilees
   const dates = useMemo(() => upcomingDates(everyone ?? [], 30, now), [everyone, now])
   const potd = useMemo(() => personOfTheDay((people ?? []).filter(p => !due.slice(0, 3).some(d => d.p.id === p.id)), now), [people, due, now])
   const toast = useUI(s => s.toast)
@@ -106,7 +106,7 @@ export function Today() {
           </motion.div>
         ) : (
           <>
-            {/* Тонус сети */}
+            {/* Network pulse */}
             <motion.button variants={stagger.item} type="button" onClick={() => nav('/pulse')} className="press mx-auto mt-4 flex w-full flex-col items-center">
               <Orb value={health.score} tone={hl.tone} size={236} label={t('network pulse')} />
               <div className="-mt-1 text-center">
@@ -132,7 +132,7 @@ export function Today() {
 
             <motion.div variants={stagger.item}><OrbitaSuggestionsCard /></motion.div>
 
-            {/* Астра */}
+            {/* Astra */}
             <motion.div variants={stagger.item} className="mt-9">
               <AstraHub
                 birthdays={dates.filter(d => d.days <= 7).length}
@@ -145,7 +145,7 @@ export function Today() {
               />
             </motion.div>
 
-            {/* Поводы написать */}
+            {/* Reasons to write */}
             {occasions.filter(o => o.kind !== 'silence').length > 0 && (
               <motion.div variants={stagger.item}>
                 <SectionTitle count={occasions.filter(o => o.kind !== 'silence').length}>{t('Reasons to reach out')}</SectionTitle>
@@ -158,7 +158,7 @@ export function Today() {
               </motion.div>
             )}
 
-            {/* Сводник */}
+            {/* Matchmaker */}
             {matches.length > 0 && (
               <motion.div variants={stagger.item}>
                 <SectionTitle count={matches.length} action={t('All')} onAction={() => nav('/intros')}>{t('Could be introduced')}</SectionTitle>
@@ -166,7 +166,7 @@ export function Today() {
               </motion.div>
             )}
 
-            {/* Кому написать */}
+            {/* Whom to write to */}
             <motion.div variants={stagger.item}>
               <SectionTitle count={due.length} action={due.length ? t('Review') : undefined} onAction={() => nav('/review')}>{t('Get in touch')}</SectionTitle>
               {due.length === 0 ? (
@@ -195,7 +195,7 @@ export function Today() {
               )}
             </motion.div>
 
-            {/* Человек дня */}
+            {/* Person of the day */}
             {potd && (
               <motion.div variants={stagger.item}>
                 <SectionTitle>{t('Recall today')}</SectionTitle>
@@ -203,7 +203,7 @@ export function Today() {
               </motion.div>
             )}
 
-            {/* Напоминания */}
+            {/* Reminders */}
             {openReminders.length > 0 && (
               <motion.div variants={stagger.item}>
                 <SectionTitle count={openReminders.length} action={t('Add')} onAction={() => open({ kind: 'reminder' })}>{t('Reminders')}</SectionTitle>
@@ -213,7 +213,7 @@ export function Today() {
               </motion.div>
             )}
 
-            {/* Даты: дни рождения, годовщины, юбилеи */}
+            {/* Dates: birthdays, anniversaries, jubilees */}
             {dates.length > 0 && (
               <motion.div variants={stagger.item} id="bdays">
                 <SectionTitle count={dates.length}>{t('Upcoming dates')}</SectionTitle>
@@ -234,7 +234,7 @@ export function Today() {
               </motion.div>
             )}
 
-            {/* Недавно */}
+            {/* Recently */}
             {recent.length > 0 && (
               <motion.div variants={stagger.item}>
                 <SectionTitle action={t('Log')} onAction={() => open({ kind: 'log' })}>{t('Recently')}</SectionTitle>
@@ -259,7 +259,7 @@ function StatTile({ icon: I, value, label, color, onClick }: { icon: typeof Cake
   )
 }
 
-/** Карточка «пора связаться» — паттерн Revolut «Напомнить». */
+/** A "time to reach out" card: the Revolut "Remind" pattern. */
 function DueCard({ p, now, circles, occasion }: { p: Person; now: number; circles: { id: string; name: string }[]; occasion?: Occasion }) {
   const nav = useNavigate()
   const open = useUI(s => s.open)
@@ -306,7 +306,7 @@ function DueCard({ p, now, circles, occasion }: { p: Person; now: number; circle
   )
 }
 
-/** «Лампа» (Lumy): карточка, освещённая сверху. Человек дня. */
+/** The "lamp" (Lumy): a card lit from above. The person of the day. */
 function LampCard({ p, now, occasion }: { p: Person; now: number; occasion?: Occasion }) {
   const nav = useNavigate()
   const open = useUI(s => s.open)
@@ -315,7 +315,7 @@ function LampCard({ p, now, occasion }: { p: Person; now: number; occasion?: Occ
   const topic = p.topics.find(topic3 => !topic3.done)
   return (
     <div className="glass relative overflow-hidden rounded-[30px] px-5 pb-5 pt-14 text-center">
-      {/* лампа */}
+      {/* lamp */}
       <div aria-hidden className="absolute left-1/2 top-0 -translate-x-1/2">
         <div className="mx-auto h-5 w-px bg-white/25" />
         <div className="mx-auto h-[10px] w-[34px] rounded-b-full bg-gradient-to-b from-[#3a3a46] to-[#1c1c24] shadow-[0_2px_0_rgba(255,255,255,0.05)]" />
@@ -343,7 +343,7 @@ function LampCard({ p, now, occasion }: { p: Person; now: number; occasion?: Occ
   )
 }
 
-/** Хаб Астры: бриф недели + быстрые действия. */
+/** Astra's hub: the weekly brief plus quick actions. */
 function AstraHub({ birthdays, cooling, intros, onWeekly, onVoice, onAsk, onEvent }: { birthdays: number; cooling: number; intros: number; onWeekly: () => void; onVoice: () => void; onAsk: () => void; onEvent: () => void }) {
   const parts = [
     birthdays && tn(birthdays, '{n} birthday', '{n} birthdays'),

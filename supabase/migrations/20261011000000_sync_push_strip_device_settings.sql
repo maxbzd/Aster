@@ -1,5 +1,5 @@
--- Защита в глубину: ключи и настройки голоса никогда не должны попасть в облако, даже если клиент по ошибке их пришлёт.
--- Раньше сервер вырезал из settings только `ai`; теперь ещё `stt` (ключ распознавания речи) и `voice`.
+-- Defence in depth: keys and voice settings must never reach the cloud, even if a client sends them by mistake.
+-- Before, the server stripped only `ai` from settings; now also `stt` (the speech recognition key) and `voice`.
 create or replace function public.sync_push(rows jsonb)
 returns jsonb
 language plpgsql

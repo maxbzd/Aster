@@ -5,7 +5,7 @@ import { agoShort } from '@/lib/format'
 import { usePeerStats, useSuggestions } from './hooks'
 import { t, tn } from '@/i18n'
 
-/** Карточка на экране «Сегодня»: Орбита предлагает что-то добавить. Без подключения не показывается. */
+/** A card on the "Today" screen: Orbita suggests adding something. Not shown without a connection. */
 export function OrbitaSuggestionsCard() {
   const list = useSuggestions()
   const open = useUI(s => s.open)
@@ -19,7 +19,7 @@ export function OrbitaSuggestionsCard() {
   )
 }
 
-/** Блок в профиле человека: что про него знает Орбита. Только для связанных людей. */
+/** A block in a person's profile: what Orbita knows about them. Only for linked people. */
 export function PersonOrbita({ personId }: { personId: string }) {
   const s = usePeerStats(personId)
   const open = useUI(st => st.open)

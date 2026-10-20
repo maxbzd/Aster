@@ -4,8 +4,8 @@ import { t } from '@/i18n'
 import { lower, stem, stems } from './text'
 
 export interface MatchPair {
-  a: Person // кто ищет
-  b: Person // кто может помочь
+  a: Person // who is looking
+  b: Person // who can help
   reason: string
   value: string
   score: number
@@ -50,7 +50,7 @@ function offerFields(p: Person): { text: string; w: number; label?: string; livi
   ]
 }
 
-/** Всё, что для сравнения нужно знать о человеке, считается один раз, а не заново для каждой пары (n² → n). */
+/** Everything needed to compare a person is computed once, not again for every pair (n² → n). */
 interface Prep {
   p: Person
   fields: { text: string; w: number; label?: string; fs: string[]; living: boolean }[]
@@ -78,7 +78,7 @@ const alreadyLinked = (a: Prep, b: Prep) =>
   a.p.links.some(l => l.personId === b.p.id) || b.p.links.some(l => l.personId === a.p.id) || a.p.introducedBy === b.p.id || b.p.introducedBy === a.p.id ||
   (!!a.company && !!b.company && a.company === b.company)
 
-/** Локальный «сводник»: кто ищет то, в чём силён другой. */
+/** The local "matchmaker": who is looking for what another is strong at. */
 export function localMatches(people: Person[], excluded: Set<string> = new Set()): MatchPair[] {
   const active = people.filter(p => !p.archived).map(prep)
   const pairs: MatchPair[] = []
@@ -98,7 +98,7 @@ export function localMatches(people: Person[], excluded: Set<string> = new Set()
         const gain = hits.length * f.w + (cityHit ? 4 : 0)
         if (gain > 0) { score += gain; if (!best || gain > best.w) best = { label: f.label, w: gain, living: f.living } }
       }
-      // взаимная польза: B тоже что-то ищет у A
+      // mutual benefit: B is also looking for something A has
       let mutual = false
       if (B.back && b.lookingFor) {
         if (B.back.some(n => A.own.some(s => s.startsWith(n)))) { score += 3; mutual = true }
@@ -116,7 +116,7 @@ export function localMatches(people: Person[], excluded: Set<string> = new Set()
       }
     }
   }
-  // лучшие пары: одна пара на «ищущего», и A×B не повторяется как B×A
+  // the best pairs: one pair per "seeker", and A×B is not repeated as B×A
   pairs.sort((x, y) => y.score - x.score)
   const seekers = new Set<string>()
   const seen = new Set<string>()

@@ -28,21 +28,21 @@ const reset = () => {
   for (const f of Object.values(cloud)) if (typeof f === 'function' && 'mockClear' in f) (f as ReturnType<typeof vi.fn>).mockClear()
 }
 
-describe('Облако: вход', () => {
+describe('Cloud: sign-in', () => {
   beforeEach(async () => { reset(); await seed({ demo: true }) })
 
-  it('карточка в профиле открывает шторку входа', async () => {
+  it('the card in the profile opens the sign-in sheet', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/me')
     expect(await screen.findByText('Войти, чтобы данные были на всех устройствах')).toBeInTheDocument()
     await user.click(screen.getByText('Облако'))
     const d = within(await dialog())
-    expect(d.getAllByRole('button', { name: 'Войти' })).toHaveLength(2) // вкладка и кнопка отправки
+    expect(d.getAllByRole('button', { name: 'Войти' })).toHaveLength(2) // the tab and the submit button
     expect(d.getByText(/Ключи Астры остаются только на этом устройстве/)).toBeInTheDocument()
     expect(bad).toEqual([])
   })
 
-  it('проверяет почту и пароль до обращения к серверу', async () => {
+  it('checks the email and password before calling the server', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -54,7 +54,7 @@ describe('Облако: вход', () => {
     expect(cloud.signIn).not.toHaveBeenCalled()
   })
 
-  it('вход: почта без пробелов, пароль как есть; ошибка сервера показывается человеческим языком', async () => {
+  it('sign-in: the email without spaces, the password as is; a server error is shown in human language', async () => {
     cloud.signIn.mockRejectedValueOnce(new Error('Неверная почта или пароль'))
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
@@ -67,7 +67,7 @@ describe('Облако: вход', () => {
     expect(d.getByLabelText('Пароль')).toHaveAttribute('type', 'password')
   })
 
-  it('регистрация: короткий пароль отклоняется, затем «проверь почту»', async () => {
+  it('sign-up: a short password is rejected, then "check your email"', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -86,7 +86,7 @@ describe('Облако: вход', () => {
     expect(cloud.signUp).toHaveBeenCalledWith('new@mail.com', 'long-enough-pass')
   })
 
-  it('«Забыл пароль» отправляет ссылку, пароль не спрашивает', async () => {
+  it('"Forgot password" sends a link, does not ask for a password', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -98,14 +98,14 @@ describe('Облако: вход', () => {
     expect(cloud.resetPassword).toHaveBeenCalledWith('max@mail.com')
   })
 
-  it('сессия истекла — понятное сообщение, данные целы', async () => {
+  it('the session expired: a clear message, the data is intact', async () => {
     useCloud.setState({ expired: true })
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     expect(await within(await dialog()).findByText(/Сессия закончилась/)).toBeInTheDocument()
   })
 
-  it('на первом экране приложения есть вход для нового устройства', async () => {
+  it('the first screen of the app has a sign-in for a new device', async () => {
     await seed({ onboarded: false })
     const { user } = renderApp('/')
     await user.click(await screen.findByText('Войти'))
@@ -113,21 +113,21 @@ describe('Облако: вход', () => {
   })
 })
 
-describe('Облако: аккаунт', () => {
+describe('Cloud: account', () => {
   beforeEach(async () => {
     reset()
     await seed({ demo: true })
     useCloud.setState({ phase: 'idle', email: 'max@mail.com', userId: 'u1', lastSyncAt: Date.now() - 120_000, pending: 0 })
   })
 
-  it('карточка показывает почту и статус; демо-данные скрыты, чтобы не затереть облако', async () => {
+  it('the card shows the email and status; demo data is hidden so as not to overwrite the cloud', async () => {
     renderApp('/me')
     expect(await screen.findByText(/max@mail.com · Всё синхронизировано/)).toBeInTheDocument()
     expect(screen.queryByText('Загрузить демо-данные')).not.toBeInTheDocument()
     expect(screen.getByText('Данные у тебя и в облаке')).toBeInTheDocument()
   })
 
-  it('статус живой: офлайн с ожидающими изменениями, потом ошибка', async () => {
+  it('the live status: offline with pending changes, then an error', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -138,7 +138,7 @@ describe('Облако: аккаунт', () => {
     expect(d.getByRole('status')).toHaveTextContent('Слишком много попыток')
   })
 
-  it('«Синхронизировать сейчас» и «Полная пересинхронизация»', async () => {
+  it('"Sync now" and "Full resync"', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -148,7 +148,7 @@ describe('Облако: аккаунт', () => {
     await waitFor(() => expect(cloud.resync).toHaveBeenCalledTimes(1))
   })
 
-  it('выход: подтверждение, затем вызов signOut', async () => {
+  it('sign-out: a confirmation, then a signOut call', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -159,7 +159,7 @@ describe('Облако: аккаунт', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
   })
 
-  it('выход с неотправленными изменениями предупреждает и требует подтверждения', async () => {
+  it('signing out with unsent changes warns and requires confirmation', async () => {
     cloud.signOut.mockRejectedValueOnce(new cloud.UnsyncedError(4))
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
@@ -171,7 +171,7 @@ describe('Облако: аккаунт', () => {
     await waitFor(() => expect(cloud.signOut).toHaveBeenLastCalledWith({ force: true }))
   })
 
-  it('удаление аккаунта требует второго нажатия', async () => {
+  it('deleting the account requires a second press', async () => {
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))
     const d = within(await dialog())
@@ -185,7 +185,7 @@ describe('Облако: аккаунт', () => {
     await waitFor(() => expect(cloud.deleteAccount).toHaveBeenCalledTimes(1))
   })
 
-  it('ссылка «сбросить пароль»: сразу открывается форма нового пароля', async () => {
+  it('a "reset password" link: the new-password form opens at once', async () => {
     act(() => setCloud({ recovery: true }))
     const { user } = renderApp('/')
     const d = within(await dialog())
@@ -196,7 +196,7 @@ describe('Облако: аккаунт', () => {
     await waitFor(() => expect(cloud.setNewPassword).toHaveBeenCalledWith('brand-new-pass'))
   })
 
-  it('сообщение о смене аккаунта показывается один раз в шторке', async () => {
+  it('the account-switch message is shown once in the sheet', async () => {
     useCloud.setState({ notice: 'На устройстве были данные другого аккаунта — они удалены, загружаю твои.' })
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Облако'))

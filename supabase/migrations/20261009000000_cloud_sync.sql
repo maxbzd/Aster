@@ -1,6 +1,6 @@
--- Aster: облачная копия данных.
--- Одна строка = одна запись любой таблицы приложения (people, interactions, …).
--- Клиент читает через RLS, а пишет ТОЛЬКО через sync_push: проверка владельца, формата и правило «побеждает новейшая правка».
+-- Aster: the cloud copy of the data.
+-- One row = one record of any table of the app (people, interactions, …).
+-- The client reads through RLS and writes ONLY through sync_push: a check of the owner and the format, and the rule "the newest edit wins".
 
 create sequence if not exists public.records_seq;
 
@@ -24,15 +24,15 @@ create unique index if not exists records_user_seq_idx on public.records (user_i
 
 alter table public.records enable row level security;
 
-create policy "records: читать только своё"
+create policy "records: read own rows only"
   on public.records for select to authenticated
   using (user_id = (select auth.uid()));
 
--- Прямая запись клиентам закрыта: нет политик insert/update/delete.
+-- Direct writes are closed to clients: there are no insert/update/delete policies.
 revoke all on public.records from anon, authenticated, public;
 grant select on public.records to authenticated;
 
--- Пакетная запись. Побеждает правка со строго большим client_ts; ключи API из settings никогда не сохраняются.
+-- A batch write. The edit with a strictly larger client_ts wins; API keys in settings are never saved.
 create or replace function public.sync_push(rows jsonb)
 returns jsonb
 language plpgsql
@@ -88,7 +88,7 @@ begin
 end;
 $$;
 
--- Стереть все облачные данные вызывающего (аккаунт остаётся).
+-- Erase all of the caller's cloud data (the account stays).
 create or replace function public.delete_my_data()
 returns bigint
 language plpgsql
@@ -108,7 +108,7 @@ begin
 end;
 $$;
 
--- Удалить аккаунт целиком (записи уйдут каскадом).
+-- Delete the whole account (the records go in a cascade).
 create or replace function public.delete_my_account()
 returns void
 language plpgsql
@@ -132,5 +132,5 @@ grant execute on function public.sync_push(jsonb) to authenticated;
 grant execute on function public.delete_my_data() to authenticated;
 grant execute on function public.delete_my_account() to authenticated;
 
--- Живые обновления между устройствами.
+-- Live updates between devices.
 alter publication supabase_realtime add table public.records;

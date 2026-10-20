@@ -5,8 +5,8 @@ import { contactAnchor } from './logic'
 import { t, tn } from '@/i18n'
 
 /**
- * Слабые связи (Грановеттер): новые возможности чаще приходят не от близких, а от дальних знакомых,
- * потому что они живут в других мирах. Здесь — те дальние знакомые, у кого потенциала больше всего.
+ * Weak ties (Granovetter): new opportunities come more often from distant acquaintances than from close ones,
+ * because they live in other worlds. Here are the distant acquaintances with the most potential.
  */
 export interface WeakTie {
   person: Person
@@ -56,7 +56,7 @@ export function weakTies(people: Person[], ints: Interaction[], graph: GraphAnal
 
       const anchor = contactAnchor(p)
       const daysSince = anchor ? Math.floor((now - anchor) / DAY) : null
-      // давно молчите — самое время вернуть тепло, пока связь не угасла совсем
+      // silent for a long time: the right moment to bring the warmth back before the connection dies out completely
       if (daysSince !== null && daysSince > 120) { score += Math.min(14, (daysSince - 120) / 20); reasons.push(t("Haven't been in touch {v}", { v: daysSince > 330 ? t('for over a year') : t('{round} mo.', { round: Math.round(daysSince / 30) }) })) }
       if (p.closeness === 3) score += 4
 

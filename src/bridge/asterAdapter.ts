@@ -10,14 +10,14 @@ import { t } from '@/i18n'
 
 const personName = (p: Pick<Person, 'firstName' | 'lastName'>) => fullName(p)
 
-/** id напоминания-отражения: у всех устройств одинаковый, поэтому дублей не возникает. */
+/** The id of a mirrored reminder: the same on all devices, so no duplicates appear. */
 export const mirrorId = (commitmentKey: string) => `bridge-${commitmentKey}`
 
-/* ---------- публикация ---------- */
+/* ---------- publishing ---------- */
 
 async function collect(links: LinkMap): Promise<FeedItem[]> {
   const settings = await db.settings.get('me')
-  // вымышленные данные в другое приложение не уходят
+  // fictional data does not go to the other app
   if (settings?.demo) return []
 
   const out: FeedItem[] = []
@@ -28,7 +28,7 @@ async function collect(links: LinkMap): Promise<FeedItem[]> {
   const blockedLocal = new Set(links.blocked.map(b => b.localId))
 
   for (const p of people) {
-    if (p.familyOf) continue // семья в другое приложение не уходит
+    if (p.familyOf) continue // family does not go to the other app
     const peerRef = links.byLocal.get(p.id) ?? (blockedLocal.has(p.id) ? null : undefined)
     const data: PersonData = { name: personName(p), aliases: p.nickname ? [p.nickname] : [], ...(p.archived ? { archived: true } : {}), ...(peerRef !== undefined ? { peerRef } : {}) }
     out.push({ entity: 'person', key: p.id, data: data as unknown as Record<string, unknown>, deleted: false, updated_ms: p.updatedAt })
@@ -51,7 +51,7 @@ async function collect(links: LinkMap): Promise<FeedItem[]> {
   return out
 }
 
-/* ---------- применение ---------- */
+/* ---------- applying ---------- */
 
 async function loadCache<T>(meta: MetaStore, key: string): Promise<T> {
   return ((await meta.get<T>(key)) ?? {}) as T
@@ -79,14 +79,14 @@ async function apply(rows: PulledItem[], ctx: ApplyContext): Promise<ApplyResult
         if (row.deleted || !d) { delete peerPeople[row.key]; break }
         const data = d as unknown as PersonData
         peerPeople[row.key] = { ...data, ms: row.updated_ms }
-        // другая сторона уже связала своего человека с моим — принимаем связь
+        // the other side has already linked their person to mine: accept the link
         if (typeof data.peerRef === 'string') {
           const mine = myLinkRow(data.peerRef)
           if (!links.byLocal.has(data.peerRef) && !links.byPeer.has(row.key) && (!mine || row.updated_ms > mine.updated_ms) && (await db.people.get(data.peerRef))) {
             linkRows.push({ local_id: data.peerRef, peer_id: row.key, origin: 'user', deleted: false, updated_ms: row.updated_ms })
           }
         } else if (data.peerRef === null) {
-          // другая сторона явно разорвала связь: принимаем, если она новее моей
+          // the other side explicitly broke the link: accept it if it is newer than mine
           const localId = links.byPeer.get(row.key)
           const mine = localId ? myLinkRow(localId) : undefined
           if (localId && mine && !mine.deleted && row.updated_ms > mine.updated_ms) {
@@ -115,7 +115,7 @@ async function apply(rows: PulledItem[], ctx: ApplyContext): Promise<ApplyResult
         break
       }
       default:
-        break // commitment_state читает Орбита, а не мы
+        break // commitment_state is read by Orbita, not by us
     }
   }
 
@@ -134,7 +134,7 @@ async function apply(rows: PulledItem[], ctx: ApplyContext): Promise<ApplyResult
   return { links: linkRows, changed }
 }
 
-/** Обязательство из Орбиты → напоминание в Aster. Побеждает та сторона, чья правка новее. */
+/** A commitment from Orbita → a reminder in Aster. The side whose edit is newer wins. */
 async function mirrorCommitment(row: PulledItem, links: LinkMap, handled: Set<string>, now: number): Promise<number> {
   const id = mirrorId(row.key)
   const existing = await db.reminders.get(id)
@@ -144,7 +144,7 @@ async function mirrorCommitment(row: PulledItem, links: LinkMap, handled: Set<st
     return 0
   }
   const d = row.data as unknown as CommitmentData
-  if (handled.has(`rem:${row.key}`)) return 0 // человек удалил это напоминание — не возвращаем
+  if (handled.has(`rem:${row.key}`)) return 0 // the person deleted this reminder: we do not bring it back
 
   const personId = d.personRef ? links.byPeer.get(d.personRef) : undefined
   const text = d.direction === 'owed_to_me' ? t('Waiting for: {title}', { title: d.title }) : d.title
@@ -165,7 +165,7 @@ async function mirrorCommitment(row: PulledItem, links: LinkMap, handled: Set<st
     await db.reminders.put(next)
     return 1
   }
-  // правка здесь новее: только дополняем связью с человеком, если она появилась
+  // the edit here is newer: we only add the link to the person if one appeared
   if (!existing.personId && personId) {
     await db.reminders.update(id, { personId })
     return 1

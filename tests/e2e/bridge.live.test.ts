@@ -44,7 +44,7 @@ describe.skipIf(!live)('bridge: two live Supabase projects', () => {
   const ownA = () => supabaseOwn(ca)
   const ownO = () => supabaseOwn(co)
 
-  // «Орбита» в этом тесте — простой издатель с записями в её проекте
+  // "Orbita" in this test is a simple publisher with records in its project
   let orbitaItems: FeedItem[] = []
   const got: PulledItem[] = []
   const orbitaAdapter: BridgeAdapter = {
@@ -83,33 +83,33 @@ describe.skipIf(!live)('bridge: two live Supabase projects', () => {
     await db.settings.put({ id: 'me', name: 'Sam', onboarded: true, createdAt: Date.now() - 86_400_000 })
   })
 
-  it('без входа создать код нельзя, анонимно читать витрину нельзя', async () => {
+  it('without signing in you cannot create a code, and you cannot read the feed anonymously', async () => {
     const anon = createClient(ASTER_URL, ASTER_KEY, { auth: { persistSession: false } })
     const offer = await anon.rpc('bridge_create_offer', { p_label: 'x', p_scopes: ['people'] })
     expect(offer.error).not.toBeNull()
     const feed = await anon.from('bridge_feed').select('*')
     expect(feed.data ?? []).toEqual([])
     const direct = await ca.from('bridge_feed').select('*')
-    expect(direct.error).not.toBeNull() // даже вошедший читает только через функции
+    expect(direct.error).not.toBeNull() // even a signed-in user reads only through functions
     await expect(peerPull({ url: ASTER_URL, key: ASTER_KEY }, `bt_${'0'.repeat(64)}`, 0, 10)).rejects.toMatchObject({ kind: 'revoked' })
   }, 30_000)
 
-  it('подключение по коду: код одноразовый, ключи работают в обе стороны', async () => {
+  it('pairing by code: the code is one-time, the keys work both ways', async () => {
     const { text } = await createPairingCode(ownA(), A)
     const id = await acceptPairingCode(ownO(), O, text)
     const [connA] = await ownA().listConnections()
     const [connO] = await ownO().listConnections()
     expect(connA).toMatchObject({ peer_label: 'Orbita', peer_url: ORBITA_URL })
     expect(connO).toMatchObject({ id, peer_label: 'Aster', peer_url: ASTER_URL })
-    // тот же код второй раз — отказ, и у принимающего ничего не остаётся
+    // the same code a second time: refused, and the receiving side is left with nothing
     await expect(acceptPairingCode(ownO(), O, text)).rejects.toMatchObject({ kind: 'code-expired' })
     expect(await ownO().listConnections()).toHaveLength(1)
-    // ключи настоящие: читаем витрины друг друга
+    // the keys are real: read each other's feeds
     await expect(peerPull({ url: ORBITA_URL, key: ORBITA_KEY }, connA!.outbound_token!, 0, 10)).resolves.toMatchObject({ rows: expect.any(Array) })
     await expect(peerPull({ url: ASTER_URL, key: ASTER_KEY }, connO!.outbound_token!, 0, 10)).resolves.toMatchObject({ rows: expect.any(Array) })
   }, 60_000)
 
-  it('люди связываются сами, обязательство становится напоминанием, выполнение возвращается', async () => {
+  it('people link on their own, a commitment becomes a reminder, completion comes back', async () => {
     await db.people.add(person({ id: 'a1', firstName: 'Алина', lastName: 'Воронцова' }))
     orbitaItems = [
       { entity: 'person', key: 'o-alina', deleted: false, data: { name: 'Алина Воронцова', aliases: [] } },
@@ -124,18 +124,18 @@ describe.skipIf(!live)('bridge: two live Supabase projects', () => {
     await rounds()
     const state = got.find(r => r.entity === 'commitment_state' && r.key === 'c1' && (r.data as { status?: string } | null)?.status === 'done')
     expect(state).toBeDefined()
-    // Aster сообщил Орбите, с кем связан её человек (peerRef в записи о человеке)
+    // Aster told Orbita whom its person is linked to (peerRef in the person record)
     expect(got.find(r => r.entity === 'person' && r.key === 'a1')?.data).toMatchObject({ name: 'Алина Воронцова', peerRef: 'o-alina' })
   }, 90_000)
 
-  it('Aster публикует людей и статистику; Орбита их получает', async () => {
+  it('Aster publishes people and statistics; Orbita receives them', async () => {
     await db.people.add(person({ id: 'a2', firstName: 'Борис', lastName: 'Катин', closeness: 2 }))
     await rounds()
     expect(got.some(r => r.entity === 'person' && r.key === 'a2' && (r.data as { name?: string } | null)?.name === 'Борис Катин')).toBe(true)
     expect(got.some(r => r.entity === 'person_stats' && r.key === 'a2')).toBe(true)
   }, 60_000)
 
-  it('разрешения владельца режут то, что читает другая сторона', async () => {
+  it('the owner\'s permissions cut what the other side reads', async () => {
     orbitaItems = [{ entity: 'capture', key: 'k1', deleted: false, data: { day: '2026-10-01', title: 'Ужин', kind: 'meeting', people: [] } }, { entity: 'person', key: 'p', deleted: false, data: { name: 'Кто-то', aliases: [] } }]
     await rounds()
     const [connO] = await ownO().listConnections()
@@ -143,10 +143,10 @@ describe.skipIf(!live)('bridge: two live Supabase projects', () => {
     const [connA] = await ownA().listConnections()
     const page = await peerPull({ url: ORBITA_URL, key: ORBITA_KEY }, connA!.outbound_token!, 0, 100)
     expect(page.rows.length).toBeGreaterThan(0)
-    expect(page.rows.every(r => r.entity === 'person')).toBe(true) // записей о встречах (capture) нет
+    expect(page.rows.every(r => r.entity === 'person')).toBe(true) // there are no records of meetings (capture)
   }, 60_000)
 
-  it('отключение: ключ сразу перестаёт работать с обеих сторон', async () => {
+  it('disconnecting: the key stops working on both sides at once', async () => {
     const [connA] = await ownA().listConnections()
     const [connO] = await ownO().listConnections()
     await disconnectPeer(ownO(), connO!)

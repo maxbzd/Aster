@@ -1,7 +1,7 @@
 import type { Channel, Person } from './types'
 import { blankPerson } from './actions'
 
-/* ---------- Парсинг .vcf (iPhone, Android, Google) ---------- */
+/* ---------- Parsing .vcf (iPhone, Android, Google) ---------- */
 
 function decodeQP(s: string) {
   const bytes: number[] = []
@@ -15,14 +15,14 @@ function decodeQP(s: string) {
   try { return new TextDecoder('utf-8').decode(new Uint8Array(bytes)) } catch { return str }
 }
 
-/** Составные поля vCard делятся по «;», но «\;» внутри значения — не разделитель. */
+/** Compound vCard fields are split by ";", but "\;" inside a value is not a separator. */
 const splitFields = (s: string) => s.split(/(?<!\\);/)
 const unescapeValue = (s: string) => s.replace(/\\n/gi, '\n').replace(/\\([,;\\])/g, '$1')
 
 interface Prop { name: string; params: Record<string, string>; value: string }
 
 function parseLines(card: string): Prop[] {
-  // разворачиваем folding (строки с пробелом в начале) и мягкие переносы quoted-printable
+  // unfold folded lines (those starting with a space) and quoted-printable soft line breaks
   const lines: string[] = []
   for (const l of card.replace(/\r\n?/g, '\n').split('\n')) {
     const prev = lines[lines.length - 1]
@@ -117,7 +117,7 @@ export function parseVCards(text: string): Person[] {
   return out
 }
 
-/* ---------- Экспорт ---------- */
+/* ---------- Export ---------- */
 const vesc = (s: string) => s.replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;')
 
 export function toVCard(p: Person) {

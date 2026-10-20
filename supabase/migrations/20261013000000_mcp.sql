@@ -1,7 +1,7 @@
--- MCP для Claude: личные ключи доступа и запись данных от имени владельца.
+-- MCP for Claude: personal access keys and writing data on behalf of the owner.
 --
--- Ключ показывается человеку один раз при создании; в базе лежит только его SHA-256. Таблица закрыта для клиентов целиком:
--- создавать, смотреть и отзывать ключи можно только через функции ниже, а проверяет ключ Edge Function `mcp` (ключ сервиса).
+-- The key is shown to the person once, at creation; only its SHA-256 is stored in the database. The table is closed to clients entirely:
+-- keys can be created, listed and revoked only through the functions below, and the key is verified by the Edge Function `mcp` (the service key).
 
 create table if not exists public.mcp_tokens (
   id           uuid primary key default gen_random_uuid(),
@@ -82,8 +82,8 @@ grant execute on function public.mcp_create_token(text) to authenticated;
 grant execute on function public.mcp_list_tokens() to authenticated;
 grant execute on function public.mcp_revoke_token(uuid) to authenticated;
 
--- Aster: запись в records от имени владельца для Edge Function `mcp`. Сама следит за client_ts, чтобы запись всегда была новее прежней
--- и приложения на всех устройствах её приняли. Вызывать может только сервис.
+-- Aster: a write to records on behalf of the owner for the Edge Function `mcp`. It maintains client_ts itself so that the write is always newer than the previous one
+-- and the apps on all devices accept it. Only the service can call it.
 create or replace function public.mcp_put(p_user uuid, p_tbl text, p_id text, p_data jsonb)
 returns bigint
 language plpgsql

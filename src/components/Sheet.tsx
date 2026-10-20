@@ -14,7 +14,7 @@ interface Props {
   glow?: string
 }
 
-/** Нижняя шторка: тянется за ручку, закрывается свайпом вниз / Esc / тапом по фону. На десктопе — модалка. */
+/** A bottom sheet: dragged by the handle, closed by swiping down / Esc / tapping the backdrop. On desktop it is a modal. */
 export function Sheet({ onClose, title, subtitle, children, footer, tall, glow = 'rgb(124 92 255 / 0.28)' }: Props) {
   const desktop = useMediaQuery('(min-width: 768px)')
   const controls = useDragControls()

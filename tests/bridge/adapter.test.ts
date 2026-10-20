@@ -14,8 +14,8 @@ import { NOW, person, resetDb } from '../helpers'
 import { allScopes, Project, worldFetch } from './world'
 
 /**
- * Aster (настоящий адаптер на настоящей базе) против «Орбиты», которую изображает простой издатель.
- * Серверы — проекты в памяти с теми же правилами, что в SQL.
+ * Aster (the real adapter on a real database) against "Orbita", which a simple publisher stands in for.
+ * The servers are in-memory projects with the same rules as the SQL.
  */
 const A = { label: 'Aster', url: 'https://aster.test', key: 'ka' }
 const O = { label: 'Орбита', url: 'https://orbita.test', key: 'ko' }
@@ -46,7 +46,7 @@ beforeEach(async () => {
   orbita = new Project(O.url, O.key)
   aster.now = orbita.now = () => NOW
   f = worldFetch([aster, orbita])
-  vi.stubGlobal('fetch', f) // сервис моста ходит в «Орбиту» обычным fetch
+  vi.stubGlobal('fetch', f) // the bridge service calls "Orbita" with an ordinary fetch
   orbitaItems = []
   orbitaGot = []
   orbitaMeta.clear()
@@ -55,8 +55,8 @@ beforeEach(async () => {
   await acceptPairingCode(aster.own(), A, text, allScopes, f)
 })
 
-describe('люди', () => {
-  it('Aster публикует людей и статистику; демо-данные не публикует', async () => {
+describe('people', () => {
+  it('Aster publishes people and statistics; it does not publish demo data', async () => {
     await db.people.bulkAdd([person({ id: 'a1', firstName: 'Алина', lastName: 'Воронцова', nickname: 'Аля', closeness: 2, lastContactAt: NOW - 3 * DAY })])
     await db.interactions.add({ id: 'i1', personIds: ['a1'], type: 'call', date: NOW - 3 * DAY, createdAt: NOW })
     await both()
@@ -69,7 +69,7 @@ describe('люди', () => {
     expect(aster.feed.get('person:a1')?.deleted).toBe(true)
   })
 
-  it('люди с одинаковым полным именем связываются сами; связь уходит обратно в Орбиту через peerRef', async () => {
+  it('people with the same full name link on their own; the link goes back to Orbita through peerRef', async () => {
     await db.people.bulkAdd([person({ id: 'a1', firstName: 'Алина', lastName: 'Воронцова' }), person({ id: 'a2', firstName: 'Борис', lastName: 'Катин' })])
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова'), orbitaPerson('o-x', 'Кто-то Другой')]
     await both()
@@ -78,14 +78,14 @@ describe('люди', () => {
     expect(aster.feed.get('person:a2')?.data).not.toHaveProperty('peerRef')
   })
 
-  it('Орбита связала своего человека с моим — принимаем связь', async () => {
+  it('Orbita linked its person to mine: we accept the link', async () => {
     await db.people.add(person({ id: 'a1', firstName: 'Алина' }))
     orbitaItems = [orbitaPerson('o-alina', 'Совсем Другое Имя', { peerRef: 'a1' })]
     await both()
     expect(aster.links.get('a1')).toMatchObject({ peer_id: 'o-alina', deleted: false })
   })
 
-  it('явный разрыв: после «Нет» автосвязь не возвращается, Орбита узнаёт через peerRef: null', async () => {
+  it('an explicit unlink: after "No" auto-linking does not come back, Orbita learns through peerRef: null', async () => {
     await db.people.add(person({ id: 'a1', firstName: 'Алина', lastName: 'Воронцова' }))
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова')]
     await both()
@@ -101,7 +101,7 @@ describe('люди', () => {
     expect(ov.candidates.find(c => c.localId === 'a1' && c.peerId === 'o-alina')).toBeUndefined()
   })
 
-  it('обзор: предложения по неполным именам', async () => {
+  it('overview: suggestions for incomplete names', async () => {
     await db.people.add(person({ id: 'a1', firstName: 'Борис' }))
     orbitaItems = [orbitaPerson('o-boris', 'Борис Катин')]
     await both()
@@ -110,13 +110,13 @@ describe('люди', () => {
   })
 })
 
-describe('обязательства → напоминания', () => {
+describe('commitments → reminders', () => {
   beforeEach(async () => {
     await db.people.add(person({ id: 'a1', firstName: 'Алина', lastName: 'Воронцова' }))
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова')]
   })
 
-  it('обязательство становится напоминанием у человека; «мне должны» помечается', async () => {
+  it('a commitment becomes a reminder on the person; "owed to me" is marked', async () => {
     orbitaItems.push(commitment('c1'), commitment('c2', { title: 'Прислать договор', direction: 'owed_to_me' }))
     await both()
     const r1 = await db.reminders.get(mirrorId('c1'))
@@ -124,19 +124,19 @@ describe('обязательства → напоминания', () => {
     expect((await db.reminders.get(mirrorId('c2')))?.text).toBe('Жду: Прислать договор')
   })
 
-  it('без срока напоминание ставится через неделю после создания обязательства', async () => {
+  it('without a due date the reminder is set a week after the commitment was created', async () => {
     orbitaItems.push(commitment('c1', { dueMs: undefined, createdMs: NOW }))
     await both()
     expect((await db.reminders.get(mirrorId('c1')))?.dueAt).toBe(NOW + 7 * DAY)
   })
 
-  it('повторные круги не создают дубли', async () => {
+  it('repeated rounds do not create duplicates', async () => {
     orbitaItems.push(commitment('c1'))
     await both(); await both(); await both()
     expect(await db.reminders.count()).toBe(1)
   })
 
-  it('человек не связан — напоминание всё равно есть, а после связи получает человека', async () => {
+  it('the person is not linked: the reminder exists anyway and gets the person after linking', async () => {
     await db.people.update('a1', { firstName: 'Другая', lastName: 'Фамилия' })
     orbitaItems.push(commitment('c1'))
     await both()
@@ -148,7 +148,7 @@ describe('обязательства → напоминания', () => {
     expect((await db.reminders.get(mirrorId('c1')))?.personId).toBe('a1')
   })
 
-  it('выполнено в Aster → Орбита получает состояние «выполнено»', async () => {
+  it('done in Aster → Orbita gets the "done" state', async () => {
     orbitaItems.push(commitment('c1'))
     await both()
     await toggleReminder(mirrorId('c1'))
@@ -157,7 +157,7 @@ describe('обязательства → напоминания', () => {
     expect(orbitaGot.some(r => r.entity === 'commitment_state' && r.key === 'c1')).toBe(true)
   })
 
-  it('выполнено в Орбите (она новее) → напоминание закрывается', async () => {
+  it('done in Orbita (it is newer) → the reminder is closed', async () => {
     orbitaItems.push(commitment('c1', {}, NOW))
     await both()
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова'), commitment('c1', { status: 'done', doneMs: NOW + 1000 }, NOW + 2000)]
@@ -165,7 +165,7 @@ describe('обязательства → напоминания', () => {
     expect(await db.reminders.get(mirrorId('c1'))).toMatchObject({ done: true, doneAt: NOW + 1000 })
   })
 
-  it('правка в Aster новее правки Орбиты — не затирается', async () => {
+  it('an edit in Aster newer than Orbita\'s is not overwritten', async () => {
     orbitaItems.push(commitment('c1', {}, NOW))
     await both()
     await db.reminders.update(mirrorId('c1'), { done: true, doneAt: NOW + 5000, updatedAt: NOW + 5000 })
@@ -176,7 +176,7 @@ describe('обязательства → напоминания', () => {
     expect(r?.text).toBe('Прислать презентацию')
   })
 
-  it('удалено в Орбите → напоминание исчезает', async () => {
+  it('deleted in Orbita → the reminder disappears', async () => {
     orbitaItems.push(commitment('c1'))
     await both()
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова')]
@@ -184,7 +184,7 @@ describe('обязательства → напоминания', () => {
     expect(await db.reminders.get(mirrorId('c1'))).toBeUndefined()
   })
 
-  it('удалил напоминание сам — оно не возвращается', async () => {
+  it('you deleted the reminder yourself: it does not come back', async () => {
     orbitaItems.push(commitment('c1'))
     await both()
     await deleteReminder(mirrorId('c1'))
@@ -193,14 +193,14 @@ describe('обязательства → напоминания', () => {
     expect((await db.settings.get('me'))?.bridgeHandled).toContain('rem:c1')
   })
 
-  it('«отказались» (dropped) закрывает напоминание', async () => {
+  it('"dropped" closes the reminder', async () => {
     orbitaItems.push(commitment('c1', { status: 'dropped' }, NOW))
     await both()
     expect((await db.reminders.get(mirrorId('c1')))?.done).toBe(true)
   })
 })
 
-describe('предложения из Орбиты', () => {
+describe('suggestions from Orbita', () => {
   const capture = (key: string, extra: Record<string, unknown> = {}): FeedItem => ({ entity: 'capture', key, deleted: false, data: { day: '2026-10-03', title: 'Ужин у Алины', summary: 'Обсудили инвестора', kind: 'meeting', place: 'Москва', people: [{ ref: 'o-alina', name: 'Алина Воронцова' }], ...extra } })
   const fact = (key: string, title: string): FeedItem => ({ entity: 'fact', key, deleted: false, data: { title, people: [{ ref: 'o-alina', name: 'Алина' }] } })
 
@@ -209,7 +209,7 @@ describe('предложения из Орбиты', () => {
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова')]
   })
 
-  it('запись о встрече — предложение; принятие создаёт взаимодействие один раз', async () => {
+  it('a record of a meeting is a suggestion; accepting creates an interaction once', async () => {
     orbitaItems.push(capture('k1'))
     await both()
     const [s] = await listSuggestions(NOW)
@@ -223,7 +223,7 @@ describe('предложения из Орбиты', () => {
     expect(await listSuggestions(NOW)).toEqual([])
   })
 
-  it('«Скрыть» запоминается и не возвращается', async () => {
+  it('"Hide" is remembered and does not come back', async () => {
     orbitaItems.push(capture('k1'))
     await both()
     await dismissSuggestion((await listSuggestions(NOW))[0]!)
@@ -231,23 +231,23 @@ describe('предложения из Орбиты', () => {
     expect(await listSuggestions(NOW)).toEqual([])
   })
 
-  it('факт добавляется в карточку без дублей', async () => {
+  it('a fact is added to the card without duplicates', async () => {
     orbitaItems.push(fact('f1', 'Любит бег'), fact('f2', 'любит бег'))
     await both()
     const list = await listSuggestions(NOW)
     expect(list).toHaveLength(2)
     await acceptSuggestion(list[0]!)
     expect((await db.people.get('a1'))?.facts.map(x => x.text)).toEqual(['Любит бег'])
-    expect(await listSuggestions(NOW)).toHaveLength(0) // второй — тот же факт, уже есть в карточке
+    expect(await listSuggestions(NOW)).toHaveLength(0) // the second one is the same fact, already on the card
   })
 
-  it('про несвязанных людей и старые записи предложений нет', async () => {
+  it('no suggestions about unlinked people and old records', async () => {
     orbitaItems.push(capture('k1', { people: [{ ref: 'o-nobody', name: 'Никто' }] }), capture('k2', { day: '2025-01-01' }))
     await both()
     expect(await listSuggestions(NOW)).toEqual([])
   })
 
-  it('записи удалены в Орбите — предложение исчезает', async () => {
+  it('records deleted in Orbita: the suggestion disappears', async () => {
     orbitaItems.push(capture('k1'))
     await both()
     orbitaItems = [orbitaPerson('o-alina', 'Алина Воронцова')]
@@ -255,7 +255,7 @@ describe('предложения из Орбиты', () => {
     expect(await listSuggestions(NOW)).toEqual([])
   })
 
-  it('кэши Орбиты лежат на устройстве', async () => {
+  it('Orbita\'s caches live on the device', async () => {
     orbitaItems.push(capture('k1'))
     await both()
     expect(Object.keys((await bridgeMeta.get<Record<string, unknown>>(META.captures)) ?? {})).toEqual(['k1'])

@@ -32,7 +32,7 @@ export function summaryText(r: YearReview): string {
   return lines.join('\n')
 }
 
-/** «Итоги года»: история на весь экран. Тап — дальше или назад, удержание — пауза. */
+/** "Year in review": a full-screen story. Tap to go forward or back, hold to pause. */
 export function Year() {
   const nav = useNavigate()
   const toast = useUI(s => s.toast)
@@ -48,7 +48,7 @@ export function Year() {
   const slides = useMemo(() => SLIDES.filter(s => s.show(review)), [review])
 
   const [idx, setIdx] = useState(0)
-  // полоска прогресса двигается напрямую через ref: перерисовывать весь экран 60 раз в секунду незачем
+  // the progress bar moves directly through a ref: there is no need to re-render the whole screen 60 times a second
   const bar = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
   const paused = useRef(false)
@@ -69,7 +69,7 @@ export function Year() {
 
   useEffect(() => { go(0) }, [year]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // таймер: идёт, пока не нажат экран и открыта вкладка; на последнем слайде не листает
+  // the timer runs while the screen is not pressed and the tab is open; it does not advance on the last slide
   useEffect(() => {
     if (isLast) return
     let raf = 0
@@ -118,7 +118,7 @@ export function Year() {
     const p = press.current
     press.current = null
     if (!p) return
-    // короткое касание — переход; долгое — это была пауза (подержать, чтобы разглядеть)
+    // a short touch is a transition; a long one was a pause (holding to take a closer look)
     if (performance.now() - p.t > 260) return
     const w = (e.currentTarget as HTMLElement).clientWidth
     if (p.x < w * 0.3) prev(); else next()
@@ -126,7 +126,7 @@ export function Year() {
 
   return (
     <div className="fixed inset-0 z-[60] select-none overflow-hidden bg-[#05060a] text-white" onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={() => { paused.current = false; press.current = null }} role="presentation">
-      {/* фон слайда: три дрейфующих пятна цвета */}
+      {/* slide background: three drifting spots of colour */}
       <AnimatePresence initial={false}>
         <motion.div key={slide.key} aria-hidden className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.9 }}>
           <div className="absolute inset-0" style={{ background: `radial-gradient(120% 80% at 50% 110%, ${c3}, #05060a 70%)` }} />
@@ -135,7 +135,7 @@ export function Year() {
         </motion.div>
       </AnimatePresence>
 
-      {/* прогресс */}
+      {/* progress */}
       <div className="absolute inset-x-0 top-0 z-10 flex gap-1.5 px-4 pt-[calc(14px+var(--safe-top))]">
         {slides.map((s, i) => (
           <div key={s.key} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/25">
@@ -145,7 +145,7 @@ export function Year() {
       </div>
       <button type="button" aria-label={t('Close')} onClick={close} className="press absolute right-3 top-[calc(26px+var(--safe-top))] z-20 grid h-10 w-10 place-items-center rounded-full bg-black/30 text-white"><XIcon size={18} weight="bold" /></button>
 
-      {/* слайд */}
+      {/* slide */}
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={`${year}-${slide.key}`} className="absolute inset-0 mx-auto flex max-w-[460px] flex-col px-7 pb-[calc(44px+var(--safe-bottom))] pt-[calc(70px+var(--safe-top))]"
           initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.35 }}>

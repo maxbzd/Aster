@@ -111,7 +111,7 @@ const capitalizedRun = (s: string) => {
   return out.join(' ')
 }
 
-/** Извлечь сведения о человеке из текста (всё, что относится к главному герою заметки). */
+/** Extract details about a person from the text (everything that concerns the main character of the note). */
 function extractInto(d: PersonDraft, text: string, people: Person[], now: number, reminders: CapturePlan['reminders'], selfName: string) {
   const query = text
   const l = lower(query)

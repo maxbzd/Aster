@@ -28,7 +28,7 @@ function setup(opts: Partial<ControllerOptions> & { device?: Device; server?: Fa
 }
 
 describe('SyncController', () => {
-  it('первый запуск на пустом устройстве: запоминает владельца и сообщает «синхронизировано»', async () => {
+  it('the first start on an empty device: remembers the owner and reports "synced"', async () => {
     const { ctl, state, device } = setup()
     await ctl.start()
     expect(state.phase).toBe('idle')
@@ -36,23 +36,23 @@ describe('SyncController', () => {
     expect(await device.engine.getMeta('userId')).toBe('u1')
   })
 
-  it('локальные данные до входа попадают в облако', async () => {
+  it('local data from before sign-in gets to the cloud', async () => {
     const device = makeDevice()
     await device.db.people.bulkAdd([personOf('a'), personOf('b')])
-    await device.db.outbox.clear() // как будто правки были давно, очередь не помнит
+    await device.db.outbox.clear() // as if the edits were long ago and the queue does not remember
     const { ctl, server } = setup({ device })
     await ctl.start()
     expect(server.live('people').map(r => r.id).sort()).toEqual(['a', 'b'])
   })
 
-  it('правка на устройстве уходит сама, без нажатия кнопки', async () => {
+  it('an edit on the device goes out on its own, without pressing a button', async () => {
     const { ctl, server, device } = setup()
     await ctl.start()
     await device.db.people.add(personOf('p1'))
     await until(() => server.get('people', 'p1'))
   })
 
-  it('сигнал Realtime подтягивает чужую правку', async () => {
+  it('a Realtime signal pulls in another device\'s edit', async () => {
     const other = makeDevice()
     const server = new FakeServer()
     let ping = () => {}
@@ -64,7 +64,7 @@ describe('SyncController', () => {
     await until(async () => device.db.people.get('from-other'))
   })
 
-  it('нет сети: статус «offline» с числом ожидающих, при появлении сети всё уходит', async () => {
+  it('no network: status "offline" with the number waiting, when the network returns everything goes out', async () => {
     let online = false
     const { ctl, state, device, server } = setup({ online: () => online })
     await ctl.start()
@@ -81,7 +81,7 @@ describe('SyncController', () => {
     expect(server.get('people', 'p1')).toBeDefined()
   })
 
-  it('ошибка сервера: статус «error», данные остаются в очереди, потом само повторяет', async () => {
+  it('a server error: status "error", the data stays in the queue, then it retries on its own', async () => {
     const { ctl, state, device, server } = setup()
     await ctl.start()
     await device.db.people.add(personOf('p1'))
@@ -90,11 +90,11 @@ describe('SyncController', () => {
     await ctl.syncNow()
     expect(state.phase).toBe('error')
     expect(state.pending).toBe(1)
-    await until(() => server.get('people', 'p1')) // повтор по таймеру
+    await until(() => server.get('people', 'p1')) // a retry by the timer
     await until(() => state.phase === 'idle')
   })
 
-  it('обрыв сети во время запроса считается «offline», а не ошибкой', async () => {
+  it('a network drop during a request counts as "offline", not an error', async () => {
     const { ctl, state, server } = setup()
     server.online = false
     await ctl.start()
@@ -102,7 +102,7 @@ describe('SyncController', () => {
     expect(state.error).toBeUndefined()
   })
 
-  it('параллельные вызовы схлопываются: не больше одной синхронизации одновременно', async () => {
+  it('parallel calls collapse: no more than one sync at a time', async () => {
     const { ctl, server, device } = setup()
     await ctl.start()
     await device.db.people.add(personOf('p1'))
@@ -112,7 +112,7 @@ describe('SyncController', () => {
     expect(server.pushes.length).toBe(1)
   })
 
-  it('другой аккаунт на том же устройстве: чужие данные удаляются и не смешиваются', async () => {
+  it('another account on the same device: the other\'s data is deleted and not mixed', async () => {
     const device = makeDevice()
     const server = new FakeServer()
     const first = setup({ device, server, userId: 'u1' })
@@ -134,7 +134,7 @@ describe('SyncController', () => {
     expect(await device.engine.getMeta('userId')).toBe('u2')
   })
 
-  it('тот же аккаунт после перезапуска: данные не трогаем', async () => {
+  it('the same account after a restart: the data is not touched', async () => {
     const device = makeDevice()
     const server = new FakeServer()
     const a = setup({ device, server })
@@ -148,7 +148,7 @@ describe('SyncController', () => {
     expect(b.state.notice).toBeUndefined()
   })
 
-  it('после stop() синхронизации больше не запускаются', async () => {
+  it('after stop() syncs no longer start', async () => {
     const { ctl, server, device } = setup()
     await ctl.start()
     ctl.stop()
@@ -159,7 +159,7 @@ describe('SyncController', () => {
     expect(server.get('people', 'p1')).toBeUndefined()
   })
 
-  it('полная пересинхронизация загружает локальное заново', async () => {
+  it('a full resync uploads the local data again', async () => {
     const { ctl, server, device } = setup()
     await ctl.start()
     await device.db.people.add(personOf('p1'))
@@ -170,8 +170,8 @@ describe('SyncController', () => {
   })
 })
 
-describe('демо-данные и облако', () => {
-  it('демо-данные при первом входе удаляются и не попадают в аккаунт', async () => {
+describe('demo data and the cloud', () => {
+  it('demo data is deleted on the first sign-in and does not get into the account', async () => {
     const device = makeDevice()
     await device.db.settings.add({ id: 'me', name: 'Макс', onboarded: true, createdAt: 1, demo: true })
     await device.db.people.bulkAdd([personOf('fake1'), personOf('fake2')])
@@ -183,7 +183,7 @@ describe('демо-данные и облако', () => {
     expect(state.notice).toMatch(/Демо-данные удалены/)
   })
 
-  it('настоящие данные не трогаются', async () => {
+  it('real data is not touched', async () => {
     const device = makeDevice()
     await device.db.settings.add({ id: 'me', name: 'Макс', onboarded: true, createdAt: 1 })
     await device.db.people.add(personOf('real'))
@@ -193,7 +193,7 @@ describe('демо-данные и облако', () => {
     expect(state.notice).toBeUndefined()
   })
 
-  it('число отклонённых записей попадает в состояние', async () => {
+  it('the number of rejected records gets into the state', async () => {
     const device = makeDevice()
     const { ctl, server, state } = setup({ device })
     await ctl.start()

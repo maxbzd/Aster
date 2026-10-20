@@ -5,8 +5,8 @@ import { circleOf, personOf } from './rows'
 
 const sync = (d: Device, s: FakeServer, opts?: { full?: boolean }) => d.engine.syncOnce(s.remote(), opts)
 
-describe('отслеживание изменений', () => {
-  it('создание, правка и удаление попадают в очередь одной записью на строку', async () => {
+describe('tracking changes', () => {
+  it('create, update and delete get into the queue as one entry per row', async () => {
     const d = makeDevice()
     await d.db.people.add(personOf('p1'))
     await until(async () => (await outboxKeys(d)).includes('people:p1'))
@@ -21,13 +21,13 @@ describe('отслеживание изменений', () => {
     expect(await outboxKeys(d)).toEqual(['people:p1'])
   })
 
-  it('работает, когда транзакция не включает таблицу очереди', async () => {
+  it('works when the transaction does not include the queue table', async () => {
     const d = makeDevice()
     await d.db.transaction('rw', d.db.people, async () => { await d.db.people.put(personOf('p1')) })
     await until(async () => (await d.db.outbox.count()) === 1)
   })
 
-  it('массовые операции: bulkPut, bulkDelete, clear', async () => {
+  it('bulk operations: bulkPut, bulkDelete, clear', async () => {
     const d = makeDevice()
     await d.db.people.bulkPut([personOf('a'), personOf('b'), personOf('c')])
     await until(async () => (await d.db.outbox.count()) === 3)
@@ -39,7 +39,7 @@ describe('отслеживание изменений', () => {
     await until(async () => (await outboxKeys(d)).join() === 'people:c')
   })
 
-  it('изменения, пришедшие из облака, обратно не отправляются', async () => {
+  it('changes that came from the cloud are not sent back', async () => {
     const d = makeDevice()
     const rec: RemoteRecord = { tbl: 'people', id: 'r1', data: { ...personOf('r1') }, deleted: false, client_ts: 5, seq: 1 }
     await d.engine.applyRemote([rec])
@@ -48,7 +48,7 @@ describe('отслеживание изменений', () => {
     expect(await d.db.outbox.count()).toBe(0)
   })
 
-  it('правка только локальных полей настроек (ключ Астры, дата копии) в облако не уходит', async () => {
+  it('an edit of local-only settings fields (Astra\'s key, the backup date) does not go to the cloud', async () => {
     const d = makeDevice()
     await d.db.settings.add({ id: 'me', name: 'Макс', onboarded: true, createdAt: 1 })
     await until(async () => (await d.db.outbox.count()) === 1)
@@ -64,8 +64,8 @@ describe('отслеживание изменений', () => {
   })
 })
 
-describe('отправка', () => {
-  it('строка уходит целиком с меткой времени из очереди, очередь очищается', async () => {
+describe('sending', () => {
+  it('a row goes whole with the timestamp from the queue, the queue is cleared', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.add(personOf('p1', { firstName: 'Анна' }))
@@ -79,7 +79,7 @@ describe('отправка', () => {
     expect(await d.db.outbox.count()).toBe(0)
   })
 
-  it('удалённая строка уходит надгробием без данных', async () => {
+  it('a deleted row goes as a tombstone with no data', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.add(personOf('p1'))
@@ -90,7 +90,7 @@ describe('отправка', () => {
     expect(s.get('people', 'p1')).toMatchObject({ deleted: true, data: null })
   })
 
-  it('ключи Астры и дата копии не попадают в payload', async () => {
+  it('Astra\'s keys and the backup date do not get into the payload', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.settings.add({ id: 'me', name: 'Макс', onboarded: true, createdAt: 1, lastBackupAt: 9, ai: { mode: 'key', apiKey: 'sk-секрет', model: 'm', shareNotes: false, webSearch: false } })
@@ -102,7 +102,7 @@ describe('отправка', () => {
     expect(serialize('settings', { id: 'me', ai: { apiKey: 'x' }, name: 'a' })).toEqual({ id: 'me', name: 'a' })
   })
 
-  it('большая очередь делится на пачки', async () => {
+  it('a large queue is split into batches', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.bulkAdd(Array.from({ length: 250 }, (_, i) => personOf(`p${i}`)))
@@ -112,7 +112,7 @@ describe('отправка', () => {
     expect(s.live('people')).toHaveLength(250)
   })
 
-  it('при ошибке ничего не теряется, повтор доотправляет', async () => {
+  it('on an error nothing is lost, a retry sends the rest', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.bulkAdd([personOf('a'), personOf('b')])
@@ -125,7 +125,7 @@ describe('отправка', () => {
     expect(s.live('people')).toHaveLength(2)
   })
 
-  it('если строку изменили во время отправки, правка не теряется и уходит следующей пачкой', async () => {
+  it('if a row was changed during sending, the edit is not lost and goes in the next batch', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.add(personOf('p1'))
@@ -150,8 +150,8 @@ describe('отправка', () => {
   })
 })
 
-describe('получение', () => {
-  it('новые строки, правки и удаления применяются; повторное применение ничего не меняет', async () => {
+describe('receiving', () => {
+  it('new rows, edits and deletions are applied; applying again changes nothing', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
@@ -175,7 +175,7 @@ describe('получение', () => {
     expect(await b.db.outbox.count()).toBe(0)
   })
 
-  it('своя несинхронизированная правка новее — облако её не затирает и она уходит следом', async () => {
+  it('your own unsynced edit is newer: the cloud does not overwrite it and it goes out afterwards', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
@@ -185,7 +185,7 @@ describe('получение', () => {
     await a.db.people.update('p1', { notes: 'от A' })
     await until(async () => (await a.db.outbox.count()) === 1)
     await sync(a, s)
-    // B правит позже, но ещё не синхронизировался
+    // B edits later but has not synced yet
     await new Promise(r => setTimeout(r, 5))
     await b.db.people.update('p1', { notes: 'от B (позже)' })
     await until(async () => (await b.db.outbox.count()) === 1)
@@ -196,7 +196,7 @@ describe('получение', () => {
     expect((await a.db.people.get('p1'))?.notes).toBe('от B (позже)')
   })
 
-  it('облачная версия новее локальной несинхронизированной — побеждает облако', async () => {
+  it('a cloud version newer than the local unsynced one: the cloud wins', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
@@ -214,7 +214,7 @@ describe('получение', () => {
     expect(await b.db.outbox.count()).toBe(0)
   })
 
-  it('настройки приходят без потери ключа Астры, который есть только на этом устройстве', async () => {
+  it('settings arrive without losing Astra\'s key, which exists only on this device', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
@@ -228,7 +228,7 @@ describe('получение', () => {
     expect(await b.db.outbox.count()).toBe(0)
   })
 
-  it('постраничное чтение: больше страницы за раз', async () => {
+  it('reading by pages: more than one page at a time', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
@@ -241,7 +241,7 @@ describe('получение', () => {
     expect(s.pulls.filter(p => p.after < PULL_PAGE).length).toBeGreaterThan(1)
   })
 
-  it('курсор отступает назад на PULL_OVERLAP, чтобы не пропустить поздно зафиксированное', async () => {
+  it('the cursor steps back by PULL_OVERLAP so as not to miss what was committed late', async () => {
     const a = makeDevice()
     const s = new FakeServer()
     for (let i = 0; i < 400; i++) s.rows.set(`people:x${i}`, { tbl: 'people', id: `x${i}`, data: { ...personOf(`x${i}`) }, deleted: false, client_ts: 1, seq: ++s.seq })
@@ -252,12 +252,12 @@ describe('получение', () => {
     expect(s.pulls[0].after).toBe(400 - PULL_OVERLAP)
   })
 
-  it('запись, которая зафиксировалась в облаке позже и с меньшим seq, не теряется', async () => {
+  it('a record that was committed to the cloud later and with a smaller seq is not lost', async () => {
     const a = makeDevice()
     const s = new FakeServer()
     s.rows.set('people:late', { tbl: 'people', id: 'late', data: { ...personOf('late') }, deleted: false, client_ts: 1, seq: 5 })
     s.rows.set('people:early', { tbl: 'people', id: 'early', data: { ...personOf('early') }, deleted: false, client_ts: 1, seq: 9 })
-    // «late» ещё не была видна (её транзакция не зафиксирована)
+    // "late" was not visible yet (its transaction is not committed)
     const hidden = s.rows.get('people:late')!
     s.rows.delete('people:late')
     await sync(a, s)
@@ -266,15 +266,15 @@ describe('получение', () => {
     expect(await a.db.people.get('late')).toBeDefined()
   })
 
-  it('записи неизвестных таблиц игнорируются', async () => {
+  it('records of unknown tables are ignored', async () => {
     const a = makeDevice()
     const n = await a.engine.applyRemote([{ tbl: 'hack' as never, id: 'x', data: { id: 'x' }, deleted: false, client_ts: 1, seq: 1 }])
     expect(n).toBe(0)
   })
 })
 
-describe('несколько устройств', () => {
-  it('сходятся при конкурентных правках: побеждает более поздняя, в любом порядке синхронизации', async () => {
+describe('several devices', () => {
+  it('converge under concurrent edits: the later one wins, in any order of syncing', async () => {
     for (const order of ['ab', 'ba'] as const) {
       const a = makeDevice()
       const b = makeDevice()
@@ -294,14 +294,14 @@ describe('несколько устройств', () => {
     }
   })
 
-  it('первое подключение: локальные данные и облако объединяются, ничего не теряется', async () => {
+  it('first connection: local data and the cloud are merged, nothing is lost', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
     await a.db.people.bulkAdd([personOf('a1'), personOf('a2')])
     await a.engine.enqueueAll()
     await sync(a, s)
-    // у B были свои данные до входа в аккаунт
+    // B had its own data before signing in
     await b.db.people.bulkAdd([personOf('b1')])
     await b.engine.enqueueAll()
     await sync(b, s)
@@ -311,7 +311,7 @@ describe('несколько устройств', () => {
     expect(await ids(b)).toEqual(['a1', 'a2', 'b1'])
   })
 
-  it('старая локальная копия не воскрешает удалённое в облаке', async () => {
+  it('an old local copy does not resurrect what was deleted in the cloud', async () => {
     const a = makeDevice()
     const b = makeDevice()
     const s = new FakeServer()
@@ -321,14 +321,14 @@ describe('несколько устройств', () => {
     await a.db.people.delete('p1')
     await until(async () => (await a.db.outbox.count()) === 1)
     await sync(a, s)
-    // B не синхронизировалась и заново ставит всё в очередь с исходными метками
+    // B did not sync and queues everything again with the original stamps
     await b.engine.enqueueAll()
     await sync(b, s)
     expect(await b.db.people.get('p1')).toBeUndefined()
     expect(s.get('people', 'p1')?.deleted).toBe(true)
   })
 
-  it('полная пересинхронизация чинит облако, из которого пропали строки', async () => {
+  it('a full resync repairs a cloud that lost rows', async () => {
     const a = makeDevice()
     const s = new FakeServer()
     await a.db.people.bulkAdd([personOf('p1'), personOf('p2')])
@@ -339,7 +339,7 @@ describe('несколько устройств', () => {
     expect(s.live('people').map(r => r.id).sort()).toEqual(['p1', 'p2'])
   })
 
-  it('сводная проверка: случайные операции на трёх устройствах, после синхронизации все равны', async () => {
+  it('an overall check: random operations on three devices, after syncing all are equal', async () => {
     let seed = 20261009
     const rnd = () => {
       seed = (seed * 1664525 + 1013904223) % 4294967296
@@ -361,7 +361,7 @@ describe('несколько устройств', () => {
         }
       }
       await Promise.all(devs.map(d => settle(d)))
-      // синхронизируются не все и не в одном порядке
+      // not all of them sync, and not in the same order
       for (const d of devs.filter(() => rnd() < 0.7)) await sync(d, s)
     }
     for (let pass = 0; pass < 3; pass++) for (const d of devs) await sync(d, s)
@@ -377,14 +377,14 @@ describe('несколько устройств', () => {
 })
 
 describe('stable', () => {
-  it('не зависит от порядка ключей и игнорирует undefined', () => {
+  it('does not depend on key order and ignores undefined', () => {
     expect(stable({ b: 1, a: [{ d: 1, c: undefined }] })).toBe(stable({ a: [{ d: 1 }], b: 1 }))
     expect(stable({ a: 1 })).not.toBe(stable({ a: 2 }))
   })
 })
 
-describe('запись, которую сервер отклоняет насовсем', () => {
-  it('не блокирует остальные: пачка делится, виновник откладывается, остальное уходит', async () => {
+describe('a record the server rejects for good', () => {
+  it('does not block the others: the batch is split, the culprit is set aside, the rest goes through', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.bulkAdd([personOf('a'), personOf('bad'), personOf('c'), personOf('d')])
@@ -397,7 +397,7 @@ describe('запись, которую сервер отклоняет насо�
     expect(await d.engine.rejectedCount()).toBe(1)
   })
 
-  it('обычный сбой сети по-прежнему оставляет всё в очереди и ничего не откладывает', async () => {
+  it('an ordinary network failure still leaves everything in the queue and sets nothing aside', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.add(personOf('a'))
@@ -408,7 +408,7 @@ describe('запись, которую сервер отклоняет насо�
     expect(await d.engine.rejectedCount()).toBe(0)
   })
 
-  it('исправленная запись уходит позже, а счётчик отклонённых уменьшается', async () => {
+  it('a corrected record goes later, and the rejected counter decreases', async () => {
     const d = makeDevice()
     const s = new FakeServer()
     await d.db.people.add(personOf('bad'))
@@ -425,8 +425,8 @@ describe('запись, которую сервер отклоняет насо�
   })
 })
 
-describe('часы устройства', () => {
-  it('устройство с часами на годы вперёд не блокирует правки с нормальных часов', async () => {
+describe('the device clock', () => {
+  it('a device with a clock years ahead does not block edits from a normal clock', async () => {
     const wrong = makeDevice()
     const right = makeDevice()
     const s = new FakeServer()
@@ -436,7 +436,7 @@ describe('часы устройства', () => {
     await right.engine.syncOnce(s.remote())
     expect((await right.db.people.get('p1'))?.notes).toBe('с неверных часов')
 
-    // через две минуты правка с нормального устройства выигрывает
+    // two minutes later the edit from the normal device wins
     const later = Date.now() + 120_000
     s.nowMs = () => later
     await right.db.people.update('p1', { notes: 'нормальная правка' })
