@@ -123,7 +123,7 @@ Everything below needs your own Supabase project (free tier is enough). Aster do
 | TickTick | Reminders appear in TickTick, "done" syncs both ways | [docs/TICKTICK.md](docs/TICKTICK.md) |
 | Orbita bridge | Connect Aster with its companion app Orbita (tasks, commitments, journal) | [docs/BRIDGE.md](docs/BRIDGE.md) |
 
-> **Orbita** is a companion open-source project for personal tasks, commitments and reflection. It will get its own repository; the
+> **[Orbita](https://github.com/maxbzd/Orbita)** is a companion open-source project for personal tasks, commitments and reflection. The
 > bridge protocol that connects the two apps lives here in `src/bridge/` and is documented in [docs/BRIDGE.md](docs/BRIDGE.md).
 
 ## Tech stack
