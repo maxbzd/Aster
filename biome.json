@@ -1,0 +1,18 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "vcs": { "enabled": false },
+  "files": { "includes": ["src/**/*.ts", "src/**/*.tsx", "api/**", "tests/**", "*.ts"] },
+  "formatter": { "enabled": false },
+  "assist": { "enabled": false },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "style": { "useTemplate": "off", "noNonNullAssertion": "off", "useImportType": "off" },
+      "suspicious": { "noExplicitAny": "warn", "noArrayIndexKey": "off" },
+      "a11y": { "noAutofocus": "off", "useValidAnchor": "off", "useKeyWithClickEvents": "off", "noStaticElementInteractions": "off", "useSemanticElements": "off" },
+      "complexity": { "noForEach": "off", "noImportantStyles": "off" },
+      "correctness": { "useExhaustiveDependencies": "off" }
+    }
+  }
+}

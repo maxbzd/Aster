@@ -1,0 +1,14 @@
+{
+  // Aster on Cloudflare Workers: only the static site. AI keys do not live here but in the Supabase Edge Function
+  // `ai` (supabase/functions/ai). See docs/DEPLOY.md.
+  // The name must match the worker's name in the Cloudflare dashboard (aster.<account>.workers.dev).
+  // Fork it, change the name if you like, and deploy with `npx wrangler deploy`.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aster",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    // The app uses addresses like /#/people, so any other path is the app again.
+    "not_found_handling": "single-page-application"
+  }
+}
