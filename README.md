@@ -166,7 +166,7 @@ CI runs everything on every push and pull request.
 ## Contributing
 
 Contributions are welcome: bug reports, features, translations, docs. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
-Adding a language takes one JSON file: see [docs/I18N.md](docs/I18N.md). Security issues: see [SECURITY.md](SECURITY.md).
+How the code is organised: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Adding a language takes one JSON file: see [docs/I18N.md](docs/I18N.md). Security issues: see [SECURITY.md](SECURITY.md).
 
 ## License
 

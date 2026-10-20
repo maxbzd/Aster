@@ -163,7 +163,7 @@ npm run test:coverage
 ## Участие в проекте
 
 Приглашаем к участию: отчёты об ошибках, идеи, переводы, документация. Сначала прочитайте [CONTRIBUTING.md](CONTRIBUTING.md).
-Новый язык — это один JSON-файл: [docs/I18N.md](docs/I18N.md). Об уязвимостях — в [SECURITY.md](SECURITY.md).
+Как устроен код: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). Новый язык — это один JSON-файл: [docs/I18N.md](docs/I18N.md). Об уязвимостях — в [SECURITY.md](SECURITY.md).
 
 ## Лицензия
 
