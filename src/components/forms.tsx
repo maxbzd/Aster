@@ -8,10 +8,10 @@ import type { ID } from '@/data/types'
 import { haptic } from '@/app/store'
 import { t } from '@/i18n'
 
-/** Поле в стиле Oura: подпись сверху, значение крупно. */
+/** An Oura-style field: the label above, the value large. */
 export function Field({ label, children, hint }: { label: string; children: ReactNode; hint?: ReactNode }) {
-  // не <label>: внутри бывают кнопки-подсказки, а вложенные интерактивные элементы невалидны.
-  // Тап по пустому месту и подписи по-прежнему ставит курсор в поле.
+  // not a <label>: it may contain suggestion buttons, and nested interactive elements are invalid.
+  // A tap on the empty space and on the label still puts the cursor in the field.
   return (
     <div className="block cursor-text px-4 py-3" onClick={e => { const target2 = e.target as HTMLElement; if (target2 === e.currentTarget || target2.dataset.fieldLabel) e.currentTarget.querySelector<HTMLElement>('input, textarea')?.focus() }}>
       <span data-field-label className="micro mb-1.5 block text-fg-3">{label}</span>
@@ -43,14 +43,14 @@ export function FormGroup({ title, children, action }: { title?: string; childre
   )
 }
 
-/** Выбор людей с поиском. */
+/** A people picker with search. */
 export function PersonPicker({ value, onChange, multi = true, exclude = [], placeholder = t('Find a person…') }: { value: ID[]; onChange: (v: ID[]) => void; multi?: boolean; exclude?: ID[]; placeholder?: string }) {
   const people = usePeople()
   const [q, setQ] = useState('')
   const list = useMemo(() => {
     const query = q.trim().toLowerCase()
     const pool = (people ?? []).filter(p => !exclude.includes(p.id))
-    // имя ищем с транслитом и уменьшительными (Alexey → Алексей, Саша → Александр), компанию — по подстроке
+    // the name is searched with transliteration and short forms (Alexey → Алексей, Саша → Александр), the company by substring
     const byName = new Set(query ? searchByName(query, pool).map(p => p.id) : [])
     return pool
       .filter(p => !query || byName.has(p.id) || `${fullName(p)} ${p.company ?? ''}`.toLowerCase().includes(query))
@@ -101,8 +101,8 @@ export function PersonPicker({ value, onChange, multi = true, exclude = [], plac
 }
 
 /**
- * Поле, которое отдаёт значение наружу не на каждую букву, а с паузой и при уходе из поля.
- * Нужно там, где «наружу» — это запись в базу: иначе поле догоняет запись с задержкой и съедает символы.
+ * A field that hands its value out not on every letter but after a pause and when it loses focus.
+ * Needed where "out" means a database write: otherwise the field lags behind the write and swallows characters.
  */
 export function CommitInput({ value, onCommit, delay = 350, ...rest }: { value: string; onCommit: (v: string) => void; delay?: number } & Omit<ComponentProps<'input'>, 'value' | 'onChange' | 'onBlur'>) {
   const [text, setText] = useState(value)

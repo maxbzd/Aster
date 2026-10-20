@@ -8,7 +8,7 @@ import {
 } from '@/lib/calendar'
 import { t } from '@/i18n'
 
-/* Свои выбор даты, времени и списка вместо системных. Системные окна браузера не стилизуются и выбиваются из дизайна.
+/* Our own date, time and list pickers instead of the system ones. The browser's system windows cannot be styled and clash with the design.
    Выпадашка — на десктопе всплывающая карточка у поля, на телефоне — нижняя шторка. */
 
 type Variant = 'box' | 'field' | 'pill' | 'mini' | 'none'
@@ -53,7 +53,7 @@ function usePicker() {
   return { anchor, open, setOpen, close }
 }
 
-/** Всплывающая карточка. Escape закрывает только её, а не шторку под ней. */
+/** A popover card. Escape closes only it, not the sheet below. */
 function Popover({ anchor, onClose, title, width = 320, children }: { anchor: RefObject<HTMLElement | null>; onClose: () => void; title: string; width?: number; children: ReactNode }) {
   const desktop = useMediaQuery('(min-width: 640px)')
   const panel = useRef<HTMLDivElement>(null)
@@ -124,7 +124,7 @@ function Popover({ anchor, onClose, title, width = 320, children }: { anchor: Re
 const navBtn = 'press grid h-9 w-9 shrink-0 place-items-center rounded-full text-fg-2 hover:bg-white/[0.07] disabled:opacity-25'
 const SELECTED = 'bg-[linear-gradient(145deg,#b9adff,#7f63ff)] font-semibold text-white shadow-[0_8px_20px_-8px_rgb(124_92_255/0.9)]'
 
-/** Календарь с переключением месяца, месяцев и лет. Управляется с клавиатуры: стрелки, PageUp/PageDown, Home/End. */
+/** A calendar that switches the month, months and years. Keyboard-controlled: arrows, PageUp/PageDown, Home/End. */
 export function Calendar({ value, onPick, min, max, autoFocus }: { value?: string; onPick: (iso: string) => void; min?: string; max?: string; autoFocus?: boolean }) {
   const today = toISODate(Date.now())
   const start = parseISO(value) ?? parseISO(clampISO(today, min, max))!
@@ -244,7 +244,7 @@ export function Calendar({ value, onPick, min, max, autoFocus }: { value?: strin
 
 const ROW = 40
 
-/** Колонка-барабан: листается пальцем или колесом, нажатие на значение выбирает его. */
+/** A drum column: scrolled by finger or wheel, tapping a value selects it. */
 function Wheel({ items, value, onChange, label }: { items: number[]; value: number; onChange: (v: number) => void; label: string }) {
   const box = useRef<HTMLDivElement>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
@@ -313,19 +313,19 @@ interface DateProps {
   onChange: (iso: string) => void
   min?: string
   max?: string
-  /** Показать кнопку «Удалить» (значение станет пустым). */
+  /** Show a "Delete" button (the value becomes empty). */
   clearable?: boolean
   placeholder?: string
   label: string
   variant?: Variant
   className?: string
-  /** Без года: «10 октября». */
+  /** Without a year: "October 10". */
   hideYear?: boolean
-  /** Свой текст в поле вместо даты. */
+  /** A custom text in the field instead of the date. */
   render?: (iso: string) => ReactNode
 }
 
-/** Выбор даты. Значение — «ГГГГ-ММ-ДД» или пустая строка. */
+/** A date picker. The value is "YYYY-MM-DD" or an empty string. */
 export function DateField({ value, onChange, min, max, clearable, placeholder = t('Pick a date'), label, variant = 'box', className, hideYear, render }: DateProps) {
   const { anchor, open, setOpen, close } = usePicker()
   const today = toISODate(Date.now())
@@ -349,7 +349,7 @@ export function DateField({ value, onChange, min, max, clearable, placeholder = 
   )
 }
 
-/** Выбор даты и времени. Значение — миллисекунды. */
+/** A date and time picker. The value is in milliseconds. */
 export function DateTimeField({ value, onChange, label, variant = 'box', className, min }: { value: number; onChange: (value2: number) => void; label: string; variant?: Variant; className?: string; min?: string }) {
   const { anchor, open, setOpen, close } = usePicker()
   const d = new Date(value)
@@ -383,7 +383,7 @@ export function DateTimeField({ value, onChange, label, variant = 'box', classNa
 
 export interface Option<T extends string | number> { value: T; label: ReactNode; hint?: string }
 
-/** Выбор из списка. `columns` > 1 раскладывает варианты сеткой (дни месяца, месяцы). */
+/** A choice from a list. `columns` > 1 lays the options out in a grid (days of the month, months). */
 export function SelectField<T extends string | number>({
   value, options, onChange, label, placeholder = t('Select'), variant = 'box', className, columns = 1, width, shown,
 }: {
@@ -396,7 +396,7 @@ export function SelectField<T extends string | number>({
   className?: string
   columns?: number
   width?: number
-  /** Текст в поле, если он должен отличаться от подписи варианта. */
+  /** The text in the field, if it must differ from the option's label. */
   shown?: ReactNode
 }) {
   const { anchor, open, setOpen, close } = usePicker()

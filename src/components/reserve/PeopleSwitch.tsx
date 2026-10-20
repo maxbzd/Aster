@@ -3,7 +3,7 @@ import { Segmented } from '@/components/ui'
 import { useCounts } from '@/data/hooks'
 import { t } from '@/i18n'
 
-/** Переключатель «Сеть / Резерв»: люди, с которыми общаешься, и контакты про запас. */
+/** The "Network / Reserve" switch: people you are in touch with, and contacts kept in store. */
 export function PeopleSwitch({ value }: { value: 'people' | 'reserve' }) {
   const nav = useNavigate()
   const c = useCounts()

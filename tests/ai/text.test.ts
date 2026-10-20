@@ -5,24 +5,24 @@ import {
 import { NOW, person } from '../helpers'
 
 describe('stem / stems', () => {
-  it('снимает русские окончания', () => {
+  it('strips Russian endings', () => {
     expect(stem('инвесторы')).toBe('инвестор')
     expect(stem('юристами')).toBe('юрист')
     expect(stem('дизайнера')).toBe('дизайнер')
   })
-  it('латиницу и короткие слова не трогает', () => {
+  it('leaves Latin and short words alone', () => {
     expect(stem('fintech')).toBe('fintech')
     expect(stem('ии')).toBe('ии')
     expect(stem('мир')).toBe('мир')
   })
-  it('stems выкидывает стоп-слова и приводит ё к е', () => {
+  it('stems drops stop words and turns ё into е', () => {
     expect(stems('Кто может помочь с визой в ОАЭ?')).toEqual(['виз', 'оаэ'])
     expect(stems('Ёлка')).toEqual(['елк'])
   })
 })
 
-describe('wordRe — границы слов для кириллицы', () => {
-  it('находит слово целиком и не находит внутри другого', () => {
+describe('wordRe: word boundaries for Cyrillic', () => {
+  it('finds a whole word and does not find one inside another', () => {
     expect(wordRe('кот').test('мой кот спит')).toBe(true)
     expect(wordRe('кот').test('котлета')).toBe(false)
     expect(wordRe('кот').test('скот')).toBe(false)
@@ -30,14 +30,14 @@ describe('wordRe — границы слов для кириллицы', () => {
   })
 })
 
-describe('имена в именительный падеж', () => {
+describe('names to the nominative case', () => {
   it.each([
     ['Артёмом', 'Артём'], ['Анной', 'Анна'], ['Сергеем', 'Сергей'], ['Дмитрием', 'Дмитрий'], ['Марией', 'Мария'],
     ['Олегом', 'Олег'], ['Игорем', 'Игорь'], ['Ильёй', 'Илья'], ['Максимом', 'Максим'],
   ])('%s → %s', (form, nom) => {
     expect(nameToNominative(form)).toBe(nom)
   })
-  it('фамилии', () => {
+  it('last names', () => {
     expect(surnameToNominative('Смирновым')).toBe('Смирнов')
     expect(surnameToNominative('Смирновой')).toBe('Смирнова')
     expect(surnameToNominative('Чайковским')).toBe('Чайковский')
@@ -48,22 +48,22 @@ describe('имена в именительный падеж', () => {
   })
 })
 
-describe('findMentioned — упомянутые люди в падежах', () => {
+describe('findMentioned: people mentioned in case forms', () => {
   const people = [person({ id: 'a', firstName: 'Артём' }), person({ id: 'n', firstName: 'Анна', lastName: 'Ким' }), person({ id: 'n2', firstName: 'Анна', lastName: 'Лим' }), person({ id: 'o', firstName: 'Олег' })]
-  it('находит по косвенным падежам', () => {
+  it('finds by oblique cases', () => {
     expect(findMentioned('Вчера говорил с Артёмом', people).map(p => p.id)).toEqual(['a'])
     expect(findMentioned('Встретил Олега и Артёма', people).map(p => p.id).sort()).toEqual(['a', 'o'])
   })
-  it('при тёзках выбирает того, чья фамилия названа', () => {
+  it('with namesakes it picks the one whose last name is given', () => {
     expect(findMentioned('Написала Анна Лим по поводу сделки', people).map(p => p.id)).toEqual(['n2'])
   })
-  it('не путает части слов и пропускает архивных', () => {
+  it('does not confuse word parts and skips archived people', () => {
     expect(findMentioned('Олегарх пришёл', people)).toEqual([])
     expect(findMentioned('Артём', [person({ firstName: 'Артём', archived: true })])).toEqual([])
   })
 })
 
-describe('parseWhen — «когда» из речи (сегодня: пн 5 октября 2026)', () => {
+describe('parseWhen: "when" from speech (today: Mon 5 October 2026)', () => {
   it.each([
     ['позвоню завтра', '2026-10-06'],
     ['напомни послезавтра', '2026-10-07'],
@@ -86,13 +86,13 @@ describe('parseWhen — «когда» из речи (сегодня: пн 5 о�
   ])('«%s» → %s', (text, iso) => {
     expect(parseWhen(text, NOW)).toBe(iso)
   })
-  it('без даты — null', () => {
+  it('no date: null', () => {
     expect(parseWhen('просто поговорили', NOW)).toBeNull()
   })
-  it('«завтра» не срабатывает внутри слова', () => {
+  it('"завтра" does not fire inside a word', () => {
     expect(parseWhen('позавчера', NOW)).toBeNull()
   })
-  it('месяцы: май и производные', () => {
+  it('months: май and its derivatives', () => {
     expect(monthIndex('мая')).toBe(4)
     expect(monthIndex('майский')).toBe(-1)
     expect(monthIndex('марта')).toBe(2)
@@ -109,13 +109,13 @@ describe('parseBirthday', () => {
   ])('«%s» → %s', (text, v) => {
     expect(parseBirthday(text)).toBe(v)
   })
-  it('нет даты — null', () => {
+  it('no date: null', () => {
     expect(parseBirthday('любит бегать')).toBeNull()
   })
 })
 
 describe('clauses', () => {
-  it('делит на смысловые фразы', () => {
+  it('splits into meaningful phrases', () => {
     const parts = clauses('Познакомились на конференции. Работает в финтехе, а живёт в Дубае! Обещал интро.')
     expect(parts).toHaveLength(4)
     expect(parts[0]).toBe('Познакомились на конференции.')

@@ -4,7 +4,7 @@ import { skeleton, normalize } from '@/lib/names'
 import { fullName } from '@/lib/format'
 import { t, collate } from '@/i18n'
 
-/** Телефоны сравниваем по цифрам, ники и почту — без регистра и @. */
+/** Phones are compared by digits; handles and emails ignoring case and @. */
 export const channelKey = (c: Channel): string => {
   const v = c.value.trim().toLowerCase().replace(/^@/, '').replace(/^https?:\/\/(www\.)?/, '').replace(/\/$/, '')
   return c.type === 'phone' || c.type === 'whatsapp' ? `tel:${v.replace(/\D/g, '').replace(/^8(?=\d{10}$)/, '7')}` : `${c.type === 'telegram' ? 'tg' : c.type}:${v}`
@@ -15,8 +15,8 @@ export interface DuplicateGroup { people: Person[]; reasons: string[] }
 const fullSkeleton = (p: Pick<Person, 'firstName' | 'lastName'>) => [p.firstName, p.lastName ?? ''].map(skeleton).filter(Boolean).sort().join(' ')
 
 /**
- * Возможные дубли: одно и то же полное имя (в том числе Alexey Petrov = Алексей Петров),
- * или общий телефон, почта, ник. Один человек не бывает в двух группах — группы склеиваются.
+ * Possible duplicates: the same full name (Alexey Petrov = Алексей Петров included),
+ * or a shared phone, email or handle. One person is never in two groups: groups are merged.
  */
 export function findDuplicates(all: Person[]): DuplicateGroup[] {
   const people = all.filter(p => !p.familyOf)
@@ -35,7 +35,7 @@ export function findDuplicates(all: Person[]): DuplicateGroup[] {
       note(list.map(p => p.id), why)
     }
   }
-  // имя из одного слова слишком общее («Саша»): совпадение по имени требует фамилии
+  // a one-word name is too common ("Sasha"): matching by name requires a last name
   bucket(p => (p.lastName?.trim() ? [fullSkeleton(p)] : []), t('same first and last name'))
   bucket(p => p.channels.map(channelKey).filter(k => !/^(website|other):/.test(k) && k.length > 6), t('shared contact'))
 
@@ -49,7 +49,7 @@ export function findDuplicates(all: Person[]): DuplicateGroup[] {
 
 const uniqBy = <T,>(xs: T[], key: (x: T) => string) => { const seen = new Set<string>(); return xs.filter(x => { const k = key(x); if (seen.has(k)) return false; seen.add(k); return true }) }
 
-/** Чистое слияние полей: оставляем заполненное у главной карточки, недостающее берём у остальных. */
+/** A pure merge of fields: keep what the main card has filled in, take what is missing from the others. */
 export function mergeFields(keep: Person, others: Person[]): Person {
   const out: Person = { ...keep }
   const text = ['lastName', 'nickname', 'photo', 'company', 'role', 'city', 'birthday', 'metAt', 'metPlace', 'metStory', 'family', 'canHelpMe', 'iCanHelp', 'lookingFor', 'giftIdeas', 'introducedBy', 'cadenceDays', 'relation', 'familyOf'] as const
@@ -70,7 +70,7 @@ export function mergeFields(keep: Person, others: Person[]): Person {
     out.closeness = Math.min(out.closeness, o.closeness) as Person['closeness']
     out.lastContactAt = Math.max(out.lastContactAt ?? 0, o.lastContactAt ?? 0) || undefined
     out.createdAt = Math.min(out.createdAt, o.createdAt)
-    if (!out.lifeStatus && o.lifeStatus === undefined) { /* остаётся активным */ }
+    if (!out.lifeStatus && o.lifeStatus === undefined) { /* stays active */ }
     out.everyday = out.everyday || o.everyday || undefined
     if (out.nickname === undefined && o.firstName.toLowerCase() !== out.firstName.toLowerCase() && normalize(o.firstName) !== normalize(out.firstName)) out.nickname = o.firstName
   }
@@ -81,8 +81,8 @@ export function mergeFields(keep: Person, others: Person[]): Person {
 const swap = (ids: ID[], gone: Set<ID>, keep: ID) => [...new Set(ids.map(i => (gone.has(i) ? keep : i)))]
 
 /**
- * Объединяет карточки: все записи общения, напоминания, списки, семья и связи переезжают на главную,
- * лишние карточки удаляются. Всё в одной транзакции.
+ * Merges cards: all interactions, reminders, lists, family and links move to the main one,
+ * and the extra cards are deleted. All in one transaction.
  */
 export async function mergePeople(keepId: ID, mergeIds: ID[]): Promise<Person> {
   const gone = new Set(mergeIds.filter(i => i !== keepId))
@@ -116,7 +116,7 @@ export async function mergePeople(keepId: ID, mergeIds: ID[]): Promise<Person> {
       else await db.intros.update(x.id, { aId: a, bId: b })
     }
     await db.people.bulkDelete([...gone])
-    // последний контакт пересчитываем по объединённой истории
+    // the last contact is recalculated from the merged history
     const ints = await db.interactions.where('personIds').equals(keepId).toArray()
     const last = ints.filter(i => ['meeting', 'call', 'message', 'event', 'favor_given', 'favor_got', 'gift'].includes(i.type)).reduce((m, i) => Math.max(m, i.date), 0)
     result = { ...result, lastContactAt: last || undefined }
@@ -125,7 +125,7 @@ export async function mergePeople(keepId: ID, mergeIds: ID[]): Promise<Person> {
   return result
 }
 
-/** Массовая правка: меняет только то, что указано. Теги добавляются, а не заменяются. */
+/** Bulk edit: changes only what is specified. Tags are added, not replaced. */
 export interface BulkPatch {
   city?: string
   metPlace?: string

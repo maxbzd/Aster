@@ -12,7 +12,7 @@ import { haptic, useUI } from '@/app/store'
 import type { Interaction, Person } from '@/data/types'
 import { t } from '@/i18n'
 
-/** Умные ритмы: приложение замечает, что вы общаетесь не так, как задано, и предлагает поправить ритм. */
+/** Smart rhythms: the app notices that you are not in touch as often as set and suggests adjusting the rhythm. */
 export function RhythmSuggestions({ people, ints, now }: { people: Person[]; ints: Interaction[]; now: number }) {
   const toast = useUI(s => s.toast)
   const list = useMemo(() => cadenceSuggestions(people, ints, now).slice(0, 4), [people, ints, now])
@@ -54,7 +54,7 @@ export function RhythmSuggestions({ people, ints, now }: { people: Person[]; int
   )
 }
 
-/** Взаимность: с кем перекос — ты всё время пишешь первым, или наоборот. */
+/** Reciprocity: who is lopsided, where you always write first, or the other way round. */
 export function ReciprocityCard({ people, ints, now }: { people: Person[]; ints: Interaction[]; now: number }) {
   const list = useMemo(() => reciprocityRanking(people, ints, now).slice(0, 5), [people, ints, now])
   if (!list.length) return null
@@ -87,7 +87,7 @@ export function ReciprocityCard({ people, ints, now }: { people: Person[]; ints:
   )
 }
 
-/** Два входа в новые взгляды на сеть. */
+/** Two entrances to new views of the network. */
 export function NetworkLinks() {
   const items = [
     { to: '/graph', icon: GraphIcon, title: t('Connection graph'), text: t('Who knows whom, groups and bridges'), color: '#8f7cff' },

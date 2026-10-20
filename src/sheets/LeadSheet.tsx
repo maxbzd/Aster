@@ -52,12 +52,12 @@ export function LeadSheet({ id, onClose }: { id: string; onClose: () => void }) 
   const nav = useNavigate()
   const [mode, setMode] = useState<'card' | 'write' | 'promote'>('card')
   const [confirmDel, setConfirmDel] = useState(false)
-  // «что написать»
+  // "what to write"
   const [res, setRes] = useState<Result<Drafts> | null>(null)
   const [tone, setTone] = useState<Tone>('warm')
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
-  // «в сеть»
+  // "to the network"
   const [closeness, setCloseness] = useState<Closeness>(3)
   const [circleIds, setCircleIds] = useState<string[]>([])
 

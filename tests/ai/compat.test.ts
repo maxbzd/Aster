@@ -16,15 +16,15 @@ const reply = (content: string, extra: object = {}) => new Response(JSON.stringi
 beforeEach(async () => { await resetDb() })
 afterEach(() => vi.unstubAllGlobals())
 
-describe('JSON из ответа модели', () => {
-  it('чистый JSON, в ```json```, с пояснением вокруг', () => {
+describe('JSON from the model\'s answer', () => {
+  it('plain JSON, in ```json```, with an explanation around it', () => {
     expect(extractJson('{"a":1}')).toEqual({ a: 1 })
     expect(extractJson('```json\n{"a":1}\n```')).toEqual({ a: 1 })
     expect(extractJson('Вот ответ: {"a":1}. Надеюсь, помог!')).toEqual({ a: 1 })
     expect(() => extractJson('нет объекта')).toThrow()
   })
 
-  it('картинки из формата Anthropic становятся image_url', () => {
+  it('images in the Anthropic format become image_url', () => {
     expect(toParts('текст')).toBe('текст')
     expect(toParts([{ type: 'image', source: { media_type: 'image/png', data: 'AAA' } }, { type: 'text', text: 'описание' }])).toEqual([
       { type: 'image_url', image_url: { url: 'data:image/png;base64,AAA' } },
@@ -33,8 +33,8 @@ describe('JSON из ответа модели', () => {
   })
 })
 
-describe('вызов бесплатной модели через сервер', () => {
-  it('запрос идёт на маршрут своего провайдера, схема лежит в промпте, ответ проверяется и расход пишется с нулевой ценой', async () => {
+describe('calling a free model through the server', () => {
+  it('the request goes to its provider\'s route, the schema is in the prompt, the answer is validated and the usage is recorded at zero cost', async () => {
     const f = vi.fn(async () => reply('{"answer":"ок","n":2}'))
     vi.stubGlobal('fetch', f)
     const out = await compatJSON(ai(), call({ context: 'КОНТЕКСТ СЕТИ' }))
@@ -52,7 +52,7 @@ describe('вызов бесплатной модели через сервер',
     expect(usage[0]).toMatchObject({ model: 'gemini-2.5-flash', input: 120, output: 30, cost: 0 })
   })
 
-  it('модель шлюза владельца: маршрут /gateway, приставка приложения в запрос не попадает', async () => {
+  it('the owner\'s gateway model: route /gateway, the app\'s prefix does not get into the request', async () => {
     const f = vi.fn(async () => reply('{"answer":"ок","n":1}'))
     vi.stubGlobal('fetch', f)
     await compatJSON(ai('gw:vendor/model-a'), call())
@@ -63,14 +63,14 @@ describe('вызов бесплатной модели через сервер',
     expect(modelInfo('gw:vendor/model-a')).toMatchObject({ name: 'vendor/model-a', input: 0, output: 0 })
   })
 
-  it('Groq идёт на свой маршрут', async () => {
+  it('Groq goes to its own route', async () => {
     const f = vi.fn(async () => reply('{"answer":"ок","n":1}'))
     vi.stubGlobal('fetch', f)
     await compatJSON(ai('openai/gpt-oss-120b'), call())
     expect((f.mock.calls[0] as unknown as [string])[0]).toMatch(/\/groq\/chat\/completions$/)
   })
 
-  it('кривой ответ: один шанс исправиться, потом понятная ошибка', async () => {
+  it('a malformed answer: one chance to fix it, then a clear error', async () => {
     const f = vi.fn().mockResolvedValueOnce(reply('{"answer":5}')).mockResolvedValueOnce(reply('```json\n{"answer":"ок","n":1}\n```'))
     vi.stubGlobal('fetch', f)
     expect(await compatJSON(ai(), call())).toEqual({ answer: 'ок', n: 1 })
@@ -81,7 +81,7 @@ describe('вызов бесплатной модели через сервер',
     await expect(compatJSON(ai(), call())).rejects.toThrow(/Не удалось разобрать/)
   })
 
-  it('ошибки сервера: вход, лимит, обрезанный ответ', async () => {
+  it('server errors: sign-in, limit, a cut-off answer', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 401 })))
     await expect(compatJSON(ai(), call())).rejects.toMatchObject({ status: 401 })
     vi.stubGlobal('fetch', vi.fn(async () => new Response('{}', { status: 429 })))
@@ -91,22 +91,22 @@ describe('вызов бесплатной модели через сервер',
   })
 })
 
-describe('выбор пути в клиенте', () => {
-  it('модель Gemini в серверном режиме идёт через OpenAI-формат, а не через SDK Anthropic', async () => {
+describe('choosing the path in the client', () => {
+  it('a Gemini model in server mode goes through the OpenAI format, not through the Anthropic SDK', async () => {
     const f = vi.fn(async () => reply('{"answer":"ок","n":3}'))
     vi.stubGlobal('fetch', f)
     expect(await astraJSON(ai(), call())).toEqual({ answer: 'ок', n: 3 })
     expect((f.mock.calls[0] as unknown as [string])[0]).toContain('/gemini/chat/completions')
   })
 
-  it('веб-поиск у бесплатных моделей отключён: пустой ответ без запросов', async () => {
+  it('web search is disabled for free models: an empty answer with no requests', async () => {
     const f = vi.fn()
     vi.stubGlobal('fetch', f)
     expect(await astraWebText(ai(), 'news', 's', 'p')).toBe('')
     expect(f).not.toHaveBeenCalled()
   })
 
-  it('каталог: провайдер определяется по модели; неизвестная модель — Claude', () => {
+  it('the catalogue: the provider is determined by the model; an unknown model is Claude', () => {
     expect(providerOf('gemini-2.5-flash')).toBe('gemini')
     expect(providerOf('openai/gpt-oss-120b')).toBe('groq')
     expect(providerOf('claude-opus-5-5')).toBe('anthropic')

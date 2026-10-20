@@ -32,7 +32,7 @@ beforeEach(async () => {
   sdk.ctor.mockReset()
 })
 
-describe('friendlyError — понятные ошибки по-русски', () => {
+describe('friendlyError: clear errors in Russian', () => {
   const withStatus = (status: number, message = 'x') => Object.assign(new Error(message), { status })
   it.each([
     [401, 'auth', /Ключ не подошёл/], [403, 'auth', /Ключ не подошёл/], [429, 'rate', /Слишком много запросов/],
@@ -43,12 +43,12 @@ describe('friendlyError — понятные ошибки по-русски', ()
     expect(e.kind).toBe(kind)
     expect(e.message).toMatch(re)
   })
-  it('нет сети → работаем в базовом режиме', () => {
+  it('no network → we work in basic mode', () => {
     expect(friendlyError(new Error('Connection error.')).kind).toBe('network')
     expect(friendlyError(new Error('fetch failed')).message).toMatch(/базовом режиме/)
     expect(friendlyError(new Error('Request timed out.')).kind).toBe('network')
   })
-  it('свои ошибки проходят без изменений, неизвестные — не теряют текст', () => {
+  it('our own errors pass unchanged, unknown ones do not lose their text', () => {
     const own = new AstraError('отказ', 'refusal')
     expect(friendlyError(own)).toBe(own)
     expect(friendlyError(new Error('что-то странное')).message).toBe('что-то странное')
@@ -57,7 +57,7 @@ describe('friendlyError — понятные ошибки по-русски', ()
   })
 })
 
-describe('activeAi — когда облако включено', () => {
+describe('activeAi: when the cloud is on', () => {
   it.each<[string, Partial<AiSettings> | null]>([
     ['нет настроек', null],
     ['режим «выкл»', { mode: 'off' }],
@@ -67,22 +67,22 @@ describe('activeAi — когда облако включено', () => {
     if (patch) await saveSettings({ ai: ai(patch) })
     expect(await activeAi()).toBeNull()
   })
-  it('режим «сервер» без адреса — выключено, с адресом — включено', async () => {
+  it('"server" mode with no address is off, with an address it is on', async () => {
     await saveSettings({ ai: ai({ mode: 'proxy', proxyUrl: '' }) })
     expect(await activeAi()).toBeNull()
     await saveSettings({ ai: ai({ mode: 'proxy', proxyUrl: 'https://x.app/api/claude' }) })
     expect((await activeAi())?.mode).toBe('proxy')
   })
-  it('с ключом и согласием — включено', async () => {
+  it('with a key and consent it is on', async () => {
     await saveSettings({ ai: ai() })
     expect((await activeAi())?.apiKey).toBe('sk-test')
   })
 })
 
-describe('astraJSON — запрос к модели', () => {
+describe('astraJSON: a request to the model', () => {
   const okResponse = (extra = {}) => ({ parsed_output: { ok: true }, stop_reason: 'end_turn', model: 'claude-opus-5-5', usage, ...extra })
 
-  it('отправляет кешируемые системный промпт и контекст, строгую схему и усилие', async () => {
+  it('sends the cacheable system prompt and context, a strict schema and the effort', async () => {
     sdk.parse.mockResolvedValue(okResponse())
     const r = await astraJSON(ai(), { task: 'ask', schema, system: 'СИСТЕМА', context: 'КОНТЕКСТ', content: 'вопрос', effort: 'high' })
     expect(r).toEqual({ ok: true })
@@ -99,7 +99,7 @@ describe('astraJSON — запрос к модели', () => {
     expect(body.fallbacks).toBe('default')
   })
 
-  it('Haiku: без effort и без fallbacks (модель их не поддерживает)', async () => {
+  it('Haiku: no effort and no fallbacks (the model does not support them)', async () => {
     sdk.parse.mockResolvedValue(okResponse({ model: 'claude-haiku-4-5' }))
     await astraJSON(ai({ model: 'claude-haiku-4-5' }), { task: 't', schema, system: 's', content: 'c' })
     const [body] = sdk.parse.mock.calls[0]
@@ -108,13 +108,13 @@ describe('astraJSON — запрос к модели', () => {
     expect(body.fallbacks).toBeUndefined()
   })
 
-  it('неизвестная модель из настроек заменяется на модель по умолчанию', async () => {
+  it('an unknown model from the settings is replaced by the default model', async () => {
     sdk.parse.mockResolvedValue(okResponse())
     await astraJSON(ai({ model: 'claude-старая' }), { task: 't', schema, system: 's', content: 'c' })
     expect(sdk.parse.mock.calls[0][0].model).toBe(DEFAULT_MODEL)
   })
 
-  it('учитывает расход: токены и стоимость сохраняются', async () => {
+  it('accounts for usage: tokens and cost are saved', async () => {
     sdk.parse.mockResolvedValue(okResponse())
     await astraJSON(ai(), { task: 'brief', schema, system: 's', content: 'c' })
     const [u] = await db.aiUsage.toArray()
@@ -123,7 +123,7 @@ describe('astraJSON — запрос к модели', () => {
     expect(u.cost).toBeCloseTo(costOf(modelInfo('claude-opus-5-5'), { input: 1000, output: 200, cacheRead: 5000, cacheWrite: 0 }), 10)
   })
 
-  it('свой ключ: клиент создаётся с ключом, режим «сервер» — с адресом и токеном', async () => {
+  it('your own key: the client is created with the key, "server" mode with an address and a token', async () => {
     sdk.parse.mockResolvedValue(okResponse())
     await astraJSON(ai({ apiKey: 'sk-A' }), { task: 't', schema, system: 's', content: 'c' })
     expect(sdk.ctor).toHaveBeenLastCalledWith(expect.objectContaining({ apiKey: 'sk-A', dangerouslyAllowBrowser: true }))
@@ -131,7 +131,7 @@ describe('astraJSON — запрос к модели', () => {
     expect(sdk.ctor).toHaveBeenLastCalledWith(expect.objectContaining({ baseURL: 'https://my.app/api/claude', apiKey: 'tok' }))
   })
 
-  it('клиент переиспользуется, пока настройки те же', async () => {
+  it('the client is reused while the settings stay the same', async () => {
     sdk.parse.mockResolvedValue(okResponse())
     const a = ai({ apiKey: 'sk-same' })
     await astraJSON(a, { task: 't', schema, system: 's', content: 'c' })
@@ -140,7 +140,7 @@ describe('astraJSON — запрос к модели', () => {
     expect(sdk.ctor.mock.calls.length).toBe(calls)
   })
 
-  it('отказ модели, обрыв по длине и пустой разбор — понятные ошибки', async () => {
+  it('a model refusal, a cut-off by length and an empty parse give clear errors', async () => {
     sdk.parse.mockResolvedValueOnce(okResponse({ stop_reason: 'refusal' }))
     await expect(astraJSON(ai(), { task: 't', schema, system: 's', content: 'c' })).rejects.toMatchObject({ kind: 'refusal' })
     sdk.parse.mockResolvedValueOnce(okResponse({ stop_reason: 'max_tokens' }))
@@ -149,12 +149,12 @@ describe('astraJSON — запрос к модели', () => {
     await expect(astraJSON(ai(), { task: 't', schema, system: 's', content: 'c' })).rejects.toMatchObject({ kind: 'format' })
   })
 
-  it('ошибка SDK превращается в понятную', async () => {
+  it('an SDK error becomes a clear one', async () => {
     sdk.parse.mockRejectedValue(Object.assign(new Error('bad key'), { status: 401 }))
     await expect(astraJSON(ai(), { task: 't', schema, system: 's', content: 'c' })).rejects.toMatchObject({ kind: 'auth', message: expect.stringMatching(/Ключ/) })
   })
 
-  it('прокидывает сигнал отмены', async () => {
+  it('passes the cancel signal through', async () => {
     sdk.parse.mockResolvedValue(okResponse())
     const ctl = new AbortController()
     await astraJSON(ai(), { task: 't', schema, system: 's', content: 'c', signal: ctl.signal })
@@ -162,27 +162,27 @@ describe('astraJSON — запрос к модели', () => {
   })
 })
 
-describe('astraWebText — поиск новостей', () => {
+describe('astraWebText: news search', () => {
   const textResponse = { content: [{ type: 'text', text: 'Раунд ' }, { type: 'web_search_tool_result' }, { type: 'text', text: 'закрыт' }], stop_reason: 'end_turn', model: 'claude-opus-5-5', usage }
-  it('склеивает только текстовые блоки', async () => {
+  it('joins only the text blocks', async () => {
     sdk.create.mockResolvedValue(textResponse)
     expect(await astraWebText(ai(), 'news', 'sys', 'prompt')).toBe('Раунд закрыт')
   })
-  it('версия инструмента поиска зависит от модели', async () => {
+  it('the version of the search tool depends on the model', async () => {
     sdk.create.mockResolvedValue(textResponse)
     await astraWebText(ai(), 'news', 's', 'p')
     expect(sdk.create.mock.calls[0][0].tools[0].type).toBe('web_search_20260209')
     await astraWebText(ai({ model: 'claude-haiku-4-5' }), 'news', 's', 'p')
     expect(sdk.create.mock.calls[1][0].tools[0].type).toBe('web_search_20250305')
   })
-  it('отказ модели — пустая строка', async () => {
+  it('a model refusal gives an empty string', async () => {
     sdk.create.mockResolvedValue({ ...textResponse, stop_reason: 'refusal' })
     expect(await astraWebText(ai(), 'news', 's', 'p')).toBe('')
   })
 })
 
-describe('модели и стоимость', () => {
-  it('у каждой модели есть цены и описание; по умолчанию — первая', () => {
+describe('models and cost', () => {
+  it('every model has prices and a description; the default is the first', () => {
     expect(MODELS[0].id).toBe(DEFAULT_MODEL)
     for (const m of MODELS) {
       expect(m.input).toBeGreaterThan(0)
@@ -191,14 +191,14 @@ describe('модели и стоимость', () => {
       expect(m.note).toBeTruthy()
     }
   })
-  it('costOf: токены × цена за миллион', () => {
-    const m = modelInfo('claude-sonnet-5-5') // $2 вход, $10 выход, $0.2 чтение кеша
+  it('costOf: tokens × price per million', () => {
+    const m = modelInfo('claude-sonnet-5-5') // $2 input, $10 output, $0.2 cache read
     expect(costOf(m, { input: 1_000_000, output: 0, cacheRead: 0, cacheWrite: 0 })).toBeCloseTo(2)
     expect(costOf(m, { input: 0, output: 1_000_000, cacheRead: 0, cacheWrite: 0 })).toBeCloseTo(10)
     expect(costOf(m, { input: 0, output: 0, cacheRead: 1_000_000, cacheWrite: 0 })).toBeCloseTo(0.2)
-    expect(costOf(m, { input: 0, output: 0, cacheRead: 0, cacheWrite: 1_000_000 })).toBeCloseTo(2.5) // запись в кеш дороже на 25%
+    expect(costOf(m, { input: 0, output: 0, cacheRead: 0, cacheWrite: 1_000_000 })).toBeCloseTo(2.5) // writing to the cache costs 25% more
   })
-  it('modelInfo неизвестной модели → по умолчанию', () => {
+  it('modelInfo of an unknown model → the default', () => {
     expect(modelInfo('нет такой').id).toBe(DEFAULT_MODEL)
     expect(modelInfo(undefined).id).toBe(DEFAULT_MODEL)
   })

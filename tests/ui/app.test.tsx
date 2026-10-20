@@ -3,15 +3,15 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '@/data/db'
 import { seed, renderApp, watchConsole } from './harness'
 
-describe('онбординг', () => {
+describe('onboarding', () => {
   beforeEach(() => seed({ onboarded: false }))
 
-  it('приветствие → имя → круги → «С чистого листа» ведёт на пустой главный экран', async () => {
+  it('welcome → name → circles → "Start from scratch" leads to an empty home screen', async () => {
     const { user } = renderApp('/')
     await user.click(await screen.findByRole('button', { name: 'Начать' }))
     const input = await screen.findByRole('textbox')
     const next = await screen.findByRole('button', { name: 'Дальше' })
-    expect(next).toBeDisabled() // без имени дальше нельзя
+    expect(next).toBeDisabled() // you cannot go on without a name
     await user.type(input, 'Макс')
     expect(next).toBeEnabled()
     await user.click(next)
@@ -23,7 +23,7 @@ describe('онбординг', () => {
     expect((await db.circles.count())).toBeGreaterThan(0)
   })
 
-  it('«Посмотреть на примере» грузит демо-данные', async () => {
+  it('"See an example" loads the demo data', async () => {
     const { user } = renderApp('/')
     await user.click(await screen.findByRole('button', { name: 'Начать' }))
     await user.type(await screen.findByRole('textbox'), 'Макс')
@@ -34,10 +34,10 @@ describe('онбординг', () => {
   })
 })
 
-describe('главный экран и навигация', () => {
+describe('the home screen and navigation', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('показывает приветствие, тонус и тех, кому пора написать', async () => {
+  it('shows the greeting, the pulse and those due for a message', async () => {
     renderApp('/')
     expect(await screen.findByText(/Добр(ый|ое|ой)/)).toBeInTheDocument()
     expect(await screen.findByText(/тонус сети/i)).toBeInTheDocument()
@@ -45,7 +45,7 @@ describe('главный экран и навигация', () => {
     expect(await screen.findByText('Поводы написать')).toBeInTheDocument()
   })
 
-  it('нижнее меню: Люди → Орбита → Профиль → Сегодня', async () => {
+  it('the bottom menu: People → Orbit → Profile → Today', async () => {
     const { user } = renderApp('/')
     const nav = await screen.findAllByRole('navigation')
     const tabs = within(nav[0])
@@ -59,7 +59,7 @@ describe('главный экран и навигация', () => {
     expect(await screen.findByText(/тонус сети/i)).toBeInTheDocument()
   })
 
-  it('«Люди»: поиск, переключатель Сеть / Резерв, профиль человека', async () => {
+  it('"People": search, the Network / Reserve switch, a person\'s profile', async () => {
     const { user } = renderApp('/people')
     expect(await screen.findByText('Алина Воронцова')).toBeInTheDocument()
     await user.type(screen.getByPlaceholderText(/Имя, компания/), 'Воронцова')
@@ -69,25 +69,25 @@ describe('главный экран и навигация', () => {
     expect(screen.getByText('Основательница', { exact: false })).toBeInTheDocument()
   })
 
-  it('переключатель «Резерв» открывает резерв с счётчиком', async () => {
+  it('the "Reserve" switch opens the reserve with a counter', async () => {
     const { user } = renderApp('/people')
     await user.click(await screen.findByRole('button', { name: /Резерв · \d+/ }))
     expect(await screen.findByRole('heading', { name: 'Резерв' })).toBeInTheDocument()
     expect(await screen.findByText('Давид Шварц')).toBeInTheDocument()
   })
 
-  it('несуществующий человек — «Человек не найден», а не вечная загрузка', async () => {
+  it('a non-existent person shows "Person not found", not an endless loading', async () => {
     renderApp('/person/нет-такого')
     expect(await screen.findByText('Человек не найден')).toBeInTheDocument()
   })
 
-  it('неизвестный адрес показывает главный экран', async () => {
+  it('an unknown address shows the home screen', async () => {
     renderApp('/нет/такой/страницы')
     expect(await screen.findByText(/тонус сети/i)).toBeInTheDocument()
   })
 })
 
-describe('пустые состояния', () => {
+describe('empty states', () => {
   beforeEach(() => seed({}))
   it.each([
     ['/', 'Твоя вселенная пока пуста'],
@@ -101,7 +101,7 @@ describe('пустые состояния', () => {
   })
 })
 
-describe('каждый экран открывается без ошибок и предупреждений React', () => {
+describe('every screen opens without React errors and warnings', () => {
   beforeEach(() => seed({ demo: true }))
   const routes = ['/', '/people', '/reserve', '/orbit', '/me', '/pulse', '/review', '/capture?autostart=0', '/event', '/intros', '/weekly']
   it.each(routes)('%s', async route => {

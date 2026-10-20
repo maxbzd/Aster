@@ -1,10 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { PermanentRemoteError, type PushRow, type Remote, type RemoteRecord, type SyncTable } from './engine'
 
-/** Коды Postgres/PostgREST «запрос неверен»: 22 — данные, 23 — ограничения, 42 — права и синтаксис, PGRST1 — разбор запроса. */
+/** Postgres/PostgREST codes for "the request is invalid": 22 data, 23 constraints, 42 permissions and syntax, PGRST1 request parsing. */
 const isPermanent = (e: { code?: string; status?: number }) => /^(22|23|42|PGRST1)/.test(e.code ?? '') || e.status === 400 || e.status === 413
 
-/** Реализация Remote поверх Supabase: чтение через RLS, запись только через функцию sync_push. */
+/** The Remote implementation on top of Supabase: reads through RLS, writes only through the sync_push function. */
 export function supabaseRemote(client: SupabaseClient): Remote {
   return {
     async push(rows: PushRow[]) {

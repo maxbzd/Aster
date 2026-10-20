@@ -20,15 +20,15 @@ export const CADENCE_OPTIONS = [
 ]
 
 /**
- * Ритм общения. Нулевой — когда напоминания не нужны: семья (у неё свои даты), «каждый день рядом»,
- * и люди со статусом «потеряли связь», «пауза», «больше не актуален».
+ * The contact rhythm. Zero means no reminders are needed: family (they have their own dates), "around every day",
+ * and people with the status "lost touch", "paused" or "no longer relevant".
  */
 export const cadenceOf = (p: Person) =>
   p.familyOf || p.everyday || p.lifeStatus ? 0 : p.cadenceDays === undefined ? CLOSENESS[p.closeness].cadence : p.cadenceDays
 export const cadenceLabel = (days: number) =>
   CADENCE_OPTIONS.find(o => o.days === days)?.label ?? t('Every {days} days', { days })
 
-/** Входит ли человек в «живую» сеть: не архив, не член семьи. Статусы (пауза и т. п.) в сети остаются. */
+/** Whether a person is in the "live" network: not archived, not a family member. Statuses (paused and the like) stay in the network. */
 export const inNetwork = (p: Person) => !p.archived && !p.familyOf
 
 export type WarmthLevel = 'hot' | 'warm' | 'cooling' | 'cold' | 'none'
@@ -47,7 +47,7 @@ export interface Warmth {
   ratio: number // daysSince / cadence
   daysSince: number
   cadence: number
-  dueIn: number // дней до следующего контакта (может быть отрицательным)
+  dueIn: number // days until the next contact (may be negative)
 }
 
 export const contactAnchor = (p: Person) =>
@@ -65,7 +65,7 @@ export function warmthOf(p: Person, now = Date.now()): Warmth {
 
 export const isSnoozed = (p: Person, now = Date.now()) => !!p.snoozedUntil && p.snoozedUntil > now
 
-/** Тонус сети: средневзвешенная теплота (ближний круг весит больше). */
+/** The network pulse: the weighted average warmth (the inner circle weighs more). */
 export function networkHealth(people: Person[], now = Date.now()) {
   let sum = 0, w = 0, inRhythm = 0, tracked = 0
   for (const p of people) {
@@ -89,7 +89,7 @@ export function healthLabel(score: number) {
   return { title: t('Connections are cooling'), tone: 'cold' as const }
 }
 
-/** Близкие (две ближние орбиты), с которыми связь остывает. Общая мера для хаба и брифа недели. */
+/** Close ones (the two inner orbits) whose connection is cooling. A shared measure for the hub and the weekly brief. */
 export function coolingClose(people: Person[], now = Date.now()) {
   return people
     .filter(p => !p.archived && p.closeness <= 2)
@@ -98,7 +98,7 @@ export function coolingClose(people: Person[], now = Date.now()) {
     .sort((a, b) => a.p.closeness - b.p.closeness || b.w.ratio - a.w.ratio)
 }
 
-/** Кому пора написать: вышли за ритм, отсортированы по близости и «просрочке». */
+/** Who is due for a message: past their rhythm, sorted by closeness and by how overdue they are. */
 export function dueContacts(people: Person[], now = Date.now()) {
   return people
     .filter(p => !p.archived && !isSnoozed(p, now))
@@ -119,7 +119,7 @@ export function nextBirthday(bday: string | undefined, now = Date.now()): Birthd
   if (month < 0 || month > 11 || day < 1 || day > 31) return null
   const today = startOfDay(now)
   const y = new Date(now).getFullYear()
-  // 29 февраля в невисокосный год празднуем 28-го, а не 1 марта
+  // in a non-leap year, 29 February is celebrated on the 28th, not on 1 March
   const at = (yr: number) => new Date(yr, month, month === 1 && day === 29 && new Date(yr, 1, 29).getMonth() !== 1 ? 28 : day).getTime()
   let next = at(y)
   if (next < today) next = at(y + 1)
@@ -136,7 +136,7 @@ export function upcomingBirthdays(people: Person[], within = 30, now = Date.now(
     .sort((a, b) => a.b.days - b.b.days)
 }
 
-/** «Человек дня» — стабильный в течение дня выбор из тех, кто остывает, с приоритетом близких. */
+/** "Person of the day": a choice, stable through the day, among those who are cooling, with close ones given priority. */
 export function personOfTheDay(people: Person[], now = Date.now()) {
   const pool = people
     .filter(p => !p.archived && !isSnoozed(p, now))

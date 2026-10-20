@@ -3,7 +3,7 @@ import { blankPerson } from './actions'
 import { db } from './db'
 import { t, collate, intlTag } from '@/i18n'
 
-/** Подписи без родов: «Партнёр», «Ребёнок». Конкретнее — в самой записи (имя и роль в описании). */
+/** Labels without gender: "Partner", "Child". More specific details are in the record itself (the name and the role in the description). */
 export const RELATION_LABEL: Record<FamilyRelation, string> = {
   get partner() { return t('Partner') },
   get child() { return t('Child') },
@@ -16,7 +16,7 @@ export const RELATION_ORDER: FamilyRelation[] = ['partner', 'child', 'parent', '
 
 export const RELATION_EMOJI: Record<FamilyRelation, string> = { partner: '💞', child: '🧒', parent: '🏡', sibling: '🤝', relative: '🌳' }
 
-/** «Ребёнок Алины», «Партнёр Марка» — подпись для списков, где семья смешана с остальными. */
+/** "Alina's child", "Mark's partner": a label for lists where family is mixed with everyone else. */
 export function relationPhrase(member: Person, owner?: Person): string {
   const rel = member.relation ? RELATION_LABEL[member.relation] : t('Close friend')
   return owner ? `${rel} · ${owner.firstName}` : rel
@@ -24,7 +24,7 @@ export function relationPhrase(member: Person, owner?: Person): string {
 
 export const isFamilyMember = (p: Person): boolean => !!p.familyOf
 
-/** Семья человека в удобном порядке: партнёр, дети (старшие первыми), родители, братья и сёстры, остальные. */
+/** A person's family in a convenient order: partner, children (oldest first), parents, siblings, the rest. */
 export function familyOfPerson(all: Person[], ownerId: ID): Person[] {
   const members = all.filter(p => p.familyOf === ownerId)
   const rank = (p: Person) => RELATION_ORDER.indexOf(p.relation ?? 'relative')
@@ -32,7 +32,7 @@ export function familyOfPerson(all: Person[], ownerId: ID): Person[] {
   return members.sort((a, b) => rank(a) - rank(b) || year(a) - year(b) || collate(a.firstName, b.firstName))
 }
 
-/** Возраст на сегодня по дню рождения с годом; без года — null. */
+/** The age today from a birthday with a year; null without a year. */
 export function ageOf(birthday: string | undefined, now = Date.now()): number | null {
   const m = birthday?.match(/^(\d{4})-(\d{2})-(\d{2})$/)
   if (!m) return null
@@ -43,7 +43,7 @@ export function ageOf(birthday: string | undefined, now = Date.now()): number | 
   return age >= 0 ? age : null
 }
 
-/* ---------- разбор старого текстового поля «Семья» ---------- */
+/* ---------- parsing the old free-text "Family" field ---------- */
 
 export interface ParsedMember { name: string; relation: FamilyRelation; age?: number }
 
@@ -63,8 +63,8 @@ const BARE_AGE = /\((\d{1,2})\)/
 const BARE_AGE_G = /\(\d{1,2}\)/g
 
 /**
- * «Жена Маша, сын Лёва (5 лет), мама Ольга» → список. Берём только то, что понятно: слово родства + имя.
- * Остальное вернём вызывающему как нераспознанное — человек решит сам.
+ * "Wife Dana, son Leo (5 years old), mom Olga" → a list. We take only what is clear: a relation word plus a name.
+ * The rest is returned to the caller as unrecognised: the person will decide.
  */
 export function parseFamilyText(text: string): { members: ParsedMember[]; rest: string[] } {
   const members: ParsedMember[] = []
@@ -83,11 +83,11 @@ export function parseFamilyText(text: string): { members: ParsedMember[]; rest: 
   return { members, rest }
 }
 
-/* ---------- запись в базу ---------- */
+/* ---------- writing to the database ---------- */
 
 export interface NewMember { firstName: string; lastName?: string; relation: FamilyRelation; birthday?: string; notes?: string }
 
-/** Создаёт члена семьи как отдельного человека: у него свой день рождения и своя карточка. */
+/** Creates a family member as a separate person: they have their own birthday and their own card. */
 export async function addFamilyMember(ownerId: ID, m: NewMember): Promise<ID> {
   const owner = await db.people.get(ownerId)
   const p = blankPerson({
@@ -104,8 +104,8 @@ export async function addFamilyMember(ownerId: ID, m: NewMember): Promise<ID> {
 }
 
 /**
- * Превращает текст «семья» в карточки. Возраст без даты рождения сохраняется как заметка,
- * потому что выдумывать дату нельзя.
+ * Turns the "family" text into cards. An age without a birth date is saved as a note,
+ * because a date must not be invented.
  */
 export async function convertFamilyText(ownerId: ID, now = Date.now()): Promise<{ created: number; rest: string }> {
   const owner = await db.people.get(ownerId)

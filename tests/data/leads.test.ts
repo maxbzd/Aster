@@ -11,14 +11,14 @@ beforeEach(async () => {
   vi.setSystemTime(NOW)
 })
 
-describe('резерв: операции', () => {
-  it('blankLead — уникальные id и пустые коллекции', () => {
+describe('reserve: operations', () => {
+  it('blankLead: unique ids and empty collections', () => {
     const a = blankLead()
     const b = blankLead()
     expect(a.id).not.toBe(b.id)
     expect(a).toMatchObject({ tags: [], channels: [], firstName: '' })
   })
-  it('saveLead обновляет updatedAt', async () => {
+  it('saveLead updates updatedAt', async () => {
     const l = lead({ updatedAt: 1 })
     await saveLead(l)
     expect((await db.leads.get(l.id))?.updatedAt).toBe(NOW)
@@ -28,13 +28,13 @@ describe('резерв: операции', () => {
     await deleteLeads(['a', 'c'])
     expect((await db.leads.toArray()).map(l => l.id)).toEqual(['b'])
   })
-  it('patchLeads меняет выбранные и пропускает несуществующие', async () => {
+  it('patchLeads changes the selected ones and skips non-existent ones', async () => {
     await addLeads([lead({ id: 'a', tags: ['x'] }), lead({ id: 'b', tags: [] })])
     await patchLeads(['a', 'нет'], l => ({ tags: [...l.tags, 'новый'], star: true }))
     expect(await db.leads.get('a')).toMatchObject({ tags: ['x', 'новый'], star: true, updatedAt: NOW })
     expect((await db.leads.get('b'))?.star).toBeUndefined()
   })
-  it('undoBatch удаляет только свою пачку', async () => {
+  it('undoBatch deletes only its own batch', async () => {
     await addLeads([lead({ id: 'a', batchId: 'B1' }), lead({ id: 'b', batchId: 'B1' }), lead({ id: 'c', batchId: 'B2' }), lead({ id: 'd' })])
     expect(await undoBatch('B1')).toBe(2)
     expect((await db.leads.toArray()).map(l => l.id).sort()).toEqual(['c', 'd'])
@@ -42,12 +42,12 @@ describe('резерв: операции', () => {
   })
 })
 
-describe('promoteLead — резерв → сеть', () => {
+describe('promoteLead: reserve → network', () => {
   const full = () => lead({
     id: 'L', firstName: 'Давид', lastName: 'Шварц', company: 'Northwind', role: 'Партнёр', city: 'Дубай', why: 'Инвестирует в seed', source: 'Web Summit',
     tags: ['Инвестор'], channels: [{ type: 'telegram', value: 'dshwarz' }], notes: 'Любит кофе', star: true,
   })
-  it('переносит поля, удаляет лид, возвращает id нового человека', async () => {
+  it('moves the fields, deletes the lead, returns the new person\'s id', async () => {
     await addLeads([full()])
     const id = await promoteLead('L', { closeness: 2, circleIds: ['c1'] })
     expect(id).toBeTruthy()
@@ -59,30 +59,30 @@ describe('promoteLead — резерв → сеть', () => {
     })
     expect(p?.channels).toEqual([{ type: 'telegram', value: 'dshwarz' }])
   })
-  it('несуществующий лид — undefined и база не меняется', async () => {
+  it('a non-existent lead: undefined and the database does not change', async () => {
     expect(await promoteLead('нет', { closeness: 3 })).toBeUndefined()
     expect(await db.people.count()).toBe(0)
   })
-  it('сильный контакт становится избранным только если был сильным', async () => {
+  it('a strong contact becomes a favourite only if it was strong', async () => {
     await addLeads([lead({ id: 'M' })])
     const id = await promoteLead('M', { closeness: 3 })
     expect((await db.people.get(id as string))?.pinned).toBeUndefined()
   })
 })
 
-describe('экспорт резерва в CSV', () => {
+describe('exporting the reserve to CSV', () => {
   const l = lead({
     firstName: 'Анна', lastName: 'Ким', company: 'Acme, Inc', role: 'CTO', city: 'Алматы', why: 'Сказала "да"\nи ушла', source: 'Чат', tags: ['Юрист', 'AI'],
     channels: [{ type: 'phone', value: '+7 700 1' }, { type: 'email', value: 'a@k.im' }, { type: 'telegram', value: 'anna' }], star: true,
   })
-  it('начинается с BOM (Excel) и шапки, экранирует запятые, кавычки и переносы', () => {
+  it('starts with a BOM (Excel) and a header, escapes commas, quotes and line breaks', () => {
     const csv = leadsToCSV([l])
     expect(csv.charCodeAt(0)).toBe(0xfeff)
     expect(csv.split('\r\n')[0]).toBe('﻿Имя,Фамилия,Компания,Должность,Телефон,Email,Telegram,Instagram,LinkedIn,Сайт,Город,Теги,Чем ценен,Откуда,Заметка,Сильный')
     expect(csv).toContain('"Acme, Inc"')
     expect(csv).toContain('"Сказала ""да""\nи ушла"')
   })
-  it('экспорт → импорт: то, что выгрузили, загружается обратно без потерь', () => {
+  it('export → import: what was exported loads back without loss', () => {
     const rows = parseDelimited(leadsToCSV([l, lead({ firstName: 'Борис', channels: [] })]).replace(/^﻿/, ''))
     expect(detectHeader(rows)).toBe(true)
     const roles = guessRoles(rows[0], rows.slice(1))

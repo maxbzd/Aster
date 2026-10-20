@@ -5,10 +5,10 @@ import { seed, renderApp, watchConsole } from './harness'
 
 const dialog = () => screen.findByRole('dialog')
 
-describe('резерв: добавление', () => {
+describe('reserve: adding', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('«+» → «В резерв»: умное поле заполняет карточку, «Сохранить» кладёт её в базу', async () => {
+  it('"+" → "To the reserve": the smart field fills in the card, "Save" puts it in the database', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/people')
     await screen.findByText('Алина Воронцова')
@@ -28,7 +28,7 @@ describe('резерв: добавление', () => {
     expect(bad).toEqual([])
   })
 
-  it('«Ещё один» сохраняет и очищает форму, источник остаётся', async () => {
+  it('"Another one" saves and clears the form, the source stays', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByRole('button', { name: 'Добавить контакт' }))
     const d = within(await dialog())
@@ -40,7 +40,7 @@ describe('резерв: добавление', () => {
     expect(d.getByDisplayValue('Форум')).toBeInTheDocument()
   })
 
-  it('без имени сохранить нельзя', async () => {
+  it('you cannot save without a name', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByRole('button', { name: 'Добавить контакт' }))
     const d = within(await dialog())
@@ -48,7 +48,7 @@ describe('резерв: добавление', () => {
     expect(d.getByRole('button', { name: 'Ещё один' })).toBeDisabled()
   })
 
-  it('предупреждает о повторе, если человек уже в резерве или в сети', async () => {
+  it('warns about a repeat if the person is already in the reserve or the network', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByRole('button', { name: 'Добавить контакт' }))
     const d = within(await dialog())
@@ -57,7 +57,7 @@ describe('резерв: добавление', () => {
     expect(await d.findByText(/уже есть в резерве/)).toBeInTheDocument()
   })
 
-  it('Esc закрывает шторку', async () => {
+  it('Esc closes the sheet', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByRole('button', { name: 'Добавить контакт' }))
     await dialog()
@@ -66,14 +66,14 @@ describe('резерв: добавление', () => {
   })
 })
 
-describe('резерв: загрузка списком', () => {
+describe('reserve: importing a list', () => {
   beforeEach(() => seed({ demo: true }))
   const list = `1. Артём Волков — основатель fintech-стартапа, Дубай, @artem_volkov, +971 50 777 88 99
 2. Яна Соколова, юрист по IP, Лондон, yana@iplaw.example
 3. https://www.linkedin.com/in/oleg-markov-2b7c1d
 4. Давид Шварц, партнёр фонда`
 
-  it('вставить текст → проверить → добавить → отменить одним тапом', async () => {
+  it('paste text → review → add → undo with one tap', async () => {
     const bad = watchConsole()
     const { user } = renderApp('/reserve')
     const before = await db.leads.count()
@@ -83,7 +83,7 @@ describe('резерв: загрузка списком', () => {
     await user.paste(list)
     await user.click(d.getByRole('button', { name: 'Разобрать текст' }))
     expect(await d.findByText(/будет добавлен/)).toBeInTheDocument()
-    // Давид Шварц уже есть в резерве — повтор пропускается
+    // David Schwartz is already in the reserve: the repeat is skipped
     expect(d.getByText(/пропущу 1/)).toBeInTheDocument()
     await user.type(d.getByPlaceholderText(/Web Summit/), 'Конференция X')
     await user.click(d.getByRole('button', { name: 'Добавить 3 в резерв' }))
@@ -96,7 +96,7 @@ describe('резерв: загрузка списком', () => {
     expect(bad).toEqual([])
   })
 
-  it('без повторов «Пропускать повторы» можно выключить', async () => {
+  it('with no repeats, "Skip repeats" can be switched off', async () => {
     const { user } = renderApp('/reserve')
     const before = await db.leads.count()
     await user.click(await screen.findByRole('button', { name: 'Загрузить список' }))
@@ -110,7 +110,7 @@ describe('резерв: загрузка списком', () => {
     await waitFor(async () => expect(await db.leads.count()).toBe(before + 2))
   })
 
-  it('таблица из Excel (вставка с табуляцией): шаг сопоставления колонок', async () => {
+  it('a table from Excel (pasted with tabs): the column mapping step', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByRole('button', { name: 'Загрузить список' }))
     const d = within(await dialog())
@@ -127,7 +127,7 @@ describe('резерв: загрузка списком', () => {
     expect(anna?.tags).toEqual(['Юрист'])
   })
 
-  it('пустой ввод — кнопка недоступна; ничего не распознано — понятная ошибка', async () => {
+  it('empty input: the button is unavailable; nothing recognised: a clear error', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByRole('button', { name: 'Загрузить список' }))
     const d = within(await dialog())
@@ -135,10 +135,10 @@ describe('резерв: загрузка списком', () => {
   })
 })
 
-describe('резерв: карточка контакта', () => {
+describe('reserve: the contact card', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('«Что написать»: три тона, текст на «вы», возврат назад', async () => {
+  it('"What to write": three tones, formal address, a way back', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByText('Давид Шварц'))
     const d = within(await dialog())
@@ -152,7 +152,7 @@ describe('резерв: карточка контакта', () => {
     expect(await d.findByText('Чем ценен')).toBeInTheDocument()
   })
 
-  it('«В сеть» переносит в людей и открывает профиль', async () => {
+  it('"To the network" moves to people and opens the profile', async () => {
     const { user } = renderApp('/reserve')
     const before = await db.people.count()
     await user.click(await screen.findByText('Арман Касымов'))
@@ -165,7 +165,7 @@ describe('резерв: карточка контакта', () => {
     expect(window.location.hash).toMatch(/^#\/person\//)
   })
 
-  it('«Сильный» переключает звёздочку и сохраняет её', async () => {
+  it('"Strong" toggles the star and saves it', async () => {
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByText('Арман Касымов'))
     const d = within(await dialog())
@@ -175,7 +175,7 @@ describe('резерв: карточка контакта', () => {
     await waitFor(async () => expect((await db.leads.filter(l => l.firstName === 'Арман').first())?.star).toBe(false))
   })
 
-  it('удаление в два шага с подтверждением', async () => {
+  it('deletion in two steps with confirmation', async () => {
     const { user } = renderApp('/reserve')
     const before = await db.leads.count()
     await user.click(await screen.findByText('Арман Касымов'))
@@ -186,7 +186,7 @@ describe('резерв: карточка контакта', () => {
     await waitFor(async () => expect(await db.leads.count()).toBe(before - 1))
   })
 
-  it('контакт без каналов: «Написать» подсказывает добавить контакт, а не падает', async () => {
+  it('a contact with no channels: "Write" suggests adding a contact instead of crashing', async () => {
     await db.leads.put({ id: 'bare', firstName: 'Безконтактный', tags: [], channels: [], createdAt: Date.now(), updatedAt: Date.now() })
     const { user } = renderApp('/reserve')
     await user.click(await screen.findByText('Безконтактный'))
@@ -196,10 +196,10 @@ describe('резерв: карточка контакта', () => {
   })
 })
 
-describe('резерв: список', () => {
+describe('reserve: the list', () => {
   beforeEach(() => seed({ demo: true }))
 
-  it('фильтр по тегу, «Сильные», сортировка, поиск', async () => {
+  it('filter by tag, "Strong", sorting, search', async () => {
     const { user } = renderApp('/reserve')
     await screen.findByText('Давид Шварц')
     await user.click(screen.getByRole('button', { name: /^Юрист · \d+/ }))
@@ -217,13 +217,13 @@ describe('резерв: список', () => {
     expect(await screen.findByText(/Никого не нашлось/)).toBeInTheDocument()
   })
 
-  it('блок «Пригодятся сейчас» связывает запрос из сети с контактом из резерва', async () => {
+  it('the "Useful right now" block links a request from the network with a contact from the reserve', async () => {
     renderApp('/reserve')
     expect(await screen.findByText('Пригодятся сейчас')).toBeInTheDocument()
     expect(await screen.findByText(/ищет «UX-дизайнер/)).toBeInTheDocument()
   })
 
-  it('режим выбора: метка и удаление с возвратом', async () => {
+  it('selection mode: a tag and deletion with undo', async () => {
     const { user } = renderApp('/reserve')
     await screen.findByText('Давид Шварц')
     const before = await db.leads.count()
@@ -236,7 +236,7 @@ describe('резерв: список', () => {
     await user.type(d.getByPlaceholderText(/Например: Дубай/), 'Важные{Enter}')
     await user.click(d.getByRole('button', { name: 'Добавить' }))
     await waitFor(async () => expect(await db.leads.where('tags').equals('Важные').count()).toBe(2))
-    // после добавления метки режим выбора закрывается сам
+    // after a tag is added, selection mode closes on its own
     await user.click(await screen.findByRole('button', { name: 'Выбрать' }))
     await user.click(screen.getByText('Давид Шварц'))
     await user.click(screen.getByRole('button', { name: 'Удалить' }))
@@ -246,9 +246,9 @@ describe('резерв: список', () => {
   })
 })
 
-describe('поиск ⌘K находит резерв', () => {
+describe('⌘K search finds the reserve', () => {
   beforeEach(() => seed({ demo: true }))
-  it('и по имени, и «по смыслу»', async () => {
+  it('both by name and "by meaning"', async () => {
     const { user } = renderApp('/')
     await screen.findByText(/тонус сети/i)
     await user.keyboard('{Control>}k{/Control}')

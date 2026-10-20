@@ -5,7 +5,7 @@ import type { MetaStore } from './cycle'
 import type { Named } from './match'
 import type { CaptureData, FactData, PersonData, PersonStatsData } from './protocol'
 
-/** Кэши данных Орбиты на этом устройстве (хранятся в bridgeMeta). Лёгкий модуль: его читает главный экран. */
+/** Caches of Orbita's data on this device (kept in bridgeMeta). A light module: the main screen reads it. */
 export const META = { people: 'peerPeople', stats: 'peerStats', captures: 'peerCaptures', facts: 'peerFacts' } as const
 
 export type PeerPeople = Record<string, PersonData & { ms: number }>
@@ -13,7 +13,7 @@ export type PeerStats = Record<string, PersonStatsData>
 export type PeerCaptures = Record<string, CaptureData & { ms: number }>
 export type PeerFacts = Record<string, FactData & { ms: number }>
 
-/** Служебное состояние моста в Dexie. */
+/** Bridge bookkeeping in Dexie. */
 export const bridgeMeta: MetaStore = {
   get: async <T>(key: string) => (await db.bridgeMeta.get(key))?.value as T | undefined,
   set: async (key, value) => { await db.bridgeMeta.put({ key, value }) },

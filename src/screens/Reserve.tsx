@@ -136,7 +136,7 @@ export function Reserve() {
         </div>
       ) : (
         <>
-          {/* Пригодятся сейчас */}
+          {/* Useful right now */}
           {!filtered && matches.length > 0 && (
             <div className="mt-6">
               <div className="mb-3 flex items-center gap-2 px-1">
@@ -162,14 +162,14 @@ export function Reserve() {
             </div>
           )}
 
-          {/* Поиск */}
+          {/* Search */}
           <div className="glass mt-5 flex h-12 items-center gap-2.5 rounded-full px-4">
             <MagnifyingGlassIcon size={18} className="text-fg-3" />
             <input value={q} onChange={e => setQ(e.target.value)} placeholder={t('Who, what they do, where from…')} className="field h-full text-[15.5px]" enterKeyHint="search" />
             {q && <button type="button" aria-label={t('Clear')} onClick={() => setQ('')} className="press text-fg-3"><XCircleIcon size={20} weight="fill" /></button>}
           </div>
 
-          {/* Теги */}
+          {/* Tags */}
           <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
             <Chip size="sm" active={!tag && !starOnly} onClick={() => { setTag(null); setStarOnly(false) }}>{t('All ·')}{' '}{all.length}</Chip>
             {stars > 0 && <Chip size="sm" icon={StarIcon} active={starOnly} onClick={() => setStarOnly(v => !v)}>{t('Strong ·')}{' '}{stars}</Chip>}
@@ -182,7 +182,7 @@ export function Reserve() {
             {selecting && <Chip size="sm" onClick={() => setSelected(new Set(list.map(l => l.id)))}>{t('All results ·')}{' '}{list.length}</Chip>}
           </div>
 
-          {/* Список */}
+          {/* List */}
           {list.length === 0 ? (
             <div className="mt-10 text-center">
               <div className="text-[15px] text-fg-3">{t('No one found')}{dq ? t(' matching “{dq}”', { dq }) : ''}</div>
@@ -208,7 +208,7 @@ export function Reserve() {
         </>
       )}
 
-      {/* Панель массовых действий */}
+      {/* Bulk action bar */}
       <AnimatePresence>
         {selecting && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ type: 'spring', stiffness: 460, damping: 36 }}

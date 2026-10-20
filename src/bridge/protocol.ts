@@ -1,9 +1,9 @@
 import { t } from '@/i18n'
 /**
- * Протокол моста между приложениями (Aster ↔ Орбита), версия 1. Описание — docs/BRIDGE.md.
+ * The protocol of the bridge between apps (Aster ↔ Orbita), version 1. Described in docs/BRIDGE.md.
  *
- * ВАЖНО: каталог `src/bridge/` без `adapter*`, `service*` и экрана — общий код. Он лежит в обоих репозиториях
- * в одинаковом виде и не зависит ни от Dexie, ни от React: меняя его, обнови копию в другом приложении.
+ * IMPORTANT: the `src/bridge/` directory without `adapter*`, `service*` and the screen is shared code. It lives in both repositories
+ * in the same form and depends on neither Dexie nor React: when you change it, update the copy in the other app.
  */
 
 export const BRIDGE_VERSION = 1
@@ -14,7 +14,7 @@ export type Scope = (typeof SCOPES)[number]
 export const ENTITIES = ['person', 'person_stats', 'commitment', 'commitment_state', 'capture', 'fact'] as const
 export type Entity = (typeof ENTITIES)[number]
 
-/** Какому разрешению принадлежит вид данных (то же соответствие — в SQL bridge_scope_of). */
+/** Which permission a kind of data belongs to (the same mapping is in the SQL bridge_scope_of). */
 export const SCOPE_OF: Record<Entity, Scope> = {
   person: 'people',
   person_stats: 'people',
@@ -31,13 +31,13 @@ export const SCOPE_LABEL: Record<Scope, string> = {
   get facts() { return t('Facts about people') },
 }
 
-/** Запись витрины: то, что приложение публикует для другого. */
+/** A feed record: what an app publishes for the other one. */
 export interface FeedItem {
   entity: Entity
   key: string
   data: Record<string, unknown> | null
   deleted: boolean
-  /** время изменения, мс. Если не задано, подставляется момент публикации. */
+  /** the modification time, ms. If not set, the moment of publishing is used. */
   updated_ms?: number
 }
 
@@ -61,7 +61,7 @@ export interface Connection {
   last_read_at: string | null
 }
 
-/** Связь «человек у меня = человек у другого приложения». Строки с deleted — «явно разорвано». */
+/** A link "my person = the other app's person". Rows with deleted mean "explicitly broken". */
 export interface LinkRow {
   local_id: string
   peer_id: string
@@ -70,15 +70,15 @@ export interface LinkRow {
   updated_ms: number
 }
 
-/* ---------- содержимое записей (data) ---------- */
+/* ---------- the content of records (data) ---------- */
 
 export interface PersonData {
   name: string
   aliases: string[]
   archived?: boolean
   /**
-   * Что я думаю о связи: id человека в приложении-получателе. `null` — связь явно разорвана,
-   * отсутствие поля — «своего мнения нет».
+   * What I think about the link: the person's id in the receiving app. `null` means the link was explicitly broken,
+   * and a missing field means "no opinion of my own".
    */
   peerRef?: string | null
 }
@@ -88,7 +88,7 @@ export interface PersonStatsData {
   lastContactAt?: number
   closeness?: number
   interactions?: number
-  /** Орбита */
+  /** Orbita */
   mentions?: number
   lastMentionAt?: number
   openIOwe?: number
@@ -99,7 +99,7 @@ export type CommitmentStatus = 'open' | 'done' | 'dropped'
 export interface CommitmentData {
   title: string
   direction: 'i_owe' | 'owed_to_me'
-  /** id человека в приложении-источнике (Орбите) */
+  /** the person's id in the source app (Orbita) */
   personRef?: string
   personName?: string
   dueMs?: number
@@ -120,7 +120,7 @@ export interface CaptureData {
   title?: string
   summary?: string
   place?: string
-  /** meeting | call | message | note — как приложение-источник понимает запись */
+  /** meeting | call | message | note: how the source app understands the record */
   kind: 'meeting' | 'call' | 'message' | 'note'
   people: PersonRef[]
 }
@@ -131,15 +131,15 @@ export interface FactData {
   people: PersonRef[]
 }
 
-/* ---------- ошибки ---------- */
+/* ---------- errors ---------- */
 
 export type BridgeErrorKind =
-  | 'bad-code' // код не распознан
-  | 'code-expired' // код неверный или просрочен
-  | 'revoked' // другая сторона отключила подключение
+  | 'bad-code' // the code is not recognised
+  | 'code-expired' // the code is wrong or has expired
+  | 'revoked' // the other side disconnected
   | 'offline'
-  | 'not-signed-in' // нет входа в облако этого приложения
-  | 'limit' // слишком много подключений
+  | 'not-signed-in' // not signed in to this app's cloud
+  | 'limit' // too many connections
   | 'server'
 
 export class BridgeError extends Error {
@@ -149,7 +149,7 @@ export class BridgeError extends Error {
   }
 }
 
-/** Понятное сообщение для человека. */
+/** A message a person can understand. */
 export function describeBridgeError(e: unknown): string {
   if (e instanceof BridgeError) return e.message
   const m = e instanceof Error ? e.message : String(e ?? '')
@@ -157,7 +157,7 @@ export function describeBridgeError(e: unknown): string {
   return m || t('Something went wrong')
 }
 
-/** Ключи в алфавитном порядке: одинаковое содержимое даёт одинаковую строку. */
+/** Keys in alphabetical order: the same content gives the same string. */
 export function stable(v: unknown): string {
   if (Array.isArray(v)) return `[${v.map(stable).join(',')}]`
   if (v && typeof v === 'object') {
@@ -167,5 +167,5 @@ export function stable(v: unknown): string {
   return JSON.stringify(v) ?? 'null'
 }
 
-/** Ключ записи для кэшей и карт отпечатков. */
+/** A record key for caches and fingerprint maps. */
 export const itemKey = (entity: Entity, key: string) => `${entity}:${key}`

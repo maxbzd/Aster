@@ -13,7 +13,7 @@ export const DATE_KIND_LABEL: Record<ImportantDate['kind'], string> = {
 }
 export const DATE_KIND_EMOJI: Record<ImportantDate['kind'], string> = { anniversary: '💍', nameday: '🕯️', jubilee: '🎉', event: '📌', custom: '⭐' }
 
-export interface Occurrence { days: number; date: number; /** сколько лет исполнится / прошло */ years?: number }
+export interface Occurrence { days: number; date: number; /** how many years it will be / it has been */ years?: number }
 
 const parse = (s: string) => {
   const m = s.match(/^(\d{4}|--)-?(\d{2})-(\d{2})$/)
@@ -24,7 +24,7 @@ const parse = (s: string) => {
   return { year: m[1] === '--' ? undefined : Number(m[1]), month, day }
 }
 
-/** Ближайшее наступление даты. Разовая дата в прошлом — null. */
+/** The next occurrence of a date. A one-off date in the past gives null. */
 export function nextOccurrence(date: string, yearly = true, now = Date.now()): Occurrence | null {
   const d = parse(date)
   if (!d) return null
@@ -42,24 +42,24 @@ export type OccurrenceKind = 'birthday' | ImportantDate['kind']
 
 export interface UpcomingDate {
   key: string
-  /** чей праздник или чья это дата (для члена семьи — он сам) */
+  /** whose celebration or date this is (for a family member, the member themselves) */
   person: Person
-  /** кому писать: владелец семьи или сам человек */
+  /** whom to write to: the owner of the family or the person themselves */
   contactId: ID
   kind: OccurrenceKind
   label: string
   days: number
   date: number
   years?: number
-  /** юбилей: круглая дата */
+  /** a jubilee: a round date */
   round?: boolean
 }
 
 const isRound = (n?: number) => !!n && n >= 5 && n % 5 === 0
 
 /**
- * Все ближайшие даты: дни рождения (в том числе членов семьи) и важные даты людей.
- * Не архивные и не «больше не актуальные»: для них напоминаний нет.
+ * All upcoming dates: birthdays (family members' included) and people's important dates.
+ * Archived people and those marked "no longer relevant" are skipped: there are no reminders for them.
  */
 export function upcomingDates(people: Person[], within = 30, now = Date.now()): UpcomingDate[] {
   const byId = new Map(people.map(p => [p.id, p]))
@@ -94,7 +94,7 @@ export function genitive(name: string): string {
   return n
 }
 
-/** «Исполнится 5» / «Прошло 10 лет» для подсказок. */
+/** "Turning 5" / "10 years" for hints. */
 export function yearsText(o: { kind: OccurrenceKind; years?: number }): string | null {
   if (!o.years) return null
   return o.kind === 'birthday' ? t('turns {years}', { years: o.years }) : tn(o.years, '{n} year', '{n} years')

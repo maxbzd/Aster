@@ -14,7 +14,7 @@ export const STATUS_META: Record<LifeStatus, { label: string; short: string; hin
   irrelevant: { get label() { return t('No longer relevant') }, get short() { return t('Not relevant') }, get hint() { return t("The contact has run its course. They quietly leave your network pulse, reasons to reach out and birthdays, but aren't deleted.") }, color: '#9b9cb4', icon: HandPalmIcon },
 }
 
-/** Статус отношений без удаления человека: исчезают напоминания, а не память о нём. */
+/** A relationship status without deleting the person: the reminders go away, not the memory of them. */
 export function StatusSheet({ personId, onClose }: { personId: string; onClose: () => void }) {
   const toast = useUI(s => s.toast)
   const [status, setStatus] = useState<LifeStatus | null>(null)

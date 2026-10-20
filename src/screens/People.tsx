@@ -105,7 +105,7 @@ export function People() {
   const pickAll = () => setPicked(allShown ? new Set() : new Set(list.map(x => x.p.id)))
   const pickedIds = [...picked]
 
-  // выбор не должен пережить фильтры: невидимые люди в массовой правке — это сюрприз
+  // the selection must not outlive the filters: invisible people in a bulk edit are a surprise
   useEffect(() => { setPicked(s => { const vis = new Set(list.map(x => x.p.id)); const n = new Set([...s].filter(id => vis.has(id))); return n.size === s.size ? s : n }) }, [list])
 
   const copyNames = async () => {
@@ -130,7 +130,7 @@ export function People() {
 
       <PeopleSwitch value="people" />
 
-      {/* Поиск */}
+      {/* Search */}
       <div className="glass mt-4 flex h-12 items-center gap-2.5 rounded-full px-4">
         <MagnifyingGlassIcon size={18} className="text-fg-3" />
         <input
@@ -143,7 +143,7 @@ export function People() {
         {q && <button type="button" aria-label={t('Clear')} onClick={() => setQ('')} className="press text-fg-3"><XCircleIcon size={20} weight="fill" /></button>}
       </div>
 
-      {/* Круги */}
+      {/* Circles */}
       {circles.length > 0 && (
         <div className="-mx-4 mt-4 flex gap-2.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
           <CircleCard label={t('All')} emoji="🌌" count={people.length} glow="rgb(157 140 255 / 0.35)" active={!circle} onClick={() => setCircle(null)} />
@@ -156,7 +156,7 @@ export function People() {
         </div>
       )}
 
-      {/* Свои списки: «Для раунда», «Для найма» — любые */}
+      {/* Your own lists: "For the round", "For hiring", any */}
       <div className="-mx-4 mt-3 flex items-center gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
         <span className="micro shrink-0 pr-0.5 text-fg-4">{t('Lists')}</span>
         {collections.map(c => (
@@ -173,7 +173,7 @@ export function People() {
         </button>
       </div>
 
-      {/* Выбранный список */}
+      {/* The selected list */}
       <AnimatePresence initial={false}>
         {activeList && (
           <motion.div key={activeList.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
@@ -196,7 +196,7 @@ export function People() {
         )}
       </AnimatePresence>
 
-      {/* Фильтры */}
+      {/* Filters */}
       <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6">
         <Chip size="sm" icon={SortAscendingIcon} onClick={nextSort} active={sort !== 'name'}>{SORTS.find(s => s.value === sort)!.label}</Chip>
         <Chip size="sm" icon={StarIcon} active={pinnedOnly} onClick={() => setPinnedOnly(v => !v)}>{t('Favorites')}</Chip>
@@ -213,7 +213,7 @@ export function People() {
         </div>
       )}
 
-      {/* Дубли */}
+      {/* Duplicates */}
       {dupGroups > 0 && !filtered && !selecting && (
         <button type="button" onClick={() => open({ kind: 'dedupe' })} className="press glass mt-4 flex w-full items-center gap-3 rounded-[22px] px-4 py-3 text-left">
           <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-white/[0.07] text-warm"><GitMergeIcon size={18} /></span>
@@ -225,7 +225,7 @@ export function People() {
         </button>
       )}
 
-      {/* Избранные */}
+      {/* Favourites */}
       {!filtered && pinned.length > 0 && sort === 'name' && (
         <div className="mt-6">
           <div className="micro mb-3 px-1 text-fg-3">{t('Favorites')}</div>
@@ -240,7 +240,7 @@ export function People() {
         </div>
       )}
 
-      {/* Список */}
+      {/* List */}
       {people.length === 0 ? (
         <div className="mt-8">
           <Empty icon={UsersThreeIcon} title={t('People will appear here')} text={t('Add the first person or import contacts from your phone in your profile.')} action={<PrimaryButton onClick={() => open({ kind: 'addPerson' })}>{t('Add a person')}</PrimaryButton>} />
@@ -265,7 +265,7 @@ export function People() {
       )}
       {selecting && <div className="h-28" />}
 
-      {/* Панель массовых действий */}
+      {/* Bulk action bar */}
       <AnimatePresence>
         {selecting && (
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ type: 'spring', stiffness: 460, damping: 36 }}

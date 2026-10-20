@@ -9,7 +9,7 @@ import { STT_PRESETS, sttReady } from '@/stt/client'
 import { speechSupported } from '@/lib/speech'
 import { t } from '@/i18n'
 
-/** Расшифровка записей и голосовое управление. Ключ распознавания, как и ключ Астры, хранится только на устройстве. */
+/** Transcribing recordings and voice control. The recognition key, like Astra's key, is stored on the device only. */
 export function SpeechSettings() {
   const settings = useSettings()
   const stt = settings?.stt

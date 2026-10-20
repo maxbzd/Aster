@@ -65,7 +65,7 @@ button { cursor: pointer; }
 /* ---------- Glass ---------- */
 .glass {
   position: relative;
-  /* Без backdrop-filter: размытие подхватывало мерцающие звёзды позади и превращало их в бегающие блики.
+  /* No backdrop-filter: the blur picked up the twinkling stars behind and turned them into running glints.
      Вместо него — плотная тёмная подложка: звёзды сквозь карточки не просвечивают. */
   background: linear-gradient(180deg, rgb(255 255 255 / 0.065), rgb(255 255 255 / 0.028)), rgb(11 12 20 / 0.82);
   border: 1px solid var(--color-line);
@@ -106,7 +106,7 @@ button { cursor: pointer; }
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
 }
 
-/* Невидимое расширение зоны нажатия для мелких кнопок (минимум ~44px) */
+/* An invisible expansion of the tap area for small buttons (at least ~44px) */
 .hit { position: relative; }
 .hit::after { content: ""; position: absolute; inset: -8px; }
 
@@ -170,7 +170,7 @@ button { cursor: pointer; }
 @keyframes flipDown { to { transform: rotateX(-90deg); } }
 @keyframes flipUp { to { transform: rotateX(0deg); } }
 
-/* ---------- Выбор даты, времени, списка ---------- */
+/* ---------- Date, time and list pickers ---------- */
 @keyframes pop-in { from { opacity: 0; transform: translateY(-6px) scale(0.97) } to { opacity: 1; transform: none } }
 @keyframes sheet-up { from { transform: translateY(100%) } to { transform: none } }
 @keyframes fade-in { from { opacity: 0 } to { opacity: 1 } }
@@ -182,9 +182,9 @@ button { cursor: pointer; }
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 
-/* Фоновые анимации ставятся на паузу на время прокрутки и пока открыта шторка: под ними нечему двигаться, а кадры уходят на прокрутку. */
+/* Background animations are paused during scrolling and while a sheet is open: nothing needs to move beneath them, and the frames go to scrolling. */
 .pulse-ring, .pulse-dot { transform-box: fill-box; transform-origin: center; }
-/* Анимация SVG-элемента считается на главном потоке с перекладкой на каждый кадр: шаги по 10 в секунду выглядят так же и стоят в шесть раз дешевле. */
+/* An SVG element's animation is computed on the main thread with a re-layout every frame: steps at 10 per second look the same and cost six times less. */
 .pulse-ring { animation: pulse-ring 3.2s steps(16) infinite; }
 .pulse-dot { animation: pulse-dot 2.8s steps(14) infinite; }
 @keyframes pulse-ring { 0%, 100% { transform: scale(0.85); opacity: 0.8 } 50% { transform: scale(1.7); opacity: 0 } }

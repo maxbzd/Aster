@@ -28,7 +28,7 @@ function FlipDigit({ d, w, h, speed }: { d: string; w: number; h: number; speed:
   )
 }
 
-/** Перекидной счётчик (CRED). При появлении «прокручивается» от нуля до значения. */
+/** A flip counter (CRED). When it appears it "rolls" from zero to the value. */
 export function FlipCounter({ value, digits, height = 64 }: { value: number; digits?: number; height?: number }) {
   const target = String(Math.max(0, Math.floor(value))).padStart(digits ?? 0, '0')
   const [shown, setShown] = useState(() => target.replace(/\d/g, '0'))

@@ -13,7 +13,7 @@ interface Props {
   dim?: boolean
 }
 
-/** Фото или «жидкий» градиент с инициалами. Кольцо теплоты светится, когда связь горячая. */
+/** A photo or a "liquid" gradient with initials. The warmth ring glows when the connection is hot. */
 export const Avatar = memo(function Avatar({ person, size = 44, warmth, ring = false, className = '', dim }: Props) {
   const g = personGradient(person.id)
   const showRing = ring && warmth && warmth !== 'none'

@@ -12,7 +12,7 @@ import { useUI } from '@/app/store'
 import type { FamilyRelation } from '@/data/types'
 import { t } from '@/i18n'
 
-/** Добавить или изменить члена семьи: у него свой день рождения, поэтому это отдельная карточка. */
+/** Add or edit a family member: they have their own birthday, so it is a separate card. */
 export function FamilySheet({ ownerId, id, onClose }: { ownerId: string; id?: string; onClose: () => void }) {
   const toast = useUI(s => s.toast)
   const [first, setFirst] = useState('')

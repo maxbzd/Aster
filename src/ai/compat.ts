@@ -42,7 +42,7 @@ export function extractJson(text: string): unknown {
   const query = text.trim()
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(query)
   const candidate = fenced ? fenced[1]!.trim() : query
-  try { return JSON.parse(candidate) } catch { /* ищем объект внутри текста */ }
+  try { return JSON.parse(candidate) } catch { /* look for an object inside the text */ }
   const a = candidate.indexOf('{')
   const b = candidate.lastIndexOf('}')
   if (a >= 0 && b > a) return JSON.parse(candidate.slice(a, b + 1))

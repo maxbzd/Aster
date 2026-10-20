@@ -7,12 +7,12 @@ export const KEY_PREFIX = 'aster:reminder:'
 export const keyOf = (id: string) => `${KEY_PREFIX}${id}`
 export const idOf = (key: string) => (key.startsWith(KEY_PREFIX) ? key.slice(KEY_PREFIX.length) : null)
 
-/** Сколько дней после выполнения напоминание ещё сообщается TickTick (чтобы закрыть задачу, даже если приложение долго было закрыто). */
+/** For how many days after completion a reminder is still reported to TickTick (to close the task even if the app was closed for a long time). */
 const DONE_WINDOW_DAYS = 45
 
 /**
- * Что отправить в TickTick. Напоминания-отражения обязательств из Орбиты (с bridgeKey) пропускаем: в TickTick их отправляет сама Орбита,
- * иначе одна задача появилась бы дважды.
+ * What to send to TickTick. Reminders that mirror commitments from Orbita (with a bridgeKey) are skipped: Orbita sends them to TickTick itself,
+ * otherwise one task would appear twice.
  */
 export function buildPayload(reminders: Reminder[], people: Person[], now = Date.now(), tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'): SyncBody {
   const names = new Map(people.map(p => [p.id, fullName(p)]))

@@ -2,8 +2,8 @@ import type { InteractionType } from '@/data/types'
 import { t } from '@/i18n'
 
 /**
- * Подписи типов общения без иконок: их используют логика и ИИ-контекст,
- * которым не нужно тянуть за собой весь набор иконок интерфейса.
+ * Labels of interaction types without icons: they are used by the logic and the AI context,
+ * which do not need to pull in the whole set of interface icons.
  */
 export const INTERACTION_LABEL: Record<InteractionType, string> = {
   get meeting() { return t('Meeting') },

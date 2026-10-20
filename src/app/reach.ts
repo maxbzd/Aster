@@ -5,7 +5,7 @@ import { openChannel, primaryChannel } from '@/lib/contact'
 import { useUI } from './store'
 import { t } from '@/i18n'
 
-/** «Написать»: открывает лучший канал и предлагает отметить контакт одним тапом. */
+/** "Write": opens the best channel and offers to mark the contact with one tap. */
 export function useReachOut() {
   const toast = useUI(s => s.toast)
   const open = useUI(s => s.open)

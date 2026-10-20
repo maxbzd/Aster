@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 
-/** Мягкое свечение-аврора: 2–3 мягких пятна. Не двигаются и без filter: blur: такие слои заставляют видеокарту пересчитывать размытие каждый кадр. */
+/** A soft aurora glow: 2-3 soft spots. They do not move and use no filter: blur, because such layers make the GPU recompute the blur every frame. */
 export function Aurora({
   colors,
   className = '',

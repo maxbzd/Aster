@@ -46,13 +46,13 @@ const HELP = /^(?:привет|здравствуй|добрый\s+(?:день|�
 const sentences = (text: string) => text.replace(/\s+/g, ' ').split(/(?<=[.!?;])\s+|\n+/).map(s => s.trim()).filter(s => s.length > 2)
 const cut = (s: string, n = 220) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s)
 
-/* ---------- люди в вопросе ---------- */
+/* ---------- people in the question ---------- */
 
-/** Кого имеют в виду: имя в любом падеже, латиницей, а «он/она» — человек из прошлого ответа. */
+/** Whom the question means: a name in any case form, in Latin letters, or "he/she" for the person from the previous answer. */
 export function resolvePeople(text: string, ctx: ChatCtx): { people: Person[]; viaPronoun: boolean } {
   const pool = ctx.people.filter(p => !p.archived)
   const found = findMentioned(text, pool)
-  // «Alexey», «Саша»: имя может быть записано иначе, чем в карточке
+  // "Alexey", "Sasha": the name may be written differently from the card
   for (const w of text.split(/[^\p{L}]+/u).filter(x => x.length >= 3 && /^\p{Lu}/u.test(x))) {
     for (const p of pool) {
       if (!found.includes(p) && nameScore(w, p) >= 60) found.push(p)
@@ -69,7 +69,7 @@ export function resolvePeople(text: string, ctx: ChatCtx): { people: Person[]; v
 
 const mineOf = (p: Person, ints: Interaction[]) => ints.filter(i => i.personIds.includes(p.id)).sort((a, b) => b.date - a.date)
 
-/* ---------- обещания ---------- */
+/* ---------- promises ---------- */
 
 const THEIRS = /(?:мне\s+(?:пообещал\w*|обещал\w*)|(?:он|она|они)\s+(?:пообещал\w*|обещал\w*|пришлет|пришлёт|отправит|познакомит|скинет|поможет|вернется|вернётся|подготовит|сделает)|обещал\w*\s+(?:мне|прислать|познакомить|помочь|дать)\b)|(?:he|she|they)\s+(?:promised|will send|will introduce|will help|will get back|will prepare|will do|agreed to (?:send|introduce|help))|promised me|promised to (?:send|introduce|help|give) me/
 const MINE = /(?:^|\s)(?:я\s+(?:пообещал\w*|обещал\w*)|(?:пообещал\w*|обещал\w*)\s+(?:ему|ей|им|что\s+я)|(?:я\s+)?(?:пришлю|отправлю|скину|познакомлю|подготовлю|сделаю|напишу|позвоню|вернусь|созвонюсь|узнаю|найду|организую|свожу|должен\s+(?:ему|ей|им)))|(?:^|\s)(?:i\s+(?:promised|will send|will introduce|will prepare|will do|will write|will call|will find|will organi[sz]e|owe)|promised (?:him|her|them)|i'?ll (?:send|introduce|prepare|write|call|find|organi[sz]e|get back))/
@@ -128,7 +128,7 @@ function promisesAbout(p: Person, ctx: ChatCtx): ChatReply {
   }
 }
 
-/** Все открытые обещания и напоминания по сети: «что я кому должен». */
+/** All open promises and reminders across the network: "what I owe whom". */
 function promisesAll(ctx: ChatCtx): ChatReply {
   const now = ctx.now ?? Date.now()
   const byId = new Map(ctx.people.map(p => [p.id, p]))
@@ -283,19 +283,19 @@ export function parseFilters(text: string, ctx: ChatCtx, previous?: ChatFilters)
   if (coll) f.collectionId = coll.id
   if (STALE.test(query)) { f.stale = true; if (MEETING_ONLY.test(query)) f.meetingsOnly = true }
 
-  // слова роли и интересов: всё, что не город, не круг и не служебное
+  // words of a role and interests: everything that is not a city, a circle or a function word
   const known = new Set<string>([...(city ? words(city).map(stem) : []), ...ctx.circles.filter(c => circleIds.includes(c.id)).flatMap(c => words(c.name).map(stem)), ...(coll ? words(coll.name).map(stem) : [])])
   const extra = tokenStems.filter(s => s.length >= 3 && !known.has(s) && !TOPIC_STOP.has(s))
   const expanded = new Set<string>()
   for (const s of extra) {
     for (const [k, v] of Object.entries(ASK_SYN)) if (s.startsWith(k)) { expanded.add(s); for (const x of v) expanded.add(x) }
   }
-  // роль задаём только когда слово реально встречается в карточках: иначе это просто слово вопроса
+  // the role is set only when the word really occurs in the cards: otherwise it is just a word of the question
   const corpus = ctx.people.map(p => lower([p.role, p.company, ...p.tags, p.canHelpMe, p.lookingFor].filter(Boolean).join(' ')))
   for (const s of extra) if (corpus.some(c => words(c).map(stem).some(x => x.startsWith(s) || (x.length >= 4 && s.startsWith(x))))) expanded.add(s)
   if (expanded.size) f.terms = [...expanded]
 
-  // «а из Берлина?» — уточнение к прошлой выборке
+  // "and from Berlin?" is a refinement of the previous selection
   const hasOwn = f.city || f.circleIds || f.collectionId || f.terms
   if (previous && /^\s*(?:а|и|ну|тогда|and|what about|how about|then)\s/.test(query) && hasOwn) return { ...previous, ...f, stale: previous.stale || f.stale }
   if (!hasOwn && !f.stale) return null
@@ -341,7 +341,7 @@ export function filterPeople(f: ChatFilters, ctx: ChatCtx) {
     const at = (f.meetingsOnly ? l?.meet : l?.any) || (f.meetingsOnly ? 0 : p.lastContactAt) || 0
     return { p, at, days: at ? Math.floor((now - at) / 86_400_000) : null }
   })
-  // «давно» — сначала те, с кем тише всего; без «давно» — самые свежие
+  // "for a long time": those you are quietest with first; without it, the freshest
   return f.stale
     ? list.sort((a, b) => (a.at || 0) - (b.at || 0))
     : list.sort((a, b) => b.at - a.at)

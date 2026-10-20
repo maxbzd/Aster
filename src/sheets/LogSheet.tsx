@@ -26,7 +26,7 @@ const INITIATOR: Array<{ value: Initiator | undefined; label: string }> = [
 ]
 const WITH_INITIATOR: InteractionType[] = ['meeting', 'call', 'message', 'event']
 
-/** Записать общение — или поправить уже записанное: дату, участников, тип, детали. */
+/** Log an interaction, or fix one already logged: the date, participants, type, details. */
 export function LogSheet({ personIds: initial = [], type: initialType = 'meeting', interactionId, onClose }: { personIds?: ID[]; type?: InteractionType; interactionId?: ID; onClose: () => void }) {
   const editing = !!interactionId
   const [initiator, setInitiator] = useState<Initiator | undefined>(undefined)
@@ -61,7 +61,7 @@ export function LogSheet({ personIds: initial = [], type: initialType = 'meeting
     if (!ids.length) return
     const d = fromISODate(day)
     if (interactionId) {
-      // время суток сохраняем, если день не меняли: правка даты не должна «прыгать» по хронологии
+      // the time of day is kept if the day was not changed: editing the date must not "jump" around the timeline
       const date = timeOfDay !== null && day === toISODate(d + timeOfDay) ? d + timeOfDay : d + 12 * 3600_000
       await updateInteraction(interactionId, { personIds: ids, type, date: Math.min(date, Date.now()), title: title.trim() || undefined, note: note.trim() || undefined, place: place.trim() || undefined, initiator })
       haptic(15)

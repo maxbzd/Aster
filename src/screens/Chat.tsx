@@ -22,7 +22,7 @@ const KIND_LABEL: Record<NonNullable<ChatQuote['kind']>, { label: string; color:
   topic: { get label() { return t('From a record') }, color: '#9b9cb4' },
 }
 
-/** Диалог с Астрой: помнит записи общения и предыдущие реплики. Без модели отвечает локально. */
+/** A chat with Astra: it remembers the interaction records and earlier turns. Without a model it answers locally. */
 export function Chat() {
   const nav = useNavigate()
   const [params, setParams] = useSearchParams()
@@ -54,7 +54,7 @@ export function Chat() {
     }
   }, [pending, speech])
 
-  // вопрос из поиска или с экрана «Сегодня»: ?q=…
+  // a question from search or from the "Today" screen: ?q=…
   useEffect(() => {
     const q = params.get('q')
     if (!q) return
@@ -65,7 +65,7 @@ export function Chat() {
   useEffect(() => { end.current?.scrollIntoView({ behavior: 'smooth', block: 'end' }) }, [messages?.length, pending])
   useEffect(() => () => abort.current?.abort(), [])
 
-  // голос → поле ввода
+  // voice → the input field
   useEffect(() => { if (speech.listening) setText(`${speech.text} ${speech.interim}`.trim()) }, [speech.text, speech.interim, speech.listening])
   useEffect(() => {
     const el = area.current

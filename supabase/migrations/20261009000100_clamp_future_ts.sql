@@ -1,5 +1,5 @@
--- Устройство с неверными часами (далеко в будущем) не должно навсегда «выигрывать» все конфликты:
--- метка правки не может быть позже серверного времени больше чем на минуту.
+-- A device with a wrong clock (far in the future) must not "win" every conflict forever:
+-- an edit stamp cannot be later than the server time by more than a minute.
 create or replace function public.sync_push(rows jsonb)
 returns jsonb
 language plpgsql

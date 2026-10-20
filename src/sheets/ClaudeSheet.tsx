@@ -16,7 +16,7 @@ const EXAMPLES = [
   msg('“What do I know about Anna?”'),
 ]
 
-/** Подключение Aster к Claude: личный ключ и адрес, который добавляется в Claude как свой коннектор. */
+/** Connecting Aster to Claude: a personal key and an address that is added to Claude as a custom connector. */
 export function ClaudeSheet({ onClose }: { onClose: () => void }) {
   const signedIn = useCloud(c => !!c.userId)
   const open = useUI(s => s.open)

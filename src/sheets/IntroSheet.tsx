@@ -16,7 +16,7 @@ import { t } from '@/i18n'
 
 type Tab = 'to_a' | 'to_b' | 'group'
 
-/** Знакомство по принципу двойного согласия: сначала каждому лично, потом общий чат. */
+/** An introduction by double opt-in: first to each person privately, then a shared chat. */
 export function IntroSheet({ aId, bId, reason, value, onClose }: { aId: string; bId: string; reason: string; value: string; onClose: () => void }) {
   const a = usePerson(aId)
   const b = usePerson(bId)
@@ -83,7 +83,7 @@ export function IntroSheet({ aId, bId, reason, value, onClose }: { aId: string; 
   )
 }
 
-/** Две звезды, соединённые светящейся линией. */
+/** Two stars joined by a glowing line. */
 export function PairHero({ a, b, size = 64 }: { a: Person; b: Person; size?: number }) {
   return (
     <div className="relative mx-auto flex max-w-[340px] items-center justify-between px-2 pt-2">

@@ -2,7 +2,7 @@ import { Component, type ReactNode } from 'react'
 import { backupToFile } from '@/data/actions'
 import { t } from '@/i18n'
 
-/** Страховка от «белого экрана»: показывает спокойное сообщение и даёт сохранить данные. */
+/** A safety net against a "white screen": shows a calm message and lets you save your data. */
 export class ErrorBoundary extends Component<{ children: ReactNode; inline?: boolean }, { error: Error | null; saved: boolean }> {
   state = { error: null as Error | null, saved: false }
   static getDerivedStateFromError(error: Error) { return { error } }

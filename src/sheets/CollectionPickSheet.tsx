@@ -8,7 +8,7 @@ import { haptic, useUI } from '@/app/store'
 import type { ID } from '@/data/types'
 import { t } from '@/i18n'
 
-/** Положить одного или нескольких людей в списки (или убрать из них). Применяется сразу, без кнопки «Сохранить». */
+/** Put one or several people into lists (or remove them). Applied at once, with no "Save" button. */
 export function CollectionPickSheet({ personIds, onClose }: { personIds: ID[]; onClose: () => void }) {
   const collections = useCollections()
   const people = useAllPeople()

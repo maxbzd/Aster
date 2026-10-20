@@ -6,7 +6,7 @@ import { useAllInteractions, useAllPeople, useNow } from '@/data/hooks'
 import { yearReview, yearsWithData } from '@/data/year'
 import { t, tn } from '@/i18n'
 
-/** Приглашение в «Итоги года»: показывает несколько цифр, чтобы захотелось открыть. */
+/** An invitation to the "Year in review": shows a few numbers to make you want to open it. */
 export function YearTeaser() {
   const people = useAllPeople()
   const ints = useAllInteractions()

@@ -8,7 +8,7 @@ import { disconnect, startConnect, syncNow, useTick } from '@/ticktick/cycle'
 import { useUI } from '@/app/store'
 import { t } from '@/i18n'
 
-/** Связка с TickTick: напоминания Aster появляются в TickTick, а «выполнено» работает в обе стороны. */
+/** The TickTick link: Aster's reminders appear in TickTick, and "done" works both ways. */
 export function TickTickSheet({ onClose }: { onClose: () => void }) {
   const signedIn = useCloud(c => !!c.userId)
   const open = useUI(s => s.open)

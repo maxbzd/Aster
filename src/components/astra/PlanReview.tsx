@@ -34,7 +34,7 @@ const LISTS: { key: 'facts' | 'interests' | 'topics'; label: string }[] = [
 
 export interface PlanExtras { circleIds: string[]; closeness: Closeness }
 
-/** «Вот что я поняла» — разобранная заметка, каждую деталь можно поправить или убрать. */
+/** "Here is what I understood": the parsed note, where every detail can be edited or removed. */
 export function PlanReview({ plan, onChange, source, error, extras, onExtras, photos }: {
   plan: CapturePlan
   onChange: (p: CapturePlan) => void

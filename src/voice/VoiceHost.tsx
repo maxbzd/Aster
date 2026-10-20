@@ -25,8 +25,8 @@ const CONFIRM_TIMEOUT = 60_000
 const MANUAL_WINDOW = 9_000
 
 /**
- * Голосовое управление без касаний: «Астра, запиши, что с Ниной договорились на пятницу».
- * Ничего не пишется в базу, пока человек не подтвердит план словами «да» или кнопкой.
+ * Hands-free voice control: "Astra, log that Nina and I agreed on Friday".
+ * Nothing is written to the database until the person confirms the plan by saying "yes" or with a button.
  */
 export function VoiceHost() {
   const settings = useSettings()
@@ -41,7 +41,7 @@ export function VoiceHost() {
   const timer = useRef<number>(0)
   const speakOn = !!voice?.speak
 
-  // с микрофоном работают экраны диктовки, диалога, события и разбора — там слушаем только их
+  // the dictation, chat, event and review screens work with the microphone: only they are listened to
   const paused = /^\/(capture|chat|event|review)/.test(loc.pathname)
   const enabled = !!voice?.wake && speechSupported() && !paused && !!settings?.onboarded && !denied
 

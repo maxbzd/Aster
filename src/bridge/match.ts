@@ -1,5 +1,5 @@
 import { t } from '@/i18n'
-/** Человек в упрощённом виде — достаточно, чтобы искать совпадения между приложениями. */
+/** A person in a simplified form: enough to look for matches between apps. */
 export interface Named { id: string; name: string; aliases?: string[]; archived?: boolean }
 
 export interface MatchLink { localId: string; peerId: string }
@@ -10,10 +10,10 @@ const norm = (s: string) =>
 
 const tokens = (s: string) => norm(s).split(' ').filter(Boolean)
 
-/** «Алина Воронцова» и «Воронцова Алина» — одно и то же. */
+/** "Alina Vorontsova" and "Vorontsova Alina" are the same. */
 const fullKey = (s: string) => tokens(s).sort().join(' ')
 
-/** Полные имена человека: основное и все псевдонимы, где есть хотя бы два слова. */
+/** A person's full names: the main one and all aliases that have at least two words. */
 function fullKeys(p: Named): string[] {
   const out = new Set<string>()
   for (const n of [p.name, ...(p.aliases ?? [])]) if (tokens(n).length >= 2) out.add(fullKey(n))
@@ -26,10 +26,10 @@ const hasSurname = (p: Named) => tokens(p.name).length >= 2
 const pairKey = (localId: string, peerId: string) => `${localId}\u0000${peerId}`
 
 /**
- * Находит одних и тех же людей в двух приложениях.
- *  - auto: полное имя совпало, и такого человека ровно один с каждой стороны. Это безопасно связывать самому.
- *  - candidates: похоже, но не наверняка («Алина» и «Алина Воронцова»). Решает человек.
- * Уже связанных и явно разорванных пар (blocked) здесь нет.
+ * Finds the same people in two apps.
+ *  - auto: the full name matched, and there is exactly one such person on each side. It is safe to link on its own.
+ *  - candidates: similar but not certain ("Alina" and "Alina Vorontsova"). The person decides.
+ * Already linked and explicitly broken pairs (blocked) are not here.
  */
 export function matchPeople(mine: Named[], theirs: Named[], linked: MatchLink[], blocked: MatchLink[] = [], opts: { candidates?: boolean } = {}): { auto: MatchLink[]; candidates: Candidate[] } {
   const linkedLocal = new Set(linked.map(l => l.localId))
@@ -49,7 +49,7 @@ export function matchPeople(mine: Named[], theirs: Named[], linked: MatchLink[],
   const takenPeer = new Set<string>()
   for (const [k, ms] of byKeyMine) {
     const ts = byKeyTheirs.get(k)
-    // совпадение однозначно, только если такое имя одно с каждой стороны (в том числе среди уже связанных)
+    // a match is unambiguous only if there is one such name on each side (among already linked ones too)
     if (!ts || ms.length !== 1 || ts.length !== 1) continue
     const m = ms[0]!
     const value = ts[0]!
@@ -83,7 +83,7 @@ function score(a: Named, b: Named): { score: number; reason: string } | null {
   if (fa.some(k => fb.includes(k))) return { score: 90, reason: t('The name matches, but there are others with the same name') }
   const first = firstToken(a)
   if (!first || first !== firstToken(b)) {
-    // имя одной стороны может быть псевдонимом другой («Саша»)
+    // one side's name may be the other's alias ("Sasha")
     const names = (p: Named) => [p.name, ...(p.aliases ?? [])].map(norm)
     if (names(a).some(n => n && names(b).includes(n))) return { score: 70, reason: t('Alias matched') }
     return null
@@ -92,7 +92,7 @@ function score(a: Named, b: Named): { score: number; reason: string } | null {
   const la = tokens(a.name).slice(1).join(' ')
   const lb = tokens(b.name).slice(1).join(' ')
   if (la === lb) return { score: 90, reason: t('First and last name matched') }
-  // похожие фамилии: Иванов / Иванова
+  // similar last names: Ivanov / Ivanova
   if (la.length >= 4 && lb.length >= 4 && (la.startsWith(lb.slice(0, -1)) || lb.startsWith(la.slice(0, -1)))) return { score: 55, reason: t('Similar last name') }
   return null
 }

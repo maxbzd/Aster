@@ -8,8 +8,8 @@ import { setCloud, useCloud } from './store'
 import { t } from '@/i18n'
 
 /**
- * Склейка: вход/выход, ссылки из писем, запуск и остановка синхронизации.
- * Всё, что видит интерфейс, — это useCloud (состояние) и функции отсюда.
+ * The glue: sign-in/out, links from emails, starting and stopping sync.
+ * All the interface sees is useCloud (the state) and the functions from here.
  */
 
 let client: SupabaseClient | null = null
@@ -19,7 +19,7 @@ let booted = false
 
 let bridgeStarted = false
 
-/** Мост с другим приложением работает, пока человек вошёл в облако: подгружается лениво. */
+/** The bridge to the other app works while the person is signed in to the cloud: loaded lazily. */
 function startBridgeLater() {
   bridgeStarted = true
   void import('@/bridge/service').then(m => m.startBridge()).catch(() => { bridgeStarted = false })
@@ -40,7 +40,7 @@ function attach(c: SupabaseClient, session: Session | null) {
   }
   const uid = session.user.id
   setCloud({ email: session.user.email ?? undefined, userId: uid, expired: false })
-  if (controllerUser === uid) return // та же сессия (обновился токен) — ничего не перезапускаем
+  if (controllerUser === uid) return // the same session (the token was refreshed): nothing to restart
   stopController()
   controllerUser = uid
   const ctl = new SyncController({
@@ -59,7 +59,7 @@ function attach(c: SupabaseClient, session: Session | null) {
 
 function watchAuth(c: SupabaseClient) {
   c.auth.onAuthStateChange((event, session) => {
-    // внутри обработчика нельзя ждать вызовов Supabase — выносим из него
+    // one cannot wait for Supabase calls inside the handler: move them out of it
     setTimeout(() => {
       if (event === 'PASSWORD_RECOVERY') setCloud({ recovery: true })
       if (event === 'SIGNED_OUT') {
@@ -79,11 +79,11 @@ async function ensureClient(): Promise<SupabaseClient> {
   return client
 }
 
-/** Вызывается один раз при запуске приложения. */
+/** Called once when the app starts. */
 export async function bootCloud(): Promise<void> {
   if (booted) return
   booted = true
-  installTracking() // отслеживание правок включаем сразу: даже до входа не теряем изменения
+  installTracking() // edit tracking is switched on at once: even before sign-in no change is lost
   if (!cloudEnabled()) return
 
   const link = parseAuthHash(window.location.hash)
@@ -110,7 +110,7 @@ async function handleAuthLink(c: SupabaseClient, link: NonNullable<ReturnType<ty
   }
 }
 
-/* ---------- действия ---------- */
+/* ---------- actions ---------- */
 
 export async function signIn(email: string, password: string): Promise<void> {
   const c = await ensureClient()
@@ -119,14 +119,14 @@ export async function signIn(email: string, password: string): Promise<void> {
   attach(c, data.session)
 }
 
-/** 'signed-in' — сразу вошли; 'confirm' — на почту отправлено письмо, нужно подтвердить. */
+/** 'signed-in': signed in at once; 'confirm': an email was sent and must be confirmed. */
 export async function signUp(email: string, password: string): Promise<'signed-in' | 'confirm'> {
   if (password.length < MIN_PASSWORD) throw new Error(t('The password must be at least {MIN_PASSWORD} characters', { MIN_PASSWORD }))
   const c = await ensureClient()
   const redirect = `${window.location.origin}${window.location.pathname}`
   const { data, error } = await c.auth.signUp({ email: email.trim(), password, options: { emailRedirectTo: redirect } })
   if (error) throw new Error(friendlyCloudError(error))
-  // Supabase не сообщает, что почта занята: возвращает пользователя без identities
+  // Supabase does not say that an email is taken: it returns a user without identities
   if (data.user?.identities && data.user.identities.length === 0) throw new Error(t('This email is already registered — sign in'))
   if (data.session) { attach(c, data.session); return 'signed-in' }
   return 'confirm'
@@ -157,8 +157,8 @@ export class UnsyncedError extends Error {
 }
 
 /**
- * Выход с этого устройства: сначала досылаем всё, что накопилось, затем убираем данные с устройства
- * (в облаке они остаются). Если досылать нечем (нет сети), без force выбрасывает UnsyncedError.
+ * Sign out from this device: first send whatever has accumulated, then remove the data from the device
+ * (it stays in the cloud). If there is nothing to send with (no network), without force it throws UnsyncedError.
  */
 export async function signOut(opts: { force?: boolean } = {}): Promise<void> {
   const c = await ensureClient()
@@ -171,7 +171,7 @@ export async function signOut(opts: { force?: boolean } = {}): Promise<void> {
   setCloud({ phase: 'off', userId: undefined, email: undefined, pending: 0, error: undefined, recovery: false })
 }
 
-/** Удалить аккаунт и все данные в облаке; локальные данные остаются на устройстве. */
+/** Delete the account and all the data in the cloud; local data stays on the device. */
 export async function deleteAccount(): Promise<void> {
   const c = await ensureClient()
   stopController()

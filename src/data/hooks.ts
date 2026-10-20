@@ -5,7 +5,7 @@ import type { Circle, Collection, ID, Interaction, Intro, Lead, Person, Reminder
 
 const EMPTY: never[] = []
 
-/** Люди сети. Члены семьи — отдельные карточки, но в списках сети их нет: они живут внутри семьи человека. */
+/** People of the network. Family members are separate cards but are not in network lists: they live inside a person's family. */
 export function usePeople(includeArchived = false): Person[] | undefined {
   return useLiveQuery(async () => {
     const all = (await db.people.toArray()).filter(p => !p.familyOf)
@@ -13,7 +13,7 @@ export function usePeople(includeArchived = false): Person[] | undefined {
   }, [includeArchived])
 }
 
-/** Вообще все карточки, включая семью и архив: для дат, поиска и связей. */
+/** All cards at all, family and archive included: for dates, search and links. */
 export const useAllPeople = (): Person[] | undefined => useLiveQuery(() => db.people.toArray(), [])
 
 export const useCollections = (): Collection[] => useLiveQuery(() => db.collections.orderBy('order').toArray(), []) ?? EMPTY
@@ -24,7 +24,7 @@ export const useLeads = (): Lead[] | undefined => useLiveQuery(() => db.leads.to
 
 export const useLead = (id?: ID) => useLiveQuery(async () => (id ? (await db.leads.get(id)) ?? null : null), [id])
 
-/** Счётчики для переключателя «Сеть / Резерв». */
+/** Counters for the "Network / Reserve" switcher. */
 export function useCounts() {
   return useLiveQuery(async () => {
     const [people, leads] = await Promise.all([db.people.filter(p => !p.archived && !p.familyOf).count(), db.leads.count()])
@@ -32,7 +32,7 @@ export function useCounts() {
   }, []) ?? { people: 0, leads: 0 }
 }
 
-/** undefined — ещё грузится, null — такого человека нет. */
+/** undefined: still loading; null: there is no such person. */
 export const usePerson = (id?: ID) =>
   useLiveQuery(async () => (id ? (await db.people.get(id)) ?? null : null), [id])
 
@@ -60,7 +60,7 @@ export const useReminders = (): Reminder[] =>
 export const useRemindersFor = (personId?: ID): Reminder[] =>
   useLiveQuery(async () => (personId ? (await db.reminders.where('personId').equals(personId).sortBy('dueAt')) : []), [personId]) ?? EMPTY
 
-/** Тикает раз в минуту, чтобы «сегодня/вчера» и приветствие оставались свежими. */
+/** Ticks once a minute so that "today/yesterday" and the greeting stay fresh. */
 export function useNow(intervalMs = 60_000) {
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {

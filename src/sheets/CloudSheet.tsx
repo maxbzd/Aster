@@ -28,7 +28,7 @@ export function CloudSheet({ onClose }: { onClose: () => void }) {
   )
 }
 
-/* ---------- вход и регистрация ---------- */
+/* ---------- sign-in and sign-up ---------- */
 
 function Auth() {
   const cloud = useCloud()
@@ -111,7 +111,7 @@ function Auth() {
   )
 }
 
-/* ---------- новый пароль после ссылки из письма ---------- */
+/* ---------- a new password after a link from an email ---------- */
 
 function NewPassword({ onDone }: { onDone: () => void }) {
   const [pw, setPw] = useState('')
@@ -136,7 +136,7 @@ function NewPassword({ onDone }: { onDone: () => void }) {
   )
 }
 
-/* ---------- аккаунт ---------- */
+/* ---------- account ---------- */
 
 function Account({ onClose }: { onClose: () => void }) {
   const cloud = useCloud()

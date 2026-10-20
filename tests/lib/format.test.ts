@@ -4,25 +4,25 @@ import {
 } from '@/lib/format'
 import { NOW } from '../helpers'
 
-describe('даты', () => {
-  it('startOfDay обнуляет время', () => {
+describe('dates', () => {
+  it('startOfDay zeroes the time', () => {
     const d = new Date(startOfDay(NOW))
     expect([d.getHours(), d.getMinutes(), d.getSeconds(), d.getMilliseconds()]).toEqual([0, 0, 0, 0])
     expect(d.getDate()).toBe(5)
   })
-  it('daysBetween считает календарные дни, а не 24-часовые окна', () => {
+  it('daysBetween counts calendar days, not 24-hour windows', () => {
     const lateEvening = new Date(2026, 9, 4, 23, 59).getTime()
     const earlyMorning = new Date(2026, 9, 5, 0, 1).getTime()
     expect(daysBetween(lateEvening, earlyMorning)).toBe(1)
     expect(daysBetween(NOW, NOW)).toBe(0)
     expect(daysBetween(NOW, NOW - 30 * DAY)).toBe(-30)
   })
-  it('toISODate и fromISODate обратимы и работают по местному времени', () => {
+  it('toISODate and fromISODate are reversible and work in local time', () => {
     expect(toISODate(NOW)).toBe('2026-10-05')
     expect(toISODate(fromISODate('2026-02-09'))).toBe('2026-02-09')
     expect(new Date(fromISODate('2026-12-31')).getHours()).toBe(0)
   })
-  it('fromISODate переживает неполные строки', () => {
+  it('fromISODate survives incomplete strings', () => {
     expect(Number.isNaN(fromISODate('2026-05'))).toBe(false)
   })
 })
@@ -35,20 +35,20 @@ describe('ago / agoShort / inDays', () => {
   ])('ago(%i дн.) → %s', (d, text) => {
     expect(ago(back(d), NOW)).toBe(text)
   })
-  it('ago без даты', () => expect(ago(undefined, NOW)).toBe('никогда'))
+  it('ago without a date', () => expect(ago(undefined, NOW)).toBe('никогда'))
   it.each([[0, 'сегодня'], [3, '3 д'], [10, '1 нед'], [45, '2 мес'], [400, '1 г']])('agoShort(%i) → %s', (d, text) => {
     expect(agoShort(back(d), NOW)).toBe(text)
   })
-  it('agoShort без даты', () => expect(agoShort(undefined, NOW)).toBe('—'))
+  it('agoShort without a date', () => expect(agoShort(undefined, NOW)).toBe('—'))
   it.each([[0, 'сегодня'], [1, 'завтра'], [2, 'послезавтра'], [5, 'через 5 дней'], [-3, '3 дня назад']])('inDays(%i) → %s', (d, text) => {
     expect(inDays(d)).toBe(text)
   })
 })
 
-describe('форматирование с «текущим годом»', () => {
+describe('formatting with the "current year"', () => {
   beforeEach(() => { vi.useFakeTimers({ toFake: ['Date'] }); vi.setSystemTime(NOW) })
   afterEach(() => vi.useRealTimers())
-  it('год не показывается для текущего года', () => {
+  it('the year is not shown for the current year', () => {
     expect(dateLong(new Date(2026, 4, 14))).toBe('14 мая')
     expect(dateLong(new Date(2024, 4, 14))).toBe('14 мая 2024')
     expect(dateLong(new Date(2024, 4, 14), false)).toBe('14 мая')
@@ -62,7 +62,7 @@ describe('greeting', () => {
   })
 })
 
-describe('имена и строки', () => {
+describe('names and strings', () => {
   it('fullName, initials, jobLine', () => {
     expect(fullName({ firstName: 'Анна', lastName: 'Ким' })).toBe('Анна Ким')
     expect(fullName({ firstName: 'Анна' })).toBe('Анна')
@@ -72,7 +72,7 @@ describe('имена и строки', () => {
     expect(jobLine({ company: 'Acme' })).toBe('Acme')
     expect(jobLine({})).toBe('')
   })
-  it('lcFirst не ломает аббревиатуры', () => {
+  it('lcFirst does not break abbreviations', () => {
     expect(lcFirst('Основатель')).toBe('основатель')
     expect(lcFirst('CTO в AI-проекте')).toBe('CTO в AI-проекте')
     expect(lcFirst('ООО Ромашка')).toBe('ООО Ромашка')

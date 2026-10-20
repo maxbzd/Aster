@@ -18,7 +18,7 @@ import { t, tn } from '@/i18n'
 const W = 360
 const H = 440
 
-/** Цвета групп берём из палитр кругов: один набор на всём приложении. */
+/** Group colours come from the circle palettes: one set across the whole app. */
 const clusterColor = (i: number) => PALETTES[PALETTE_KEYS[i % PALETTE_KEYS.length]!]
 
 export function Graph() {
@@ -109,7 +109,7 @@ export function Graph() {
                 ))}
               </defs>
 
-              {/* ауры групп */}
+              {/* group auras */}
               {auras.map(({ c, cx, cy, r }) => (
                 <motion.g key={`a-${c.id}`} initial={{ opacity: 0 }} animate={{ opacity: focus !== null && focus !== c.id ? 0.25 : 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
                   <circle cx={cx} cy={cy} r={r} fill={`url(#aura-${c.id})`} />
@@ -117,7 +117,7 @@ export function Graph() {
                 </motion.g>
               ))}
 
-              {/* связи */}
+              {/* links */}
               {g.edges.map((e, i) => {
                 const A = pos.get(e.a); const B = pos.get(e.b)
                 if (!A || !B) return null
@@ -132,7 +132,7 @@ export function Graph() {
                 )
               })}
 
-              {/* люди */}
+              {/* people */}
               {g.connected.map((p, i) => {
                 const pt = pos.get(p.id)
                 if (!pt) return null
@@ -165,7 +165,7 @@ export function Graph() {
             <span className="flex items-center gap-1.5"><span className="h-px w-4 border-t border-dashed border-[#ffb36b]" />{t('connection between groups')}</span>
           </div>
 
-          {/* группы */}
+          {/* groups */}
           <SectionTitle>{t('Groups')}</SectionTitle>
           <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
             {g.clusters.filter(c => c.members.length > 1).map(c => {
@@ -186,7 +186,7 @@ export function Graph() {
             })}
           </div>
 
-          {/* мосты */}
+          {/* bridges */}
           {g.bridges.length > 0 && (
             <>
               <SectionTitle>{t('Bridges')}</SectionTitle>

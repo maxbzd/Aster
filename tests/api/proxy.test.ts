@@ -16,7 +16,7 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllEnvs())
 
 describe('safeEqual', () => {
-  it('равные и разные строки, разная длина, юникод', () => {
+  it('equal and different strings, different length, unicode', () => {
     expect(safeEqual('abc', 'abc')).toBe(true)
     expect(safeEqual('abc', 'abd')).toBe(false)
     expect(safeEqual('abc', 'abcd')).toBe(false)
@@ -27,16 +27,16 @@ describe('safeEqual', () => {
 })
 
 describe('CORS', () => {
-  it('без ALLOWED_ORIGIN — из любого места', () => {
+  it('without ALLOWED_ORIGIN: from anywhere', () => {
     expect(corsHeaders(new Request('https://x', { headers: { origin: 'https://evil.com' } }), '')['access-control-allow-origin']).toBe('*')
   })
-  it('со списком — только свои адреса, чужим заголовок не выдаётся', () => {
+  it('with a list: only your own addresses, others get no header', () => {
     const allowed = 'https://aster.app, https://aster-dev.app'
     expect(corsHeaders(new Request('https://x', { headers: { origin: 'https://aster-dev.app' } }), allowed)['access-control-allow-origin']).toBe('https://aster-dev.app')
     expect(corsHeaders(new Request('https://x', { headers: { origin: 'https://evil.com' } }), allowed)['access-control-allow-origin']).toBeUndefined()
     expect(corsHeaders(new Request('https://x'), allowed)['access-control-allow-origin']).toBeUndefined()
   })
-  it('предзапрос OPTIONS отвечает 204 и разрешает нужные заголовки', async () => {
+  it('the OPTIONS preflight answers 204 and allows the needed headers', async () => {
     const res = await handler(new Request(`${URL_BASE}/v1/messages`, { method: 'OPTIONS' }))
     expect(res.status).toBe(204)
     expect(res.headers.get('access-control-allow-headers')).toContain('anthropic-beta')
@@ -44,20 +44,20 @@ describe('CORS', () => {
   })
 })
 
-describe('доступ', () => {
-  it('не POST → 405', async () => {
+describe('access', () => {
+  it('not POST → 405', async () => {
     const res = await handler(new Request(`${URL_BASE}/v1/messages`, { method: 'GET' }))
     expect(res.status).toBe(405)
     expect(res.headers.get('allow')).toContain('POST')
   })
-  it('нет токена или чужой токен → 401 в формате ошибок Anthropic', async () => {
+  it('no token or a foreign token → 401 in Anthropic\'s error format', async () => {
     for (const key of ['', 'wrong-token', 'token-12', 'token-1234']) {
       const res = await handler(req('/v1/messages', { headers: { 'x-api-key': key } }))
       expect(res.status).toBe(401)
       expect(await res.json()).toEqual({ type: 'error', error: { type: 'authentication_error', message: 'Invalid token' } })
     }
   })
-  it('сервер не настроен → 500 с подсказкой, а не пропуск без проверки', async () => {
+  it('the server is not configured → 500 with a hint, not a pass without a check', async () => {
     vi.stubEnv('ASTER_TOKEN', '')
     const res = await handler(req('/v1/messages'))
     expect(res.status).toBe(500)
@@ -66,16 +66,16 @@ describe('доступ', () => {
     vi.stubEnv('ANTHROPIC_API_KEY', '')
     expect((await handler(req('/v1/messages'))).status).toBe(500)
   })
-  it('пустой токен на сервере не совпадает с пустым токеном клиента', async () => {
+  it('an empty token on the server does not match an empty client token', async () => {
     vi.stubEnv('ASTER_TOKEN', '')
     expect((await handler(req('/v1/messages', { headers: { 'x-api-key': '' } }))).status).toBe(500)
   })
-  it.each(['/v1/files', '/v1/messages/batches', '/v1/organizations', '/', '/v1/messages/../files'])('чужие пути закрыты: %s', async path => {
+  it.each(['/v1/files', '/v1/messages/batches', '/v1/organizations', '/', '/v1/messages/../files'])('other paths are closed: %s', async path => {
     const spy = vi.spyOn(globalThis, 'fetch')
     expect((await handler(req(path))).status).toBe(404)
     expect(spy).not.toHaveBeenCalled()
   })
-  it('слишком большое тело → 413 без обращения к Anthropic', async () => {
+  it('a too large body → 413 without calling Anthropic', async () => {
     const spy = vi.spyOn(globalThis, 'fetch')
     const res = await handler(req('/v1/messages', { headers: { 'content-length': '5000000' } }))
     expect(res.status).toBe(413)
@@ -83,8 +83,8 @@ describe('доступ', () => {
   })
 })
 
-describe('проксирование', () => {
-  it('подставляет серверный ключ, не пускает токен приложения наружу, сохраняет запрос и версии', async () => {
+describe('proxying', () => {
+  it('substitutes the server key, does not let the app token out, keeps the request and versions', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(upstreamOk())
     const res = await handler(req('/v1/messages?beta=true', { headers: { 'anthropic-version': '2024-01-01', 'anthropic-beta': 'server-side-fallback-2026-07-01' } }))
     expect(res.status).toBe(200)
@@ -97,14 +97,14 @@ describe('проксирование', () => {
     expect(init.headers['anthropic-version']).toBe('2024-01-01')
     expect(init.headers['anthropic-beta']).toBe('server-side-fallback-2026-07-01')
   })
-  it('версия API по умолчанию, count_tokens разрешён, слэш на конце не мешает', async () => {
+  it('the default API version, count_tokens is allowed, a trailing slash does not matter', async () => {
     const spy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(upstreamOk())
     await handler(req('/v1/messages/count_tokens/'))
     const [url, init] = spy.mock.calls[0] as [string, { headers: Record<string, string> }]
     expect(url).toBe('https://api.anthropic.com/v1/messages/count_tokens')
     expect(init.headers['anthropic-version']).toBe('2023-06-01')
   })
-  it('ответ без кеширования, статус и полезные заголовки сохраняются', async () => {
+  it('the answer is not cached, the status and useful headers are kept', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('{"error":1}', { status: 429, headers: { 'retry-after': '30', 'content-type': 'application/json' } }))
     const res = await handler(req('/v1/messages'))
     expect(res.status).toBe(429)
@@ -112,20 +112,20 @@ describe('проксирование', () => {
     expect(res.headers.get('cache-control')).toBe('no-store')
     expect(res.headers.get('access-control-allow-origin')).toBe('*')
   })
-  it('потоковый ответ передаётся как есть', async () => {
+  it('a streamed answer is passed through as is', async () => {
     const stream = new Response('data: 1\n\ndata: 2\n\n', { headers: { 'content-type': 'text/event-stream' } })
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(stream)
     const res = await handler(req('/v1/messages'))
     expect(res.headers.get('content-type')).toBe('text/event-stream')
     expect(await res.text()).toBe('data: 1\n\ndata: 2\n\n')
   })
-  it('Anthropic недоступен → 502 в формате ошибок, без утечки деталей', async () => {
+  it('Anthropic unavailable → 502 in the error format, without leaking details', async () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('ECONNRESET sk-real'))
     const res = await handler(req('/v1/messages'))
     expect(res.status).toBe(502)
     expect(JSON.stringify(await res.json())).not.toContain('sk-real')
   })
-  it('серверный ключ никогда не попадает в ответ клиенту', async () => {
+  it('the server key never gets into the answer to the client', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(upstreamOk())
     const res = await handler(req('/v1/messages'))
     expect(JSON.stringify([...res.headers.entries()])).not.toContain('sk-real')

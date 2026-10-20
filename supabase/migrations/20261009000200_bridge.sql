@@ -1,13 +1,13 @@
--- Мост между приложениями (Aster ↔ Орбита): подключение по коду, обмен «витринами» данных.
--- Тот же файл применяется в обоих проектах Supabase. Подробности — docs/BRIDGE.md.
+-- The bridge between apps (Aster ↔ Orbita): pairing by code, exchange of data "feeds".
+-- The same file is applied in both Supabase projects. Details are in docs/BRIDGE.md.
 --
--- Идея: каждое приложение публикует у себя «витрину» (bridge_feed) в нейтральном формате. Второе приложение
--- читает её анонимно, по длинному ключу доступа (токену), который выдан при подключении. Ключ хранится
--- только как хэш, привязан к одному аккаунту и разрешённым видам данных и отзывается в любой момент.
+-- The idea: each app publishes a "feed" (bridge_feed) of its own in a neutral format. The other app
+-- reads it anonymously, with a long access key (a token) issued at pairing. The key is stored
+-- only as a hash, is tied to one account and to the allowed kinds of data, and can be revoked at any moment.
 
 create sequence if not exists public.bridge_feed_seq;
 
--- Соответствие вида данных и разрешения (scope), по которому владелец включает/выключает обмен.
+-- The mapping of a kind of data to a permission (scope), by which the owner switches the exchange on and off.
 create or replace function public.bridge_scope_of(p_entity text)
 returns text
 language sql
@@ -28,10 +28,10 @@ create table public.bridge_connections (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid not null default auth.uid() references auth.users (id) on delete cascade,
   peer_label    text not null default '',
-  -- ключ, по которому ДРУГОЕ приложение читает мою витрину (хранится только хэш)
+  -- the key by which the OTHER app reads my feed (only the hash is stored)
   inbound_hash  text unique,
   scopes        text[] not null default '{people,commitments,captures,facts}',
-  -- как читаю витрину другого приложения я
+  -- how I read the other app's feed
   peer_url      text,
   peer_key      text,
   outbound_token text,
@@ -68,7 +68,7 @@ create table public.bridge_feed (
 );
 create unique index bridge_feed_user_seq_idx on public.bridge_feed (user_id, seq);
 
--- Какой человек в этом приложении = какой человек в другом (общая для всех устройств аккаунта).
+-- Which person in this app = which person in the other (shared by all devices of the account).
 create table public.bridge_links (
   user_id    uuid not null references auth.users (id) on delete cascade,
   local_id   text not null,
@@ -87,9 +87,9 @@ alter table public.bridge_offers enable row level security;
 alter table public.bridge_feed enable row level security;
 alter table public.bridge_links enable row level security;
 
-create policy "bridge_connections: своё" on public.bridge_connections for select to authenticated using (user_id = (select auth.uid()));
-create policy "bridge_links: своё" on public.bridge_links for select to authenticated using (user_id = (select auth.uid()));
--- bridge_offers и bridge_feed напрямую клиентам не открыты вовсе (только через функции).
+create policy "bridge_connections: own rows" on public.bridge_connections for select to authenticated using (user_id = (select auth.uid()));
+create policy "bridge_links: own rows" on public.bridge_links for select to authenticated using (user_id = (select auth.uid()));
+-- bridge_offers and bridge_feed are not open to clients directly at all (only through functions).
 
 revoke all on public.bridge_connections, public.bridge_offers, public.bridge_feed, public.bridge_links from anon, authenticated, public;
 grant select on public.bridge_connections, public.bridge_links to authenticated;
@@ -110,7 +110,7 @@ as $$
   select p_prefix || left(replace(gen_random_uuid()::text || gen_random_uuid()::text || gen_random_uuid()::text, '-', ''), p_bytes * 2)
 $$;
 
--- 1. Создать одноразовый код подключения (10 минут). Возвращает сам код — он показывается один раз.
+-- 1. Create a one-time pairing code (10 minutes). Returns the code itself, which is shown once.
 create or replace function public.bridge_create_offer(p_label text, p_scopes text[])
 returns jsonb
 language plpgsql
@@ -139,7 +139,7 @@ begin
 end;
 $$;
 
--- 2. Принимающая сторона заранее заводит у себя запись «входящего» ключа (хэш) и получает её id.
+-- 2. The receiving side first creates a record of the "incoming" key (the hash) on its own side and gets its id.
 create or replace function public.bridge_register(p_hash text, p_scopes text[])
 returns uuid
 language plpgsql
@@ -163,7 +163,7 @@ begin
 end;
 $$;
 
--- 3. Принимающая сторона дописывает, как читать другое приложение.
+-- 3. The receiving side adds how to read the other app.
 create or replace function public.bridge_complete(p_id uuid, p_label text, p_url text, p_key text, p_token text)
 returns void
 language plpgsql
@@ -180,7 +180,7 @@ begin
 end;
 $$;
 
--- 4. (анонимно) Обмен кода на ключ доступа. Принимающая сторона отдаёт свой ключ, получает мой.
+-- 4. (anonymous) Exchange the code for an access key. The receiving side gives its key and gets mine.
 create or replace function public.bridge_accept(p_code text, p_label text, p_peer_url text, p_peer_key text, p_peer_token text)
 returns jsonb
 language plpgsql
@@ -209,7 +209,7 @@ begin
 end;
 $$;
 
--- 5. (анонимно) Прочитать витрину по ключу доступа. Отдаёт только разрешённые виды данных.
+-- 5. (anonymous) Read the feed by the access key. Returns only the allowed kinds of data.
 create or replace function public.bridge_pull(p_token text, p_after bigint default 0, p_limit int default 200)
 returns jsonb
 language plpgsql
@@ -244,7 +244,7 @@ begin
 end;
 $$;
 
--- 6. (анонимно) Другая сторона сообщает, что отказывается от выданного ей ключа.
+-- 6. (anonymous) The other side reports that it gives up the key issued to it.
 create or replace function public.bridge_drop(p_token text)
 returns void
 language plpgsql
@@ -257,7 +257,7 @@ begin
 end;
 $$;
 
--- Отключить подключение у себя (ключ доступа перестаёт работать сразу).
+-- Disconnect on your side (the access key stops working at once).
 create or replace function public.bridge_disconnect(p_id uuid)
 returns void
 language plpgsql
@@ -287,7 +287,7 @@ begin
 end;
 $$;
 
--- Публикация витрины. Побеждает более новая метка; одинаковое содержимое номер (seq) не меняет.
+-- Publishing a feed. The newer stamp wins; identical content does not change the number (seq).
 create or replace function public.bridge_publish(p_items jsonb)
 returns jsonb
 language plpgsql
@@ -328,7 +328,7 @@ begin
 end;
 $$;
 
--- Связи между людьми: пакетная запись, побеждает более новая метка.
+-- Links between people: a batch write, the newer stamp wins.
 create or replace function public.bridge_links_put(p_items jsonb)
 returns void
 language plpgsql
@@ -364,7 +364,7 @@ revoke all on function public.bridge_create_offer(text, text[]), public.bridge_r
 grant execute on function public.bridge_create_offer(text, text[]), public.bridge_register(text, text[]),
   public.bridge_complete(uuid, text, text, text, text), public.bridge_disconnect(uuid), public.bridge_set_scopes(uuid, text[]),
   public.bridge_publish(jsonb), public.bridge_links_put(jsonb) to authenticated;
--- Анонимные точки входа: ключ доступа проверяется внутри функций.
+-- Anonymous entry points: the access key is checked inside the functions.
 grant execute on function public.bridge_accept(text, text, text, text, text), public.bridge_pull(text, bigint, int), public.bridge_drop(text) to anon, authenticated;
--- Служебные функции вызываются из других функций (владельцем), права клиентам не нужны.
+-- Helper functions are called from other functions (by the owner); clients need no rights.
 grant execute on function public.bridge_scope_of(text) to authenticated, anon;

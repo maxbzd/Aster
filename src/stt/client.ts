@@ -3,8 +3,8 @@ import { authedFetch, serverBase } from '@/ai/managed'
 import { t } from '@/i18n'
 
 /**
- * Настоящее распознавание речи: запись уходит на OpenAI-совместимый сервер (OpenAI, Groq и т. п.) с ключом пользователя.
- * Длинные записи режутся на куски по минутам: у серверов есть лимит размера файла (обычно 25 МБ).
+ * Real speech recognition: the recording goes to an OpenAI-compatible server (OpenAI, Groq and the like) with the user's key.
+ * Long recordings are cut into pieces of a few minutes: servers limit the file size (usually 25 MB).
  */
 
 export interface SttPreset { id: string; label: string; baseUrl: string; model: string; hint: string }
@@ -22,12 +22,12 @@ export class SttError extends Error {
   constructor(message: string, readonly kind: 'config' | 'auth' | 'size' | 'network' | 'other' = 'other') { super(message) }
 }
 
-/** managed — ключ на сервере, вход по аккаунту; openai — свой ключ и сервер */
+/** managed: the key is on the server, sign in with an account; openai: your own key and server */
 export const sttReady = (s?: SttSettings): s is SttSettings => !!s && (s.provider === 'managed' || (s.provider === 'openai' && !!s.apiKey?.trim()))
 
 const endpoint = (s: SttSettings) => `${(s.baseUrl?.trim() || STT_PRESETS[0]!.baseUrl).replace(/\/$/, '')}/audio/transcriptions`
 
-/** Имена людей из сети: серверное распознавание (Deepgram) узнаёт их точнее. Уходят только слова, без карточек. */
+/** Names of people from the network: server-side recognition (Deepgram) recognises them more accurately. Only words are sent, no cards. */
 export async function networkTerms(): Promise<string[]> {
   const { db } = await import('@/data/db')
   const out = new Set<string>()
@@ -63,7 +63,7 @@ export async function transcribeBlob(blob: Blob, name: string, s: SttSettings, s
   return (data?.text ?? '').trim()
 }
 
-/** Моно WAV 16 кГц из кусочка PCM: компактно и понятно любому серверу. */
+/** Mono 16 kHz WAV from a piece of PCM: compact and understood by any server. */
 export function wavFromPcm(pcm: Float32Array, rate = RATE): Blob {
   const buf = new ArrayBuffer(44 + pcm.length * 2)
   const v = new DataView(buf)
@@ -75,7 +75,7 @@ export function wavFromPcm(pcm: Float32Array, rate = RATE): Blob {
   return new Blob([buf], { type: 'audio/wav' })
 }
 
-/** Делит дорожку на куски ≈10 минут; возвращает границы в отсчётах. */
+/** Splits the track into pieces of about 10 minutes; returns the boundaries in samples. */
 export const chunkRanges = (total: number, rate = RATE, seconds = CHUNK_SECONDS): Array<[number, number]> => {
   const size = rate * seconds
   const out: Array<[number, number]> = []
@@ -102,7 +102,7 @@ async function decodeToMono16k(file: Blob): Promise<Float32Array> {
 
 export interface TranscribeProgress { done: number; total: number }
 
-/** Файл → текст. Маленький файл уходит как есть, большой режется на куски. */
+/** File → text. A small file goes as is, a large one is cut into pieces. */
 export async function transcribeFile(file: File, s: SttSettings, onProgress?: (p: TranscribeProgress) => void, signal?: AbortSignal, terms?: string[]): Promise<string> {
   if (!sttReady(s)) throw new SttError(t("Speech recognition isn't set up: add a key in Astra's settings"), 'config')
   if (file.size <= MAX_UPLOAD) {

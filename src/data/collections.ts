@@ -58,7 +58,7 @@ export async function removeFromCollection(id: ID, rm: { personIds?: ID[]; leadI
   })
 }
 
-/** Человек добавлен в несколько списков или убран из них одним действием (из карточки или при массовой правке). */
+/** A person is added to or removed from several lists in one action (from the card or in a bulk edit). */
 export async function setPersonCollections(personId: ID, collectionIds: ID[]) {
   await db.transaction('rw', db.collections, async () => {
     const want = new Set(collectionIds)
@@ -72,7 +72,7 @@ export async function setPersonCollections(personId: ID, collectionIds: ID[]) {
 
 export const collectionsOf = (cs: Collection[], personId: ID) => cs.filter(c => c.personIds.includes(personId))
 
-/** Участники списка в порядке добавления; удалённые люди пропускаются. */
+/** The members of a list in the order they were added; deleted people are skipped. */
 export function membersOf(c: Collection, people: Person[], leads: Lead[] = []) {
   const byId = new Map(people.map(p => [p.id, p]))
   const byLead = new Map(leads.map(l => [l.id, l]))
@@ -82,7 +82,7 @@ export function membersOf(c: Collection, people: Person[], leads: Lead[] = []) {
   }
 }
 
-/** Список в виде таблицы для Excel и Google Таблиц. */
+/** A list as a table for Excel and Google Sheets. */
 export function collectionToCSV(c: Collection, people: Person[], leads: Lead[] = []): string {
   const q = (v: string | undefined) => `"${(v ?? '').replace(/"/g, '""')}"`
   const m = membersOf(c, people, leads)
@@ -92,7 +92,7 @@ export function collectionToCSV(c: Collection, people: Person[], leads: Lead[] =
   return `﻿${rows.map(r => r.map(x => q(x)).join(',')).join('\r\n')}`
 }
 
-/** Убирает удалённых людей из всех списков. Вызывается при удалении человека. */
+/** Removes deleted people from all lists. Called when a person is deleted. */
 export async function purgePerson(personId: ID) {
   for (const c of await db.collections.filter(x => x.personIds.includes(personId)).toArray()) {
     await db.collections.update(c.id, { personIds: c.personIds.filter(x => x !== personId), updatedAt: Date.now() })

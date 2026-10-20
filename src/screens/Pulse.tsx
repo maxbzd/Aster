@@ -36,7 +36,7 @@ export function Pulse() {
     const inner = ps.filter(p => p.closeness === 1)
     const innerPct = inner.length ? Math.round((inner.filter(p => warmthOf(p, now).ratio <= 1).length / inner.length) * 100) : 0
 
-    // тепловая карта: 18 недель
+    // heat map: 18 weeks
     const weeks = 18
     const today = startOfDay(now)
     const start = today - (weeks * 7 - 1) * DAY - new Date(today).getDay() * 0
@@ -167,7 +167,7 @@ export function Pulse() {
   )
 }
 
-/** Шкала со средним (Opal): заливка от среднего до значения — зелёная выше, красная ниже. */
+/** A scale with an average (Opal): the fill runs from the average to the value, green above and red below. */
 function MetricBar({ label, value, avg, max, unit, avgLabel = t('usually') }: { label: string; value: number; avg: number; max: number; unit: string; avgLabel?: string }) {
   const up = value >= avg
   const pv = Math.min(value / max, 1) * 100

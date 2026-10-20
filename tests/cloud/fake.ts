@@ -2,9 +2,9 @@ import { AsterDB } from '@/data/db'
 import { createEngine, PermanentRemoteError, type Engine, type PushRow, type Remote, type RemoteRecord } from '@/cloud/engine'
 
 /**
- * Сервер в памяти с теми же правилами, что в SQL-функции sync_push:
- * побеждает строго больший client_ts, seq растёт при каждой принятой правке,
- * поле ai в settings вырезается.
+ * An in-memory server with the same rules as the SQL function sync_push:
+ * a strictly larger client_ts wins, seq grows with every accepted edit,
+ * the ai field of settings is stripped.
  */
 export class FakeServer {
   rows = new Map<string, RemoteRecord>()
@@ -12,9 +12,9 @@ export class FakeServer {
   pushes: PushRow[][] = []
   pulls: Array<{ after: number; limit: number }> = []
   failNext = 0
-  /** id, которые сервер отклоняет насовсем (как нарушение ограничения) */
+  /** ids that the server rejects for good (like a constraint violation) */
   poison = new Set<string>()
-  /** «сейчас» сервера для зажима меток из будущего */
+  /** the server's "now" for clamping stamps from the future */
   nowMs = () => Date.now()
   online = true
 
@@ -34,7 +34,7 @@ export class FakeServer {
           if (cur && !(r.client_ts > cur.client_ts)) { stale++; continue }
           let data = r.deleted ? null : (JSON.parse(JSON.stringify(r.data)) as Record<string, unknown>)
           if (r.tbl === 'settings' && data) delete data.ai
-          // jsonb не хранит порядок ключей
+          // jsonb does not keep key order
           if (data) data = Object.fromEntries(Object.entries(data).sort(([a], [b]) => (a < b ? 1 : -1)))
           this.rows.set(key, { ...r, data, seq: ++this.seq })
           applied++
@@ -56,7 +56,7 @@ export class FakeServer {
 let n = 0
 export interface Device { name: string; engine: Engine; db: AsterDB }
 
-/** Отдельная база = отдельное «устройство». */
+/** A separate database is a separate "device". */
 export function makeDevice(name = `dev${++n}`): Device {
   const db = new AsterDB(`aster-test-${name}-${Math.random().toString(36).slice(2)}`)
   const engine = createEngine(db)
@@ -64,7 +64,7 @@ export function makeDevice(name = `dev${++n}`): Device {
   return { name, engine, db }
 }
 
-/** Ждёт, пока условие станет истинным (запись в outbox после фиксации транзакции асинхронна). */
+/** Waits until the condition becomes true (the outbox write after the transaction commits is asynchronous). */
 export async function until<T>(fn: () => Promise<T> | T, ms = 3000): Promise<T> {
   const t0 = Date.now()
   let last: unknown

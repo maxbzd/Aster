@@ -17,7 +17,7 @@ import { t } from '@/i18n'
 const uniq = (a: string[]) => [...new Set(a)]
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null)
 
-/** Добавить / изменить контакт в резерве. Сверху — «умное» поле: вставь что есть, остальное заполнится само. */
+/** Add / edit a contact in the reserve. At the top is a "smart" field: paste what you have and the rest fills itself in. */
 export function LeadEditSheet({ id, smart: smart0, keep, onClose }: { id?: string; smart?: string; keep?: { source?: string; tags?: string[] }; onClose: () => void }) {
   const editing = !!id
   const existing = useLead(id)
@@ -36,7 +36,7 @@ export function LeadEditSheet({ id, smart: smart0, keep, onClose }: { id?: strin
 
   useEffect(() => { if (existing && !loaded.current) { setD(existing); loaded.current = true } }, [existing])
 
-  // «умное» поле заполняет только то, что пользователь ещё не трогал
+  // the "smart" field fills in only what the user has not touched yet
   useEffect(() => {
     if (!smart.trim()) { last.current = null; return }
     const p = parseLeadText(smart)

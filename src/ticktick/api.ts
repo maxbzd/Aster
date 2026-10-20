@@ -2,7 +2,7 @@ import { authedFetch } from '@/ai/managed'
 import { SUPABASE_URL } from '@/cloud/config'
 import { t } from '@/i18n'
 
-/* Обращения к серверной функции `ticktick` (supabase/functions/ticktick). Ключи и токен TickTick лежат на сервере. */
+/* Calls to the server function `ticktick` (supabase/functions/ticktick). The TickTick keys and token live on the server. */
 
 const base = () => `${SUPABASE_URL.replace(/\/$/, '')}/functions/v1/ticktick`
 
@@ -23,7 +23,7 @@ export async function getStatus(): Promise<TickStatus | null> {
   } catch { return null }
 }
 
-/** Адрес, на который нужно отправить человека, чтобы он разрешил доступ в TickTick. */
+/** The address to send the person to so that they allow access in TickTick. */
 export async function connectUrl(returnTo: string): Promise<string> {
   const res = await authedFetch(`${base()}/connect`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ returnTo }) })
   const j = (await res.json().catch(() => ({}))) as { url?: string; error?: string }
