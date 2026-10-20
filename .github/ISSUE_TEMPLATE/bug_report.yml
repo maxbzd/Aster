@@ -1,0 +1,38 @@
+name: Bug report
+description: Something does not work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Tap ...
+    validations:
+      required: true
+  - type: input
+    id: env
+    attributes:
+      label: Browser and device
+      placeholder: Safari 19 on iPhone 16, installed as a PWA
+  - type: dropdown
+    id: language
+    attributes:
+      label: Interface language
+      options: [English, Русский, Other]
+  - type: checkboxes
+    id: setup
+    attributes:
+      label: Setup
+      options:
+        - label: I use cloud sync (Supabase)
+        - label: I use a cloud AI model
+        - label: The bug also happens with the demo data

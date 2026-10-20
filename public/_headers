@@ -1,0 +1,27 @@
+# Serving headers (Cloudflare Workers/Pages). They matter for security, and so that a new version reaches people at once.
+
+# The entry point and the service worker are not cached: otherwise the browser would not notice an update
+/index.html
+  Cache-Control: no-cache
+/sw.js
+  Cache-Control: no-cache
+/registerSW.js
+  Cache-Control: no-cache
+/manifest.webmanifest
+  Cache-Control: no-cache
+
+# Files with a hash in the name can be cached forever
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Cross-Origin-Opener-Policy: same-origin
+  Permissions-Policy: microphone=(self), camera=(self), geolocation=(), payment=(), usb=(), interest-cohort=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  # Content policy: only your own scripts (no inline, no eval); data goes only to your own site, Supabase (cloud and bridge),
+  # Anthropic/OpenAI/Groq and speech recognition servers. No foreign code gets into the page.
+  # If you use another AI gateway with "Your own key" mode, add its address to connect-src.
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://api.openai.com https://api.groq.com; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
