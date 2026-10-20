@@ -2,8 +2,7 @@
 
 [Русский](ru/BRIDGE.md)
 
-Aster and its companion app **Orbita** (tasks, commitments, decisions and a daily journal; an open-source project that will live in
-its own repository) are two separate apps with **separate databases** (separate Supabase projects). They exchange data through a
+Aster and its companion app **Orbita** (tasks, commitments, decisions and a daily journal; an open-source project, [github.com/maxbzd/Orbita](https://github.com/maxbzd/Orbita)) are two separate apps with **separate databases** (separate Supabase projects). They exchange data through a
 "like a calendar" connection: show a code in one app, paste it in the other, and the data flows. The second account's password is not needed.
 
 The shared code (`src/bridge/protocol|pairing|peer|own|connect|match|cycle.ts`) is **identical** in both apps: change it in one and update the copy in the other.
