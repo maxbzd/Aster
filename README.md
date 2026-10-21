@@ -14,6 +14,8 @@ Remember everyone: how you met, what matters to them, and when it is time to rea
 
 [English](README.md) · [Русский](README.ru.md)
 
+**[▶ Open the app](https://maxbzd.github.io/Aster/)**: runs in your browser, nothing to install
+
 <img src="docs/img/today.jpg" width="270" alt="Today screen" /> &nbsp; <img src="docs/img/profile.jpg" width="270" alt="A person's profile" /> &nbsp; <img src="docs/img/orbit.jpg" width="270" alt="Orbit view of your network" />
 
 </div>
