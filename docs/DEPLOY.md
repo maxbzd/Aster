@@ -25,9 +25,19 @@ To redeploy on every push, connect your fork in the Cloudflare dashboard: Worker
 Set the repository and branch, the build command to `npm run build` and the deploy command to `npx wrangler deploy`.
 The worker name in the dashboard must match `name` in `wrangler.jsonc`.
 
+### GitHub Pages (automatic)
+
+1. Fork the repository.
+2. Settings, Pages, Build and deployment, Source: **GitHub Actions**.
+3. Every push to `main` runs `.github/workflows/deploy.yml` and publishes the site at `https://<you>.github.io/<repository>/`.
+
+The build uses relative paths (`base: './'`), so the same `dist/` works from a sub-path and from the root of a domain.
+Server-side features (AI keys, sync, MCP) need the Supabase Edge Functions from section 2 and are not part of the Pages site.
+Add your Pages address to **Redirect URLs** in Supabase (Authentication, URL Configuration) if you use cloud sign-in.
+
 ### Any other static host
 
-Cloudflare Pages, Vercel, Netlify, GitHub Pages and plain nginx all work: build, then upload `dist/`. Make sure that
+Cloudflare Pages, Vercel, Netlify and plain nginx all work: build, then upload `dist/`. Make sure that
 unknown paths fall back to `index.html` (the app uses `/#/...` addresses, so most hosts need nothing extra).
 
 ### Security headers
