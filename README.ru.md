@@ -14,6 +14,8 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
+**[▶ Открыть приложение](https://maxbzd.github.io/Aster/)**: работает в браузере, ничего ставить не нужно
+
 <img src="docs/img/today-ru.jpg" width="270" alt="Экран «Сегодня»" /> &nbsp; <img src="docs/img/profile-ru.jpg" width="270" alt="Профиль человека" /> &nbsp; <img src="docs/img/orbit-ru.jpg" width="270" alt="Орбита: сеть как звёздная система" />
 
 </div>
