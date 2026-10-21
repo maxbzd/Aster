@@ -13,7 +13,8 @@ npm run build        # результат в dist/
 
 **Cloudflare Workers** (репозиторий настроен под него): `wrangler.jsonc` отдаёт `dist/` как статику с запасным переходом на `index.html`. Выберите своё имя воркера в файле и выполните `npx wrangler login`, затем `npx wrangler deploy`.
 
-Чтобы сайт обновлялся при каждом пуше, подключите свой форк в панели Cloudflare: Workers & Pages → ваш воркер → Settings → Builds → репозиторий и ветка, Build command `npm run build`, Deploy command `npx wrangler deploy`. Имя воркера в панели должно совпадать с `name` в `wrangler.jsonc`. GitHub Actions в репозитории только проверяет код, а не публикует.
+Чтобы сайт обновлялся при каждом пуше, подключите свой форк в панели Cloudflare: Workers & Pages → ваш воркер → Settings → Builds → репозиторий и ветка, Build command `npm run build`, Deploy command `npx wrangler deploy`. Имя воркера в панели должно совпадать с `name` в `wrangler.jsonc`. 
+**GitHub Pages (автоматически):** сделайте форк, затем Settings → Pages → Build and deployment → Source: **GitHub Actions**. Каждый пуш в `main` запускает `.github/workflows/deploy.yml` и публикует сайт по адресу `https://<вы>.github.io/<репозиторий>/`. Сборка использует относительные пути (`base: './'`), поэтому один и тот же `dist/` работает и из подкаталога, и из корня домена. Серверные возможности (ключи ИИ, синхронизация, MCP) требуют Supabase Edge Functions и в сайт на Pages не входят. Если используете вход в облако, добавьте адрес Pages в **Redirect URLs** в Supabase (Authentication → URL Configuration).
 
 **Любой другой хостинг:** соберите и загрузите `dist/`. Адреса вида `/#/people` обычно не требуют особых настроек.
 
