@@ -5,6 +5,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  // Relative paths: the build works from the root of a domain (Cloudflare) and from a sub-path (GitHub Pages).
+  base: './',
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   build: {
     rollupOptions: {
@@ -37,8 +39,9 @@ export default defineConfig({
         background_color: '#05060a',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        share_target: { action: '/', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
+        start_url: './',
+        scope: './',
+        share_target: { action: './', method: 'GET', params: { title: 'title', text: 'text', url: 'url' } },
         icons: [
           { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
