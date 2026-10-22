@@ -15,7 +15,8 @@ const at = (place?: string) => (place ? `на ${lc(place).replace(/^на\s+/, ''
  */
 export function localDrafts(p: Person, o: Occasion | null, me: string, people: Person[], lastInt?: Interaction): Drafts {
   const lang = p.prefs?.language === 'ru' || p.prefs?.language === 'en' ? p.prefs.language : getLocale()
-  if (lang === 'en') return englishDrafts(p, o, me, people, lastInt)
+  // template drafts exist in Russian and English; every other language gets the English ones (a cloud model writes in any language)
+  if (lang !== 'ru') return englishDrafts(p, o, me, people, lastInt)
   return applyAddress(ruDrafts(p, o, me, people, lastInt), p)
 }
 

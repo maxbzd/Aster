@@ -10,7 +10,7 @@ Remember everyone: how you met, what matters to them, and when it is time to rea
 [![CI](https://github.com/maxbzd/Aster/actions/workflows/ci.yml/badge.svg)](https://github.com/maxbzd/Aster/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Local-first](https://img.shields.io/badge/data-local--first-5fe3b0.svg)](#privacy-and-your-data)
-[![English · Русский](https://img.shields.io/badge/language-English%20·%20Русский-orange.svg)](docs/I18N.md)
+[![7 languages](https://img.shields.io/badge/languages-EN%20·%20ES%20·%20DE%20·%20FR%20·%20PT%20·%20UK%20·%20RU-orange.svg)](docs/I18N.md)
 
 [English](README.md) · [Русский](README.ru.md)
 
@@ -37,7 +37,7 @@ It is free and open source (MIT). You can use it as-is, host your own copy, or f
   Astra has a built-in on-device brain and can optionally use a cloud model of your choice.
 - **Hands-free voice.** "Astra, note that Nina and I agreed on Friday." Astra shows the plan and saves only after you confirm.
 - **Yours to move.** Backups, vCard import/export, `.ics` calendar export, CSV export.
-- **English and Russian**, including the on-device assistant, which understands both languages. [Add your own language](docs/I18N.md).
+- **Seven languages**: English, Spanish, German, French, Portuguese, Ukrainian and Russian (the on-device assistant understands English and Russian input; a cloud model writes in any of them). [Improve a translation or add your own](docs/I18N.md).
 - **Optional cloud sync** across devices through your own Supabase project, plus an **MCP server** so Claude can read and write your data, TickTick sync, and a bridge to the companion app Orbita.
 
 ## Quick start
@@ -141,7 +141,7 @@ src/
   sheets/      bottom sheets: person, contact, reminder, circles, import
   data/        model, database, warmth logic, demo data, vCard
   lib/         date formatting, colors, .ics calendar, photos, speech
-  i18n/        the translation layer and the Russian dictionary
+  i18n/        the translation layer and the language dictionaries
   ai/          Astra: on-device engine, cloud client, prompts, schemas
   cloud/       optional sync with Supabase
   bridge/      optional bridge to Orbita
