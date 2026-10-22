@@ -1,10 +1,14 @@
 name: Release
 
-# Push a tag such as v1.0.0 to publish a GitHub release: the notes come from the matching section of CHANGELOG.md
-# and the static build is attached as a zip, ready to unpack on any web host.
+# A release is published automatically when package.json carries a version that has no GitHub release yet
+# (bump "version", add a "## [x.y.z]" section to CHANGELOG.md, push to main). The notes come from that
+# changelog section and the static build is attached as a zip, ready to unpack on any web host.
+# Pushing a tag such as v1.0.0 by hand works too, and so does running the workflow manually.
 on:
   push:
+    branches: [main]
     tags: ['v*']
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -15,33 +19,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Work out the version
+        id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then tag="$GITHUB_REF_NAME"; else tag="v$(node -p "require('./package.json').version")"; fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          if gh release view "$tag" >/dev/null 2>&1; then echo "exists=true" >> "$GITHUB_OUTPUT"; else echo "exists=false" >> "$GITHUB_OUTPUT"; fi
+
       - uses: actions/setup-node@v4
+        if: steps.v.outputs.exists == 'false'
         with:
           node-version: 22
           cache: npm
 
       - run: npm ci
+        if: steps.v.outputs.exists == 'false'
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
 
       - run: npm run build
+        if: steps.v.outputs.exists == 'false'
 
       - name: Package the build
+        if: steps.v.outputs.exists == 'false'
         run: |
           name="${GITHUB_REPOSITORY#*/}"
-          (cd dist && zip -qr "../${name,,}-${GITHUB_REF_NAME}-web.zip" .)
+          (cd dist && zip -qr "../${name,,}-${{ steps.v.outputs.tag }}-web.zip" .)
 
       - name: Release notes from the changelog
+        if: steps.v.outputs.exists == 'false'
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          version="${{ steps.v.outputs.tag }}"; version="${version#v}"
           awk -v v="$version" '
             $0 ~ "^## \\[" v "\\]" { found = 1; next }
             found && /^## \[/ { exit }
             found { print }
           ' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then echo "Release ${GITHUB_REF_NAME}" > notes.md; fi
+          if [ ! -s notes.md ]; then echo "Release ${{ steps.v.outputs.tag }}" > notes.md; fi
 
       - name: Create the release
+        if: steps.v.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md ./*-web.zip
+        run: gh release create "${{ steps.v.outputs.tag }}" --target "$GITHUB_SHA" --title "${{ steps.v.outputs.tag }}" --notes-file notes.md ./*-web.zip
