@@ -17,6 +17,8 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      # Fails if the runner's Node 22 is older than the October 2026 security release (22.23.4).
+      - run: node -e "const [a,b,c]=process.versions.node.split('.').map(Number);if(a===22&&(b<23||(b===23&&c<4))){console.error('Node '+process.versions.node+' is older than 22.23.4');process.exit(1)}"
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
