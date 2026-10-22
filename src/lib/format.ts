@@ -57,11 +57,37 @@ const WEEKDAYS: Record<'en' | 'ru', string[]> = {
   ru: ['воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'],
 }
 
+// Other languages take their names from Intl, so adding a translation does not need another table.
+const intlCache = new Map<string, string[]>()
+const fromIntl = (id: string, opts: Intl.DateTimeFormatOptions, part: 'month' | 'weekday', count: number, date: (i: number) => Date) => {
+  const tag = intlTag()
+  const key = `${tag}|${id}`
+  let names = intlCache.get(key)
+  if (!names) {
+    const f = new Intl.DateTimeFormat(tag, opts)
+    names = Array.from({ length: count }, (_, i) => f.formatToParts(date(i)).find(x => x.type === part)?.value ?? '')
+    intlCache.set(key, names)
+  }
+  return names
+}
+// "day + month" is formatted so that the month comes out in the form used after a day number (genitive in Ukrainian).
+const monthNames = (style: 'long' | 'short'): string[] => {
+  const l = getLocale()
+  if (l === 'en' || l === 'ru') return MONTHS[l][style]
+  return fromIntl(`m-${style}`, { day: 'numeric', month: style }, 'month', 12, i => new Date(2024, i, 15))
+}
+const weekdayNames = (): string[] => {
+  const l = getLocale()
+  if (l === 'en' || l === 'ru') return WEEKDAYS[l]
+  return fromIntl('w', { weekday: 'long' }, 'weekday', 7, i => new Date(2024, 0, 7 + i)) // 2024-01-07 is a Sunday
+}
+
 /** "March 5" / "March 5, 2027" in English, "5 марта 2027" in Russian. The year is shown only when it is not the current one. */
 export const dateLong = (time: number | Date, withYear = true) => {
   const d = new Date(time)
   const year = withYear && d.getFullYear() !== new Date().getFullYear() ? d.getFullYear() : null
   const l = getLocale()
+  if (l !== 'en' && l !== 'ru') return d.toLocaleDateString(intlTag(), { day: 'numeric', month: 'long', ...(year ? { year: 'numeric' } : {}) })
   const month = MONTHS[l].long[d.getMonth()]
   if (l === 'en') return `${month} ${d.getDate()}${year ? `, ${year}` : ''}`
   return `${d.getDate()} ${month}${year ? ` ${year}` : ''}`
@@ -69,12 +95,13 @@ export const dateLong = (time: number | Date, withYear = true) => {
 export const dateShort = (time: number | Date) => {
   const d = new Date(time)
   const l = getLocale()
+  if (l !== 'en' && l !== 'ru') return d.toLocaleDateString(intlTag(), { day: 'numeric', month: 'short' })
   const month = MONTHS[l].short[d.getMonth()]
   return l === 'en' ? `${month} ${d.getDate()}` : `${d.getDate()} ${month}`
 }
-export const weekday = (time: number | Date) => WEEKDAYS[getLocale()][new Date(time).getDay()]!
+export const weekday = (time: number | Date) => weekdayNames()[new Date(time).getDay()]!
 /** Month name (0–11) in the form used after a day number: "марта" / "March". */
-export const monthGen = (m: number) => MONTHS[getLocale()].long[m]!
+export const monthGen = (m: number) => monthNames('long')[m]!
 export const timeHM = (time: number) => new Date(time).toLocaleTimeString(intlTag(), { hour: '2-digit', minute: '2-digit' })
 
 export function greeting(now = new Date()) {

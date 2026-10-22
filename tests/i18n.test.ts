@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { detectLocale, getLocale, registerDictionary, setLocale, t, tn, type Dictionary } from '@/i18n'
 import ru from '@/i18n/locales/ru.json'
+import es from '@/i18n/locales/es.json'
+import de from '@/i18n/locales/de.json'
+import fr from '@/i18n/locales/fr.json'
+import pt from '@/i18n/locales/pt.json'
+import uk from '@/i18n/locales/uk.json'
 
 const base = ru as Dictionary
 
@@ -50,14 +55,58 @@ describe('tn: plural forms', () => {
 
 describe('detectLocale', () => {
   it('takes the first supported language from the list', () => {
-    expect(detectLocale(['de-DE', 'ru-RU', 'en-US'])).toBe('ru')
+    expect(detectLocale(['pl-PL', 'ru-RU', 'en-US'])).toBe('ru')
+    expect(detectLocale(['de-DE', 'ru-RU', 'en-US'])).toBe('de')
+    expect(detectLocale(['pt-BR'])).toBe('pt')
+    expect(detectLocale(['uk-UA', 'ru'])).toBe('uk')
     expect(detectLocale(['en-GB'])).toBe('en')
   })
   it('falls back to English', () => {
-    expect(detectLocale(['de', 'fr'])).toBe('en')
+    expect(detectLocale(['pl', 'ja'])).toBe('en')
     expect(detectLocale([])).toBe('en')
   })
   it('the test suite runs in Russian', () => expect(getLocale()).toBe('ru'))
+})
+
+describe('translations in every language', () => {
+  const ph = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join()
+  const loaded: [string, Dictionary][] = [
+    ['es', es], ['de', de], ['fr', fr], ['pt', pt], ['uk', uk],
+  ].map(([id, d]) => [id as string, d as Dictionary])
+
+  it.each(loaded)('%s: same messages and placeholders as the Russian dictionary', (_id, dict) => {
+    const bad: string[] = []
+    for (const [k, v] of Object.entries(base)) {
+      const x = dict[k]
+      if (x === undefined) { bad.push(`missing: ${k}`); continue }
+      if (Array.isArray(v) !== Array.isArray(x)) { bad.push(`shape: ${k}`); continue }
+      if (!Array.isArray(x) && ph(k.includes('\u0004') ? k.split('\u0004')[1]! : k) !== ph(x as string)) bad.push(`placeholders: ${k}`)
+    }
+    expect(bad).toEqual([])
+  })
+
+  it('plural forms follow each language: Ukrainian has four, the rest of the Latin-script ones two', () => {
+    const key = 'testday {n}'
+    registerDictionary('uk', { [key]: ['{n} день', '{n} дні', '{n} днів', '{n} дня'] })
+    setLocale('uk')
+    expect([1, 2, 5, 21, 1.5].map(n => tn(n, key, 'unused'))).toEqual(['1 день', '2 дні', '5 днів', '21 день', '1.5 дня'])
+    registerDictionary('es', { [key]: ['{n} día', '{n} días'] })
+    setLocale('es')
+    expect([1, 2, 1_000_000].map(n => tn(n, key, 'unused'))).toEqual(['1 día', '2 días', '1000000 días'])
+  })
+
+  it('dates are named in the interface language', async () => {
+    const { dateLong, monthGen, weekday } = await import('@/lib/format')
+    const { calendarNames } = await import('@/lib/calendar')
+    setLocale('de')
+    expect(monthGen(2)).toMatch(/^m(ä|a)rz$/i)
+    expect(weekday(new Date(2024, 0, 7))).toBe('Sonntag')
+    expect(dateLong(new Date(2020, 5, 3))).toContain('Juni')
+    expect(calendarNames().weekAbbr).toHaveLength(7)
+    setLocale('uk')
+    expect(monthGen(2)).toBe('березня')
+    expect(calendarNames().monthsNom[2]).toBe('Березень')
+  })
 })
 
 describe('dictionary', () => {

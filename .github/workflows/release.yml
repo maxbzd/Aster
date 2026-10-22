@@ -1,0 +1,47 @@
+name: Release
+
+# Push a tag such as v1.0.0 to publish a GitHub release: the notes come from the matching section of CHANGELOG.md
+# and the static build is attached as a zip, ready to unpack on any web host.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+
+      - run: npm run build
+
+      - name: Package the build
+        run: |
+          name="${GITHUB_REPOSITORY#*/}"
+          (cd dist && zip -qr "../${name,,}-${GITHUB_REF_NAME}-web.zip" .)
+
+      - name: Release notes from the changelog
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          awk -v v="$version" '
+            $0 ~ "^## \\[" v "\\]" { found = 1; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then echo "Release ${GITHUB_REF_NAME}" > notes.md; fi
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" --title "$GITHUB_REF_NAME" --notes-file notes.md ./*-web.zip

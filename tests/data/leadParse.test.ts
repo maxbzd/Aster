@@ -176,6 +176,11 @@ describe('headers and column roles', () => {
     ['Телефон', 'phone'], ['Mobile', 'phone'], ['E-mail', 'email'], ['Почта', 'email'], ['Telegram', 'telegram'], ['тг', 'telegram'],
     ['Instagram', 'instagram'], ['LinkedIn', 'linkedin'], ['Сайт', 'website'], ['Город', 'city'], ['Компания', 'company'], ['Должность', 'role'],
     ['Теги', 'tags'], ['Категория', 'tags'], ['Чем ценен', 'why'], ['Описание', 'why'], ['Откуда', 'source'], ['Источник', 'source'], ['Комментарий', 'notes'],
+    // other interface languages
+    ['Nombre', 'first'], ['Apellidos', 'last'], ['Vorname', 'first'], ['Nachname', 'last'], ['Prénom', 'first'], ['Nom de famille', 'last'],
+    ['Sobrenome', 'last'], ['Прізвище', 'last'], ["Ім'я", 'first'], ['Teléfono', 'phone'], ['Telefon', 'phone'], ['Téléphone', 'phone'],
+    ['Correo', 'email'], ['Ciudad', 'city'], ['Stadt', 'city'], ['Ville', 'city'], ['Empresa', 'company'], ['Unternehmen', 'company'],
+    ['Cargo', 'role'], ['Посада', 'role'], ['Origen', 'source'], ['Quelle', 'source'], ['Звідки', 'source'], ['Notizen', 'notes'], ['Етикетки', 'skip'],
     ['Что-то странное', 'skip'], ['', 'skip'],
   ])('«%s» → %s', (header, role) => {
     expect(roleOfHeader(header)).toBe(role)
