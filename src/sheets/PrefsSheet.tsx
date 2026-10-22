@@ -11,7 +11,11 @@ import { t, msg } from '@/i18n'
 
 export const ALCOHOL_LABEL: Record<AlcoholPref, string> = { get yes() { return t('Drinks') }, get no() { return t("Doesn't drink") }, get rarely() { return t('Rarely') } }
 export const TIME_LABEL: Record<BestTime, string> = { get morning() { return t('Morning') }, get day() { return t('Daytime') }, get evening() { return t('Evening') }, get weekend() { return t('Weekends') } }
-export const LANGUAGES = [{ code: 'ru', label: 'Русский' }, { code: 'en', label: 'English' }, { code: 'other', get label() { return t('Other language') } }]
+export const LANGUAGES = [
+  { code: 'ru', label: 'Русский' }, { code: 'en', label: 'English' }, { code: 'uk', label: 'Українська' }, { code: 'es', label: 'Español' },
+  { code: 'de', label: 'Deutsch' }, { code: 'fr', label: 'Français' }, { code: 'pt', label: 'Português' },
+  { code: 'other', get label() { return t('Other language') } },
+]
 export const prefsEmpty = (p?: Prefs) => !p || !(p.food || p.allergies || p.alcohol || p.hobbies?.length || p.address || p.bestChannel || p.bestTime || p.language)
 
 const HOBBY_HINTS = [msg('Running'), msg('Yoga'), msg('Tennis'), msg('Travel'), msg('Coffee'), msg('Wine'), msg('Books'), msg('Movies'), msg('Music'), msg('Mountains'), msg('Cooking'), msg('Chess')]

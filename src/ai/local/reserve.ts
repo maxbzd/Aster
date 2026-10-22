@@ -100,7 +100,7 @@ export function reserveMatches(people: Person[], leads: Lead[], limit = 6): Rese
 
 /** A first message to a stranger: formal register, no gender-dependent words. */
 export function localLeadDrafts(l: Lead, me: string): Drafts {
-  return getLocale() === 'en' ? enLeadDrafts(l, me) : ruLeadDrafts(l, me)
+  return getLocale() === 'ru' ? ruLeadDrafts(l, me) : enLeadDrafts(l, me)
 }
 
 function enLeadDrafts(l: Lead, me: string): Drafts {

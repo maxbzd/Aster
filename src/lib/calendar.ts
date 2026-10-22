@@ -1,6 +1,6 @@
 /* Pure calendar arithmetic for the date picker. Dates are "YYYY-MM-DD" strings in local time, with no time zones. */
 
-import { getLocale, type Locale } from '@/i18n'
+import { getLocale, intlTag } from '@/i18n'
 import { monthGen } from '@/lib/format'
 
 export interface Cell { iso: string; y: number; m: number; d: number; inMonth: boolean }
@@ -67,17 +67,44 @@ const NAMES = {
     monthsAbbr: ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'],
     weekAbbr: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'],
   },
-} satisfies Record<Locale, { monthsNom: string[]; monthsAbbr: string[]; weekAbbr: string[] }>
+}
+type CalendarNames = { monthsNom: string[]; monthsAbbr: string[]; weekAbbr: string[] }
+
+const intlNames = new Map<string, CalendarNames>()
+function namesFromIntl(tag: string): CalendarNames {
+  const month = (style: 'long' | 'short') => {
+    const f = new Intl.DateTimeFormat(tag, { month: style })
+    return Array.from({ length: 12 }, (_, i) => f.format(new Date(2024, i, 15)))
+  }
+  const week = new Intl.DateTimeFormat(tag, { weekday: 'short' })
+  const cap = (s: string) => s.charAt(0).toLocaleUpperCase(tag) + s.slice(1)
+  return {
+    monthsNom: month('long').map(cap),
+    monthsAbbr: month('short'),
+    weekAbbr: Array.from({ length: 7 }, (_, i) => week.format(new Date(2024, 0, 1 + i))), // 2024-01-01 is a Monday
+  }
+}
 
 /** Month and weekday names for the date picker in the current language (the week starts on Monday). */
-export const calendarNames = () => NAMES[getLocale()]
+export function calendarNames(): CalendarNames {
+  const l = getLocale()
+  if (l === 'en' || l === 'ru') return NAMES[l]
+  const tag = intlTag()
+  const known = intlNames.get(tag)
+  if (known) return known
+  const names = namesFromIntl(tag)
+  intlNames.set(tag, names)
+  return names
+}
 
 /** "October 10, 2026" / "10 октября 2026" */
 export function longDate(iso: string, withYear = true) {
   const p = parseISO(iso)
   if (!p) return ''
+  const l = getLocale()
+  if (l !== 'en' && l !== 'ru') return new Date(p.y, p.m, p.d).toLocaleDateString(intlTag(), { day: 'numeric', month: 'long', ...(withYear ? { year: 'numeric' } : {}) })
   const month = monthGen(p.m)
-  return getLocale() === 'en' ? `${month} ${p.d}${withYear ? `, ${p.y}` : ''}` : `${p.d} ${month}${withYear ? ` ${p.y}` : ''}`
+  return l === 'en' ? `${month} ${p.d}${withYear ? `, ${p.y}` : ''}` : `${p.d} ${month}${withYear ? ` ${p.y}` : ''}`
 }
 
 /** A date and time in milliseconds ↔ parts for the time picker. */

@@ -271,7 +271,7 @@ export function occasionsFrom(people: Person[], interactions: Interaction[], rem
 }
 
 /** The person's language of communication, when it differs from the interface language: tells the model which language to write in. */
-const LANGUAGE_NAMES: Record<string, string> = { ru: 'Russian', en: 'English' }
+const LANGUAGE_NAMES: Record<string, string> = { ru: 'Russian', en: 'English', es: 'Spanish', de: 'German', fr: 'French', pt: 'Portuguese', uk: 'Ukrainian' }
 const languageLine = (p: Person) => {
   const lang = p.prefs?.language
   return lang && LANGUAGE_NAMES[lang] && lang !== getLocale() ? `Write all three messages in ${LANGUAGE_NAMES[lang]}.\n\n` : ''
