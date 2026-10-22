@@ -7,7 +7,7 @@ By taking part you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md). Se
 
 ## Getting started
 
-Requirements: Node.js 22 or newer.
+Requirements: Node.js 22.23.4 or newer (earlier 22.x releases have known security fixes; any 24.22.1+ or 26.12.1+ works too).
 
 ```bash
 git clone https://github.com/maxbzd/Aster.git
