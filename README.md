@@ -42,7 +42,7 @@ It is free and open source (MIT). You can use it as-is, host your own copy, or f
 
 ## Quick start
 
-Requirements: Node.js 22 or newer.
+Requirements: Node.js 22.23.4 or newer (earlier 22.x releases have known security fixes; any 24.22.1+ or 26.12.1+ works too).
 
 ```bash
 git clone https://github.com/maxbzd/Aster.git
