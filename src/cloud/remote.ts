@@ -10,8 +10,9 @@ export function supabaseRemote(client: SupabaseClient): Remote {
     async push(rows: PushRow[]) {
       const { data, error } = await client.rpc('sync_push', { rows })
       if (error) throw isPermanent(error as { code?: string }) ? new PermanentRemoteError(error.message) : error
-      const r = (data ?? {}) as { applied?: number; stale?: number }
-      return { applied: r.applied ?? 0, stale: r.stale ?? 0 }
+      const r = (data ?? {}) as { applied?: number; stale?: number; conflicts?: unknown }
+      const conflicts = Array.isArray(r.conflicts) ? r.conflicts.filter((k): k is string => typeof k === 'string') : []
+      return { applied: r.applied ?? 0, stale: r.stale ?? 0, conflicts }
     },
     async pull(afterSeq: number, limit: number) {
       const { data, error } = await client

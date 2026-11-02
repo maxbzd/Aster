@@ -17,6 +17,8 @@ export class FakeServer {
   /** the server's "now" for clamping stamps from the future */
   nowMs = () => Date.now()
   online = true
+  /** an older server without the base_ts check */
+  cas = true
 
   remote(): Remote {
     return {
@@ -27,10 +29,13 @@ export class FakeServer {
         this.pushes.push(rows)
         let applied = 0
         let stale = 0
+        const conflicts: string[] = []
         for (const row of rows) {
           const r = { ...row, client_ts: Math.max(0, Math.min(row.client_ts, this.nowMs() + 60_000)) }
           const key = `${r.tbl}:${r.id}`
           const cur = this.rows.get(key)
+          // optimistic concurrency, as in the SQL: the edit was made on a version the cloud no longer holds
+          if (this.cas && row.base_ts !== undefined && cur && cur.client_ts !== row.base_ts) { conflicts.push(key); continue }
           if (cur && !(r.client_ts > cur.client_ts)) { stale++; continue }
           let data = r.deleted ? null : (JSON.parse(JSON.stringify(r.data)) as Record<string, unknown>)
           if (r.tbl === 'settings' && data) delete data.ai
@@ -39,7 +44,7 @@ export class FakeServer {
           this.rows.set(key, { ...r, data, seq: ++this.seq })
           applied++
         }
-        return { applied, stale }
+        return { applied, stale, conflicts }
       },
       pull: async (after, limit) => {
         if (!this.online) throw new Error('Failed to fetch')

@@ -56,7 +56,19 @@ export class AsterDB extends Dexie {
   }
 }
 
-export interface OutboxEntry { key: string; table: string; rowId: string; ts: number }
+export interface OutboxEntry {
+  key: string
+  table: string
+  rowId: string
+  ts: number
+  /**
+   * The row as the cloud last knew it, before this device's first unsent edit: the common ancestor for the field-level
+   * merge when another device changed the same row. Absent for a row created here and never sent (nothing to compare with).
+   */
+  base?: Record<string, unknown>
+  /** The cloud's `client_ts` of that version: sent as `base_ts` so the cloud can tell that another device wrote in between. */
+  baseTs?: number
+}
 export interface SyncMetaEntry { key: string; value: unknown }
 
 export const db = new AsterDB()

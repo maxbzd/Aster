@@ -21,9 +21,19 @@ Dexie (device) ──hook──▶ outbox ──push──▶ sync_push() ──
   format and strips `settings.ai`, so Astra's keys never reach the cloud.
 - **The `outbox` queue** in Dexie: hooks on create, update and delete put the row key there. A delete is a tombstone
   (`deleted = true`) so it reaches the other devices.
-- **Conflicts**: the row with the larger `client_ts` (the device's monotonic edit time) wins. The rule is the same on the
-  server (`sync_push`) and on the client (`applyRemote`): your own unsynced edit that is newer is not overwritten by the cloud;
-  a newer cloud version replaces the local queue. The assumption is that device clocks are roughly right.
+- **Conflicts** are merged on the device, field by field. When a row was edited here and also changed in the cloud, the
+  two versions are compared with their common ancestor (`OutboxEntry.base`: the row as the cloud last knew it, saved when
+  you first edit it): a field changed on one side only keeps that side's value; lists such as tags merge as sets; items
+  with an `id` merge by id; two edits in different places of one note both survive (word-level diff3), and a line
+  appended on both devices keeps both lines. Only when both devices changed the **same** field differently does the newer
+  edit (`client_ts`, ties broken the same way on every device) win, and the older value goes to a conflict log
+  (`engine.conflictLog()`, the last 100) so it can be restored instead of vanishing. The merge is in `src/cloud/merge.ts`
+  and is symmetric: swapping the two sides gives the same record.
+- **No lost update**: each pushed row carries `base_ts`, the `client_ts` of the cloud version it was made on top of. If the
+  cloud holds another version by now, `sync_push` declines the row (and locks it while deciding, so two simultaneous pushes
+  are ordered), returns it in `conflicts`, and the device pulls, merges and pushes again. A sync cycle is therefore
+  pull, merge, push, pull. This needs the `20261014000000_sync_push_base_ts.sql` migration; without it the app still works,
+  but falls back to "the newer whole row wins" and an edit of a different field on another device can be lost.
 - **Cursor** `seq` is an increasing number of each accepted change. The client steps back by `PULL_OVERLAP` so it does not
   miss transactions committed later. Applying is idempotent (content is compared), so reading twice is harmless.
 - **Poison records**: if the server permanently rejects a record (too large, bad format), the batch is split in half, the

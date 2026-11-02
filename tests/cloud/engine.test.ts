@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { PULL_OVERLAP, PULL_PAGE, PUSH_BATCH, serialize, stable, type RemoteRecord } from '@/cloud/engine'
+import type { Person } from '@/data/types'
 import { FakeServer, makeDevice, outboxKeys, settle, until, type Device } from './fake'
 import { circleOf, personOf } from './rows'
 
@@ -443,5 +444,236 @@ describe('the device clock', () => {
     await right.db.outbox.put({ key: 'people:p1', table: 'people', rowId: 'p1', ts: later })
     await right.engine.syncOnce(s.remote())
     expect(s.get('people', 'p1')?.data).toMatchObject({ notes: 'нормальная правка' })
+  })
+})
+
+describe('field-level merge', () => {
+  const offlineEdit = async (d: Device, id: string, changes: Partial<Person>) => {
+    await new Promise(r => setTimeout(r, 5))
+    await d.db.people.update(id, changes)
+    await until(async () => (await d.db.outbox.get(`people:${id}`))?.base !== undefined)
+  }
+  const seeded = async () => {
+    const a = makeDevice()
+    const b = makeDevice()
+    const s = new FakeServer()
+    await a.db.people.add(personOf('p1', { notes: 'v1', company: 'Acme', city: 'Москва' }))
+    await sync(a, s)
+    await sync(b, s)
+    return { a, b, s }
+  }
+
+  it('edits of different fields on two devices both survive, whoever syncs first', async () => {
+    for (const order of ['ab', 'ba'] as const) {
+      const { a, b, s } = await seeded()
+      await offlineEdit(a, 'p1', { company: 'Globex' })
+      await offlineEdit(b, 'p1', { city: 'Лиссабон' })
+      for (let pass = 0; pass < 3; pass++) for (const x of order) await sync(x === 'a' ? a : b, s)
+      for (const d of [a, b]) expect(await d.db.people.get('p1')).toMatchObject({ company: 'Globex', city: 'Лиссабон', notes: 'v1' })
+      expect(s.get('people', 'p1')?.data).toMatchObject({ company: 'Globex', city: 'Лиссабон' })
+      for (const d of [a, b]) expect(await d.db.outbox.count()).toBe(0)
+    }
+  })
+
+  it('the same field on both devices: the newer edit wins and the older value is in the conflict log', async () => {
+    const { a, b, s } = await seeded()
+    await offlineEdit(a, 'p1', { city: 'Рим' })
+    await offlineEdit(b, 'p1', { city: 'Париж' }) // later
+    await sync(a, s)
+    await sync(b, s)
+    await sync(a, s)
+    expect((await a.db.people.get('p1'))?.city).toBe('Париж')
+    expect((await b.db.people.get('p1'))?.city).toBe('Париж')
+    // B merged last and kept its own, newer value; the value it overrode is in B's log
+    const log = await b.engine.conflictLog()
+    expect(log).toHaveLength(1)
+    expect(log[0]).toMatchObject({ table: 'people', id: 'p1', path: 'city', lost: 'Рим', kept: 'local' })
+  })
+
+  it('tags added on both devices are both kept', async () => {
+    const { a, b, s } = await seeded()
+    await offlineEdit(a, 'p1', { tags: ['бег'] })
+    await offlineEdit(b, 'p1', { tags: ['кофе'] })
+    for (let pass = 0; pass < 3; pass++) for (const d of [a, b]) await sync(d, s)
+    for (const d of [a, b]) expect([...((await d.db.people.get('p1'))?.tags ?? [])].sort()).toEqual(['бег', 'кофе'])
+  })
+
+  it('a line appended to the notes on both devices: both lines are kept', async () => {
+    const { a, b, s } = await seeded()
+    await offlineEdit(a, 'p1', { notes: 'v1 Дописал на телефоне.' })
+    await offlineEdit(b, 'p1', { notes: 'v1 Дописал на ноутбуке.' })
+    for (let pass = 0; pass < 3; pass++) for (const d of [a, b]) await sync(d, s)
+    const notes = (await a.db.people.get('p1'))?.notes ?? ''
+    expect(notes).toContain('Дописал на телефоне.')
+    expect(notes).toContain('Дописал на ноутбуке.')
+    expect((await b.db.people.get('p1'))?.notes).toBe(notes)
+    expect(await a.engine.conflictLog()).toEqual([])
+  })
+
+  it('several quick edits in a row keep the base of the first one', async () => {
+    const { a, b, s } = await seeded()
+    await a.db.people.update('p1', { company: 'Один' })
+    await a.db.people.update('p1', { company: 'Два' })
+    await a.db.people.update('p1', { city: 'Рим' })
+    await until(async () => (await a.db.outbox.get('people:p1'))?.base !== undefined)
+    await new Promise(r => setTimeout(r, 40))
+    expect((await a.db.outbox.get('people:p1'))?.base).toMatchObject({ company: 'Acme', city: 'Москва' })
+    await offlineEdit(b, 'p1', { notes: 'v1+' })
+    for (let pass = 0; pass < 3; pass++) for (const d of [a, b]) await sync(d, s)
+    for (const d of [a, b]) expect(await d.db.people.get('p1')).toMatchObject({ company: 'Два', city: 'Рим', notes: 'v1+' })
+  })
+
+  it('an edit made while the row was being sent is not lost, and its base is what was sent', async () => {
+    const { a, s } = await seeded()
+    await offlineEdit(a, 'p1', { company: 'Globex' })
+    const remote = s.remote()
+    let calls = 0
+    let baseOfSecondSend: Record<string, unknown> | undefined
+    const slow = { ...remote, push: async (rows: Parameters<typeof remote.push>[0]) => {
+      calls++
+      if (calls === 1) {
+        await a.db.people.update('p1', { city: 'Рим' }) // during the request
+        await new Promise(r => setTimeout(r, 30))
+      } else {
+        baseOfSecondSend = (await a.db.outbox.get('people:p1'))?.base
+      }
+      return remote.push(rows)
+    } }
+    await a.engine.pushPending(slow) // sends again until the queue is empty
+    expect(calls).toBe(2)
+    // between the two sends the entry's base was what the first send put in the cloud
+    expect(baseOfSecondSend).toMatchObject({ company: 'Globex', city: 'Москва' })
+    expect(s.get('people', 'p1')?.data).toMatchObject({ company: 'Globex', city: 'Рим' })
+    expect(await a.db.outbox.count()).toBe(0)
+  })
+
+  it('a row created here and not yet sent has no base: nothing to compare with', async () => {
+    const a = makeDevice()
+    await a.db.people.add(personOf('p1', { notes: 'новый' }))
+    await until(async () => (await a.db.outbox.count()) === 1)
+    expect((await a.db.outbox.get('people:p1'))?.base).toBeUndefined()
+  })
+
+  it('Astra\'s key stays on the device through a merge', async () => {
+    const a = makeDevice()
+    const b = makeDevice()
+    const s = new FakeServer()
+    await a.db.settings.add({ id: 'me', name: 'Макс', onboarded: true, createdAt: 1 })
+    await sync(a, s)
+    await sync(b, s)
+    await a.db.settings.update('me', { ai: { mode: 'key', apiKey: 'sk-секрет', model: 'm', shareNotes: false, webSearch: false } })
+    await new Promise(r => setTimeout(r, 5))
+    await a.db.settings.update('me', { name: 'Максим' })
+    await until(async () => (await a.db.outbox.get('settings:me'))?.base !== undefined)
+    await b.db.settings.update('me', { onboarded: false })
+    await until(async () => (await b.db.outbox.get('settings:me'))?.base !== undefined)
+    await sync(b, s)
+    await sync(a, s)
+    const me = await a.db.settings.get('me')
+    expect(me).toMatchObject({ name: 'Максим', onboarded: false })
+    expect(me?.ai?.apiKey).toBe('sk-секрет')
+    expect(JSON.stringify(s.get('settings', 'me')?.data)).not.toContain('sk-секрет')
+  })
+
+  it('three devices, each editing its own field at random: after syncing nothing is lost and all are equal', async () => {
+    let seed = 424242
+    const rnd = () => {
+      seed = (seed * 1664525 + 1013904223) % 4294967296
+      return seed / 4294967296
+    }
+    const s = new FakeServer()
+    const devs = [makeDevice('x'), makeDevice('y'), makeDevice('z')]
+    const fieldOf = { x: 'company', y: 'city', z: 'metPlace' } as const
+    await devs[0].db.people.add(personOf('p1', { company: '0', city: '0', metPlace: '0' }))
+    for (const d of devs) await sync(d, s)
+    const last: Record<string, string> = {}
+    for (let round = 0; round < 15; round++) {
+      for (const d of devs) {
+        if (rnd() < 0.6) {
+          const value = `${d.name}${round}`
+          await new Promise(r => setTimeout(r, 3))
+          await d.db.people.update('p1', { [fieldOf[d.name as 'x' | 'y' | 'z']]: value } as Partial<Person>)
+          last[fieldOf[d.name as 'x' | 'y' | 'z']] = value
+        }
+      }
+      await Promise.all(devs.map(d => settle(d)))
+      for (const d of devs.filter(() => rnd() < 0.6)) await sync(d, s)
+    }
+    for (let pass = 0; pass < 4; pass++) for (const d of devs) await sync(d, s)
+    const snap = async (d: Device) => stable(await d.db.people.get('p1'))
+    const [sx, sy, sz] = await Promise.all(devs.map(snap))
+    expect(sy).toBe(sx)
+    expect(sz).toBe(sx)
+    const row = (await devs[0].db.people.get('p1')) as unknown as Record<string, unknown>
+    for (const [field, value] of Object.entries(last)) expect(row[field]).toBe(value)
+    for (const d of devs) expect(await d.db.outbox.count()).toBe(0)
+  })
+})
+
+describe('another device writes between our pull and our push', () => {
+  const setup = async (cas: boolean) => {
+    const a = makeDevice()
+    const b = makeDevice()
+    const s = new FakeServer()
+    s.cas = cas
+    await a.db.people.add(personOf('p1', { notes: 'v1', company: 'Acme', city: 'Москва' }))
+    await sync(a, s)
+    await sync(b, s)
+    for (const [d, changes] of [[a, { company: 'Globex' }], [b, { city: 'Лиссабон' }]] as const) {
+      await new Promise(r => setTimeout(r, 5))
+      await d.db.people.update('p1', changes)
+      await until(async () => (await d.db.outbox.get('people:p1'))?.base !== undefined)
+    }
+    return { a, b, s }
+  }
+
+  it('the cloud declines the stale push, the device merges and pushes again: nothing is lost', async () => {
+    const { a, b, s } = await setup(true)
+    // A has already pulled (nothing new) and is about to push; B gets in first
+    const aRemote = s.remote()
+    const aPull = await a.engine.pullAll(aRemote)
+    expect(aPull).toBe(0)
+    await sync(b, s)
+    const result = await a.engine.pushPending(aRemote)
+    expect(result).toEqual({ pushed: 0, conflicts: 1 })
+    expect(await a.db.outbox.count()).toBe(1) // kept for the merge
+    expect(s.get('people', 'p1')?.data).toMatchObject({ city: 'Лиссабон', company: 'Acme' }) // A did not overwrite B
+
+    await sync(a, s)
+    await sync(b, s)
+    for (const d of [a, b]) expect(await d.db.people.get('p1')).toMatchObject({ company: 'Globex', city: 'Лиссабон', notes: 'v1' })
+    expect(s.get('people', 'p1')?.data).toMatchObject({ company: 'Globex', city: 'Лиссабон' })
+    for (const d of [a, b]) expect(await d.db.outbox.count()).toBe(0)
+  })
+
+  it('an older server without the migration keeps the old rule: the newer whole row wins (and the merge cannot save the other edit)', async () => {
+    const { a, b, s } = await setup(false)
+    const aRemote = s.remote()
+    await a.engine.pullAll(aRemote)
+    await sync(b, s)
+    const result = await a.engine.pushPending(aRemote)
+    expect(result.conflicts).toBe(0)
+    expect(s.get('people', 'p1')?.data).toMatchObject({ city: 'Лиссабон', company: 'Acme' })
+  })
+
+  it('a deletion made on a stale version waits for the pull instead of erasing a newer edit', async () => {
+    const a = makeDevice()
+    const b = makeDevice()
+    const s = new FakeServer()
+    await a.db.people.add(personOf('p1', { notes: 'v1' }))
+    await sync(a, s)
+    await sync(b, s)
+    await b.db.people.update('p1', { notes: 'правка B' })
+    await sync(b, s)
+    await new Promise(r => setTimeout(r, 5))
+    await a.db.people.delete('p1') // the newest action, made without seeing B's edit
+    await settle(a)
+    await sync(a, s)
+    await sync(b, s)
+    // the deletion is newer than B's edit, so it wins everywhere and the queues are empty
+    expect(await a.db.people.get('p1')).toBeUndefined()
+    expect(await b.db.people.get('p1')).toBeUndefined()
+    expect(s.get('people', 'p1')?.deleted).toBe(true)
+    for (const d of [a, b]) expect(await d.db.outbox.count()).toBe(0)
   })
 })

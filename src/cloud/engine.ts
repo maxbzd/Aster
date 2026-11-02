@@ -1,6 +1,7 @@
 import Dexie, { type Table, type Transaction } from 'dexie'
-import { db as appDb, type AsterDB } from '@/data/db'
+import { db as appDb, type AsterDB, type OutboxEntry } from '@/data/db'
 import type { Settings } from '@/data/types'
+import type { FieldConflict } from './merge'
 
 /**
  * The local-first sync engine: the app always works with Dexie,
@@ -9,16 +10,25 @@ import type { Settings } from '@/data/types'
  *   a change in Dexie → a hook puts the key in the outbox → push sends whole rows
  *   the cloud → pull by the seq cursor → applied to Dexie (without sending it back)
  *
- * Conflicts are resolved by "the newest edit wins" (client_ts), the same as on the server (sync_push).
+ * Conflicts: the server keeps the version with the larger client_ts (sync_push), so two whole-row versions never merge there.
+ * The merging happens on the device: when a row was edited here and also changed in the cloud, the two versions are
+ * merged field by field against their common ancestor (`OutboxEntry.base`, see merge.ts), and the merged row is sent
+ * back with a newer stamp. Only when both devices changed the same field does the newer edit win, and the older value
+ * is kept in the conflict log instead of vanishing.
  */
 
 export const SYNC_TABLES = ['people', 'interactions', 'reminders', 'circles', 'settings', 'intros', 'events', 'captures', 'leads', 'collections'] as const
 export type SyncTable = (typeof SYNC_TABLES)[number]
 
-export interface PushRow { tbl: SyncTable; id: string; data: Record<string, unknown> | null; deleted: boolean; client_ts: number }
+export interface PushRow {
+  tbl: SyncTable; id: string; data: Record<string, unknown> | null; deleted: boolean; client_ts: number
+  /** The client_ts of the cloud version this edit is based on: the server refuses the row if the cloud has moved on. */
+  base_ts?: number
+}
 export interface RemoteRecord extends PushRow { seq: number }
 export interface Remote {
-  push(rows: PushRow[]): Promise<{ applied: number; stale: number }>
+  /** `conflicts`: keys (`tbl:id`) the server did not write because the cloud had a different version than `base_ts`. */
+  push(rows: PushRow[]): Promise<{ applied: number; stale: number; conflicts?: string[] }>
   pull(afterSeq: number, limit: number): Promise<RemoteRecord[]>
 }
 
@@ -40,7 +50,12 @@ export const PULL_PAGE = 500
  */
 export const PULL_OVERLAP = 250
 
-type TrackedTx = Transaction & { _asterRemote?: boolean; _asterDirty?: Map<string, { table: SyncTable; id: string }> }
+interface Dirty { table: SyncTable; id: string; /** the row before the edit (an update) */ base?: Record<string, unknown>; /** created in this transaction: there is nothing to compare with */ fresh: boolean }
+type TrackedTx = Transaction & { _asterRemote?: boolean; _asterDirty?: Map<string, Dirty> }
+
+/** What the conflict log keeps of a lost value: enough to restore it, not a whole transcript. */
+const LOST_VALUE_LIMIT = 4000
+export interface ConflictEntry extends FieldConflict { table: string; id: string; at: number }
 
 let lastTs = 0
 /** Monotonic timestamps: two edits on one device never get the same ts. */
@@ -70,6 +85,12 @@ function mergeIncoming(name: SyncTable, local: object | undefined, incoming: Rec
   return { ...incoming, ...keep }
 }
 
+/** A lost value, shortened if it is long, so the log stays small. */
+function clip(value: unknown): unknown {
+  const text = JSON.stringify(value) ?? 'null'
+  return text.length <= LOST_VALUE_LIMIT ? value : `${text.slice(0, LOST_VALUE_LIMIT)}…`
+}
+
 /** An engine bound to one database. The app has one; tests may have several "devices". */
 export function createEngine(db: AsterDB) {
   const table = (name: SyncTable) => db.table(name) as Table<{ id: string }, string>
@@ -83,22 +104,37 @@ export function createEngine(db: AsterDB) {
     return () => { listeners.delete(fn) }
   }
 
-  function mark(trans: TrackedTx | undefined, name: SyncTable, id: string | undefined) {
+  function mark(trans: TrackedTx | undefined, name: SyncTable, id: string | undefined, before?: object, fresh = false) {
     if (!trans || trans._asterRemote || !id) return
     let dirty = trans._asterDirty
     if (!dirty) {
-      const batch = new Map<string, { table: SyncTable; id: string }>()
+      const batch = new Map<string, Dirty>()
       dirty = trans._asterDirty = batch
       // the outbox is written after the main transaction commits: it may not include this table
       trans.on('complete', () => {
         const ts = nextTs()
-        db.outbox
-          .bulkPut([...batch.values()].map(d => ({ key: `${d.table}:${d.id}`, table: d.table, rowId: d.id, ts })))
+        const dirtyRows = [...batch.values()]
+        // read-modify-write in one transaction: a row edited twice in a row keeps the base of the FIRST edit
+        db.transaction('rw', db.outbox, db.syncMeta, async () => {
+          const keys = dirtyRows.map(d => `${d.table}:${d.id}`)
+          const existing = await db.outbox.bulkGet(keys)
+          const versions = await db.syncMeta.bulkGet(keys.map(k => `v:${k}`))
+          await db.outbox.bulkPut(dirtyRows.map((d, i) => {
+            const entry: OutboxEntry = { key: keys[i], table: d.table, rowId: d.id, ts }
+            const old = existing[i]
+            const base = old ? old.base : d.fresh ? undefined : d.base
+            const baseTs = old ? old.baseTs : d.fresh ? undefined : (versions[i]?.value as number | undefined)
+            if (base) entry.base = base
+            if (baseTs !== undefined) entry.baseTs = baseTs
+            return entry
+          }))
+        })
           .then(() => { for (const fn of listeners) fn() })
           .catch(() => undefined)
       })
     }
-    dirty.set(`${name}:${id}`, { table: name, id })
+    // the first operation on a row in this transaction decides what its base is
+    if (!dirty.has(`${name}:${id}`)) dirty.set(`${name}:${id}`, { table: name, id, base: before ? serialize(name, before) : undefined, fresh })
   }
 
   /** Subscribes to create, update and delete in the synced tables. Safe to call again. */
@@ -107,11 +143,11 @@ export function createEngine(db: AsterDB) {
     installed = true
     for (const name of SYNC_TABLES) {
       const value2 = db.table(name)
-      value2.hook('creating', (_pk, obj, trans) => { mark(trans as TrackedTx, name, (obj as { id?: string }).id) })
-      value2.hook('updating', (mods, pk, _obj, trans) => {
+      value2.hook('creating', (_pk, obj, trans) => { mark(trans as TrackedTx, name, (obj as { id?: string }).id, undefined, true) })
+      value2.hook('updating', (mods, pk, obj, trans) => {
         // an edit of local-only fields (for example the API key) does not go to the cloud
         if (name === 'settings' && Object.keys(mods).every(isDeviceOnly)) return
-        mark(trans as TrackedTx, name, String(pk))
+        mark(trans as TrackedTx, name, String(pk), obj)
       })
       value2.hook('deleting', (pk, _obj, trans) => { mark(trans as TrackedTx, name, String(pk)) })
     }
@@ -124,6 +160,14 @@ export function createEngine(db: AsterDB) {
   const delMeta = (key: string) => db.syncMeta.delete(key)
   const pendingCount = () => db.outbox.count()
 
+  /** The last fields where two devices disagreed and the older value lost: the value is kept here so it can be restored. */
+  const CONFLICT_LOG_LIMIT = 100
+  const conflictLog = async () => (await getMeta<ConflictEntry[]>('conflicts')) ?? []
+  const clearConflicts = () => delMeta('conflicts')
+  async function recordConflicts(entries: ConflictEntry[]) {
+    await setMeta('conflicts', [...(await conflictLog()), ...entries].slice(-CONFLICT_LOG_LIMIT))
+  }
+
   /* ---------- sending ---------- */
 
   const rejectedList = async () => (await getMeta<RejectedEntry[]>('rejected')) ?? []
@@ -131,7 +175,7 @@ export function createEngine(db: AsterDB) {
   const clearRejected = () => delMeta('rejected')
 
   /** Rows are built from the current state of the database: what is sent is what exists now, not what it was at the time of the edit. */
-  async function buildPayload(entries: Array<{ key: string; table: string; rowId: string; ts: number }>): Promise<PushRow[]> {
+  async function buildPayload(entries: Array<{ key: string; table: string; rowId: string; ts: number; baseTs?: number }>): Promise<PushRow[]> {
     const byTable = new Map<SyncTable, string[]>()
     for (const e of entries) {
       const list = byTable.get(e.table as SyncTable) ?? []
@@ -146,24 +190,39 @@ export function createEngine(db: AsterDB) {
     return entries.map(e => {
       const name = e.table as SyncTable
       const row = rows.get(e.key)
-      return row
+      const out: PushRow = row
         ? { tbl: name, id: e.rowId, data: serialize(name, row), deleted: false, client_ts: e.ts }
         : { tbl: name, id: e.rowId, data: null, deleted: true, client_ts: e.ts }
+      if (e.baseTs !== undefined) out.base_ts = e.baseTs
+      return out
     })
   }
 
-  /** Removes sent entries from the queue; an entry changed while it was being sent stays. */
-  async function release(entries: Array<{ key: string; ts: number }>) {
-    await db.transaction('rw', db.outbox, async () => {
+  /**
+   * Removes sent entries from the queue. An entry changed while it was being sent stays, and what was sent becomes its
+   * new base: the cloud now holds exactly that. Either way the sent stamp is remembered as the cloud's version of the row.
+   */
+  async function release(entries: Array<{ key: string; ts: number }>, sent: PushRow[]) {
+    const sentByKey = new Map(sent.map(r => [`${r.tbl}:${r.id}`, r]))
+    await db.transaction('rw', db.outbox, db.syncMeta, async () => {
       for (const e of entries) {
+        await db.syncMeta.put({ key: `v:${e.key}`, value: e.ts })
         const cur = await db.outbox.get(e.key)
-        if (cur && cur.ts === e.ts) await db.outbox.delete(e.key)
+        if (!cur) continue
+        if (cur.ts === e.ts) await db.outbox.delete(e.key)
+        else {
+          const row = sentByKey.get(e.key)
+          const next: OutboxEntry = { ...cur, baseTs: e.ts }
+          if (row?.data) next.base = row.data
+          else delete next.base
+          await db.outbox.put(next)
+        }
       }
     })
     const rejected = await rejectedList()
     if (rejected.length) {
-      const sent = new Set(entries.map(e => e.key))
-      const left = rejected.filter(r => !sent.has(r.key))
+      const sentKeys = new Set(entries.map(e => e.key))
+      const left = rejected.filter(r => !sentKeys.has(r.key))
       if (left.length !== rejected.length) await setMeta('rejected', left)
     }
   }
@@ -179,36 +238,53 @@ export function createEngine(db: AsterDB) {
     })
   }
 
-  /** Sends a batch; if the server rejects it as a whole, splits it in half until the culprit is found. */
-  async function sendEntries(remote: Remote, entries: Array<{ key: string; table: string; rowId: string; ts: number }>): Promise<number> {
+  /**
+   * Sends a batch; if the server rejects it as a whole, splits it in half until the culprit is found.
+   * Rows the server declined because the cloud holds a newer version than their base stay in the queue (they are
+   * merged after the next pull) and are reported in `conflicts`.
+   */
+  async function sendEntries(remote: Remote, entries: OutboxEntry[]): Promise<{ sent: number; conflicts: string[] }> {
+    let payload: PushRow[]
+    let result: Awaited<ReturnType<Remote['push']>>
     try {
-      await remote.push(await buildPayload(entries))
+      payload = await buildPayload(entries)
+      result = await remote.push(payload)
     } catch (e) {
       if (!(e instanceof PermanentRemoteError)) throw e
       if (entries.length > 1) {
         const mid = entries.length >> 1
-        return (await sendEntries(remote, entries.slice(0, mid))) + (await sendEntries(remote, entries.slice(mid)))
+        const first = await sendEntries(remote, entries.slice(0, mid))
+        const second = await sendEntries(remote, entries.slice(mid))
+        return { sent: first.sent + second.sent, conflicts: [...first.conflicts, ...second.conflicts] }
       }
       await quarantine(entries[0], e.message)
-      return 0
+      return { sent: 0, conflicts: [] }
     }
-    await release(entries)
-    return entries.length
+    const conflicts = new Set(result.conflicts ?? [])
+    const done = entries.filter(e => !conflicts.has(e.key))
+    await release(done, payload)
+    return { sent: done.length, conflicts: [...conflicts] }
   }
 
   /** Sends everything in the outbox in batches. On a network error nothing is lost: the entries stay in the queue. */
-  async function pushPending(remote: Remote): Promise<{ pushed: number }> {
+  async function pushPending(remote: Remote): Promise<{ pushed: number; conflicts: number }> {
     let pushed = 0
+    const waiting = new Set<string>() // declined for a conflict: they wait for the next pull
     for (;;) {
-      const entries = await db.outbox.orderBy('ts').limit(PUSH_BATCH).toArray()
-      if (!entries.length) return { pushed }
-      pushed += await sendEntries(remote, entries)
+      const entries = await db.outbox.orderBy('ts').filter(e => !waiting.has(e.key)).limit(PUSH_BATCH).toArray()
+      if (!entries.length) return { pushed, conflicts: waiting.size }
+      const result = await sendEntries(remote, entries)
+      pushed += result.sent
+      for (const key of result.conflicts) waiting.add(key)
     }
   }
 
   /* ---------- receiving ---------- */
 
-  /** Applies records from the cloud. Your own unsynced edits that are newer are not overwritten. */
+  /**
+   * Applies records from the cloud. A row that was also edited here is merged field by field with its base, so edits of
+   * different fields on two devices both survive; your own newer edit of the same field is not overwritten.
+   */
   async function applyRemote(records: RemoteRecord[]): Promise<number> {
     if (!records.length) return 0
     const byTable = new Map<SyncTable, RemoteRecord[]>()
@@ -219,7 +295,11 @@ export function createEngine(db: AsterDB) {
       byTable.set(r.tbl, list)
     }
     let changed = 0
-    await db.transaction('rw', [...SYNC_TABLES.map(n => db.table(n)), db.outbox], async () => {
+    const lost: ConflictEntry[] = []
+    // The merge code is only needed when this device has unsent edits, so it stays out of the startup bundle.
+    // It is loaded here, before the transaction: awaiting a module inside a Dexie transaction would end it.
+    const { mergeRecords } = (await db.outbox.count()) ? await import('./merge') : { mergeRecords: null }
+    await db.transaction('rw', [...SYNC_TABLES.map(n => db.table(n)), db.outbox, db.syncMeta], async () => {
       ;(Dexie.currentTransaction as TrackedTx)._asterRemote = true
       for (const [name, recs] of byTable) {
         const value3 = table(name)
@@ -228,11 +308,34 @@ export function createEngine(db: AsterDB) {
         const toPut: object[] = []
         const toDelete: string[] = []
         const supersede: string[] = []
+        const versions: Array<{ key: string; value: unknown }> = []
+        const rebase: OutboxEntry[] = []
         recs.forEach((r, i) => {
           const p = pending[i]
-          if (p && p.ts > r.client_ts) return // the local edit is newer: it will go to the cloud
-          if (p) supersede.push(p.key)
           const local = locals[i]
+          // The cloud's version of this row: the next edit made here is based on it (see `base_ts`).
+          if (!p || r.client_ts >= (p.baseTs ?? 0)) versions.push({ key: `v:${name}:${r.id}`, value: r.client_ts })
+          if (mergeRecords && !r.deleted && r.data && p && local && p.base) {
+            // Both sides changed the row. Nothing new in the cloud since our base: our edit simply goes out later.
+            if (stable(r.data) === stable(p.base)) {
+              if (p.baseTs !== r.client_ts) rebase.push({ ...p, baseTs: r.client_ts })
+              return
+            }
+            const { value, conflicts } = mergeRecords(p.base, serialize(name, local), r.data, { localTs: p.ts, remoteTs: r.client_ts })
+            const merged = mergeIncoming(name, local, value)
+            const at = Date.now()
+            for (const c of conflicts) lost.push({ ...c, lost: clip(c.lost), table: name, id: r.id, at })
+            if (stable(serialize(name, merged)) === stable(r.data)) supersede.push(p.key) // the cloud already has all of it
+            else rebase.push({ ...p, ts: Math.max(nextTs(), r.client_ts + 1), base: r.data, baseTs: r.client_ts }) // goes out again, newer than both
+            if (stable(merged) !== stable(local)) toPut.push(merged)
+            return
+          }
+          if (p && p.ts > r.client_ts) {
+            // the local edit is newer: it will go to the cloud, on top of this version
+            if (p.baseTs !== r.client_ts) rebase.push({ ...p, baseTs: r.client_ts })
+            return
+          }
+          if (p) supersede.push(p.key)
           if (r.deleted) {
             if (local) toDelete.push(r.id)
           } else if (r.data) {
@@ -243,9 +346,12 @@ export function createEngine(db: AsterDB) {
         if (toDelete.length) await value3.bulkDelete(toDelete)
         if (toPut.length) await value3.bulkPut(toPut as { id: string }[])
         if (supersede.length) await db.outbox.bulkDelete(supersede)
+        if (rebase.length) await db.outbox.bulkPut(rebase)
+        if (versions.length) await db.syncMeta.bulkPut(versions as Array<{ key: string; value: unknown }>)
         changed += toDelete.length + toPut.length
       }
     })
+    if (lost.length) await recordConflicts(lost)
     return changed
   }
 
@@ -267,10 +373,21 @@ export function createEngine(db: AsterDB) {
     return changed
   }
 
-  /** One full cycle: send first, then receive. */
+  /**
+   * One full cycle: receive first, so that a row edited on two devices is merged here before anything is sent (a push
+   * of a whole row would otherwise overwrite the other device's edit in the cloud); then send; then receive again to
+   * pick up the cursor past our own writes.
+   */
   async function syncOnce(remote: Remote, opts: { full?: boolean } = {}) {
-    const { pushed } = await pushPending(remote)
-    const pulled = await pullAll(remote, opts)
+    let pulled = await pullAll(remote, opts)
+    let pushed = 0
+    // A row the cloud declined (another device wrote it meanwhile) is merged by the pull and goes out again: a few rounds at most.
+    for (let round = 0; round < 4; round++) {
+      const r = await pushPending(remote)
+      pushed += r.pushed
+      if (r.pushed || r.conflicts) pulled += await pullAll(remote)
+      if (!r.conflicts) break
+    }
     await setMeta('lastSyncAt', Date.now())
     return { pushed, pulled }
   }
@@ -307,11 +424,11 @@ export function createEngine(db: AsterDB) {
     return false
   }
 
-  return { db, installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData }
+  return { db, installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, conflictLog, clearConflicts, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData }
 }
 
 export type Engine = ReturnType<typeof createEngine>
 
 /** The app's engine, bound to the main database. */
 export const engine: Engine = createEngine(appDb)
-export const { installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData } = engine
+export const { installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, conflictLog, clearConflicts, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData } = engine

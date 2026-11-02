@@ -2,7 +2,35 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
+import type { Plugin } from 'vite'
+
+/**
+ * GitHub Pages cannot send headers, so `public/_headers` (used by Cloudflare and Netlify) does nothing there, and the
+ * hosted app would run with no content policy at all. This copies the policy from that single source into a <meta> tag
+ * of the built index.html. Browsers ignore `frame-ancestors` in a <meta>, and `upgrade-insecure-requests` would break
+ * `vite preview` on http://127.0.0.1, so both are left to the real header.
+ */
+function cspMeta(): Plugin {
+  return {
+    name: 'aster:csp-meta',
+    apply: 'build',
+    transformIndexHtml(html) {
+      const headers = readFileSync(fileURLToPath(new URL('./public/_headers', import.meta.url)), 'utf8')
+      const line = headers.split('\n').find((l) => l.trim().startsWith('Content-Security-Policy:'))
+      if (!line) throw new Error('public/_headers has no Content-Security-Policy line')
+      const policy = line
+        .slice(line.indexOf(':') + 1)
+        .split(';')
+        .map((d) => d.trim())
+        .filter((d) => d && !/^(frame-ancestors|upgrade-insecure-requests)\b/.test(d))
+        .join('; ')
+      const tag = `<meta http-equiv="Content-Security-Policy" content="${policy}" />`
+      return html.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    ${tag}`)
+    },
+  }
+}
 
 export default defineConfig({
   // Relative paths: the build works from the root of a domain (Cloudflare) and from a sub-path (GitHub Pages).
@@ -27,6 +55,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    cspMeta(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
