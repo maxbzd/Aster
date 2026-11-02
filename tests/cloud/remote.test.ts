@@ -14,6 +14,10 @@ describe('supabaseRemote: which errors count as "for good"', () => {
   })
   it('success returns the counters', async () => {
     const c = { rpc: async () => ({ data: { applied: 2, stale: 1 }, error: null }) } as never
-    expect(await supabaseRemote(c).push([])).toEqual({ applied: 2, stale: 1 })
+    expect(await supabaseRemote(c).push([])).toEqual({ applied: 2, stale: 1, conflicts: [] })
+  })
+  it('reports the rows the cloud declined because it holds another version', async () => {
+    const c = { rpc: async () => ({ data: { applied: 1, stale: 0, conflicts: ['people:p1', 7, 'people:p2'] }, error: null }) } as never
+    expect((await supabaseRemote(c).push([])).conflicts).toEqual(['people:p1', 'people:p2'])
   })
 })
