@@ -1,5 +1,5 @@
 import { screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '@/data/db'
 import { seed, renderApp, watchConsole } from './harness'
 
@@ -31,6 +31,49 @@ describe('onboarding', () => {
     await user.click(await screen.findByRole('button', { name: 'Дальше' }))
     await user.click(await screen.findByRole('button', { name: /Посмотреть на примере/ }))
     await waitFor(async () => { expect(await db.people.count()).toBe(32); expect(await db.leads.count()).toBe(23) }, { timeout: 8000 })
+  })
+})
+
+describe('Safari deletes a site\'s data after 7 idle days', () => {
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+  afterEach(() => { vi.restoreAllMocks(); localStorage.clear() })
+
+  it('onboarding on iPhone in a tab says so before asking for a name, and shows how to install', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(IPHONE)
+    await seed({ onboarded: false })
+    const { user } = renderApp('/')
+    await user.click(await screen.findByRole('button', { name: 'Начать' }))
+    expect(await screen.findByRole('heading', { name: 'Добавь Aster на экран «Домой»' })).toBeInTheDocument()
+    expect(screen.getAllByRole('listitem')).toHaveLength(3)
+    expect(screen.queryByRole('textbox')).toBeNull() // no name yet
+    await user.click(screen.getByRole('button', { name: 'Продолжить без установки' }))
+    expect(await screen.findByRole('textbox')).toBeInTheDocument()
+  })
+
+  it('onboarding elsewhere goes straight to the name', async () => {
+    await seed({ onboarded: false })
+    const { user } = renderApp('/')
+    await user.click(await screen.findByRole('button', { name: 'Начать' }))
+    expect(await screen.findByRole('textbox')).toBeInTheDocument()
+    expect(screen.queryByText('Продолжить без установки')).toBeNull()
+  })
+
+  it('the home screen keeps reminding on iPhone in a tab; it can be dismissed for a while', async () => {
+    vi.spyOn(navigator, 'userAgent', 'get').mockReturnValue(IPHONE)
+    await seed({ demo: true })
+    const { user } = renderApp('/')
+    expect(await screen.findByText('Safari может удалить твои данные')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Как' }))
+    expect(await screen.findAllByRole('listitem')).not.toHaveLength(0)
+    await user.click(screen.getAllByRole('button', { name: 'Напомнить позже' })[0])
+    await waitFor(() => expect(screen.queryByText('Safari может удалить твои данные')).toBeNull())
+  })
+
+  it('no reminder where the data is safe', async () => {
+    await seed({ demo: true })
+    renderApp('/')
+    await screen.findByText(/Привет|Добр|Здравствуй|Доброй/i).catch(() => undefined)
+    expect(screen.queryByText('Safari может удалить твои данные')).toBeNull()
   })
 })
 

@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { AddressBookIcon, ArrowLeftIcon, CameraIcon, FlaskIcon, SparkleIcon } from '@phosphor-icons/react'
 import { SpaceBackground } from '@/components/Page'
 import { Aurora } from '@/components/Aurora'
@@ -10,11 +10,14 @@ import { LanguagePicker } from '@/components/LanguagePicker'
 import { cloudEnabled } from '@/cloud/config'
 import { DEFAULT_CIRCLES, saveSettings, setCircles } from '@/data/actions'
 import { PALETTES } from '@/lib/colors'
+import { isDataAtRisk } from '@/lib/storage'
 import { fileToAvatar, pickFile } from '@/lib/image'
 import { haptic, useUI } from '@/app/store'
 import { t, msg } from '@/i18n'
 
 const FAKE = [msg('Alina'), msg('Marc'), msg('Nina'), msg('Timur'), msg('Sofia'), msg('Ilya'), msg('Eve'), msg('Oleg'), msg('Kira'), msg('Daniel')].map((n, i) => ({ id: `f${i * 7919}`, firstName: n }))
+
+const SafetyStep = lazy(() => import('@/components/SafetyStep'))
 
 export function Onboarding() {
   const [step, setStep] = useState(0)
@@ -22,6 +25,9 @@ export function Onboarding() {
   const [photo, setPhoto] = useState<string>()
   const [chosen, setChosen] = useState<string[]>(DEFAULT_CIRCLES.slice(0, 5).map(c => c.name))
   const [busy, setBusy] = useState(false)
+  // Safari in a tab deletes a site's data after 7 idle days: say so before the person types anything in
+  const [atRisk] = useState(isDataAtRisk)
+  const [safetyAck, setSafetyAck] = useState(false)
   const open = useUI(s => s.open)
 
   const next = () => { haptic(10); setStep(s => s + 1) }
@@ -84,7 +90,9 @@ export function Onboarding() {
               </>
             )}
 
-            {step === 1 && (
+            {step === 1 && atRisk && !safetyAck && <Suspense fallback={null}><SafetyStep onContinue={() => setSafetyAck(true)} /></Suspense>}
+
+            {step === 1 && (!atRisk || safetyAck) && (
               <>
                 <div className="mt-12">
                   <div className="micro text-fg-3">{t('Step 1 of 3')}</div>

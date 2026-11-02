@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { useMemo } from 'react'
+import { lazy, Suspense, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
   CakeIcon, CalendarStarIcon, CardsThreeIcon, ChatCircleDotsIcon, CheckIcon, ClockCountdownIcon, CloudArrowDownIcon, FileTextIcon,
@@ -28,6 +28,7 @@ import { OrbitaSuggestionsCard } from '@/bridge/Bits'
 import { useCloud } from '@/cloud/store'
 import { upcomingDates } from '@/data/dates'
 import type { Person } from '@/data/types'
+import { installNudgeDue, isDataAtRisk } from '@/lib/storage'
 import { t, tn } from '@/i18n'
 
 const TONE_AURORA = {
@@ -36,6 +37,8 @@ const TONE_AURORA = {
   cooling: ['rgb(124 92 255 / 0.55)', 'rgb(70 130 255 / 0.35)', 'rgb(255 120 180 / 0.25)'],
   cold: ['rgb(60 110 255 / 0.5)', 'rgb(124 92 255 / 0.35)', 'rgb(80 200 255 / 0.25)'],
 }
+
+const InstallNudge = lazy(() => import('@/components/InstallNudge'))
 
 export function Today() {
   const now = useNow()
@@ -60,7 +63,10 @@ export function Today() {
   const potd = useMemo(() => personOfTheDay((people ?? []).filter(p => !due.slice(0, 3).some(d => d.p.id === p.id)), now), [people, due, now])
   const toast = useUI(s => s.toast)
   const cloudOn = useCloud(c => !!c.userId)
-  const needsBackup = !cloudOn && !!settings && (people?.length ?? 0) >= 8 && now - settings.createdAt > 2 * 86400000 && now > (settings.backupSnoozeUntil ?? 0) && now - (settings.lastBackupAt ?? 0) > 30 * 86400000
+  // Safari in a tab may delete everything after 7 idle days: remind to install, and ask for backups sooner and more often
+  const atRisk = useMemo(() => isDataAtRisk(), [])
+  const [nudge, setNudge] = useState(() => installNudgeDue())
+  const needsBackup = !cloudOn && !!settings && (people?.length ?? 0) >= (atRisk ? 3 : 8) && now - settings.createdAt > (atRisk ? 86400000 : 2 * 86400000) && now > (settings.backupSnoozeUntil ?? 0) && now - (settings.lastBackupAt ?? 0) > (atRisk ? 7 : 30) * 86400000
   const openReminders = reminders.filter(r => !r.done && daysBetween(now, r.dueAt) <= 7)
   const contacts30 = useMemo(
     () => (people ?? []).filter(p => p.lastContactAt && now - p.lastContactAt < 30 * 86400000).length,
@@ -121,12 +127,14 @@ export function Today() {
               <StatTile icon={SparkleIcon} value={contacts30} label={t('contacts this month')} color={WARMTH_COLORS.hot} onClick={() => nav('/pulse')} />
             </motion.div>
 
+            {nudge && <Suspense fallback={null}><InstallNudge onSnooze={() => setNudge(false)} /></Suspense>}
+
             {needsBackup && (
               <motion.div variants={stagger.item} className="glass mt-5 flex items-center gap-3 rounded-[22px] py-3 pl-4 pr-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-warm/15 text-warm"><CloudArrowDownIcon size={18} /></span>
                 <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-fg-2">{settings?.lastBackupAt ? t('Your backup is out of date.') : t('Your data lives only on this device.')}{' '}{t('Save a copy — it takes 5 seconds.')}</span>
                 <button type="button" onClick={async () => { await backupToFile(); toast(t('Backup saved')) }} className="press hit rounded-full bg-fg px-3.5 py-2 text-[13px] font-semibold text-ink">{t('Download')}</button>
-                <button type="button" aria-label={t('Remind me later')} onClick={() => saveSettings({ backupSnoozeUntil: Date.now() + 14 * 86400000 })} className="press hit grid h-8 w-8 shrink-0 place-items-center rounded-full text-fg-3"><XIcon size={14} /></button>
+                <button type="button" aria-label={t('Remind me later')} onClick={() => saveSettings({ backupSnoozeUntil: Date.now() + (atRisk ? 4 : 14) * 86400000 })} className="press hit grid h-8 w-8 shrink-0 place-items-center rounded-full text-fg-3"><XIcon size={14} /></button>
               </motion.div>
             )}
 
