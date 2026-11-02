@@ -37,7 +37,7 @@ It is free and open source (MIT). You can use it as-is, host your own copy, or f
   Astra has a built-in on-device brain and can optionally use a cloud model of your choice.
 - **Hands-free voice.** "Astra, note that Nina and I agreed on Friday." Astra shows the plan and saves only after you confirm.
 - **Yours to move.** Backups, vCard import/export, `.ics` calendar export, CSV export.
-- **Seven languages**: English, Spanish, German, French, Portuguese, Ukrainian and Russian (the on-device assistant understands English and Russian input; a cloud model writes in any of them). [Improve a translation or add your own](docs/I18N.md).
+- **Seven languages**: English, Spanish, German, French, Portuguese, Ukrainian and Russian (the on-device assistant understands English and Russian input, [and why that is, and the plan to widen it](docs/NEURAL.md); a cloud model writes in any of them). [Improve a translation or add your own](docs/I18N.md).
 - **Optional cloud sync** across devices through your own Supabase project, plus an **MCP server** so Claude can read and write your data, TickTick sync, and a bridge to the companion app Orbita.
 
 ## Quick start
