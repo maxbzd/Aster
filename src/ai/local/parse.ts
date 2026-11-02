@@ -50,7 +50,7 @@ const INDUSTRIES: [RegExp, string][] = [
   [/крипт|блокчейн|web3|crypto|blockchain/i, msg('Crypto')], [/медиа|\bmedia\b/i, msg('Media')], [/ритейл|retail/i, msg('Retail')],
   [/геймдев|игр[ыау]|game ?dev|gaming|video games/i, msg('Gamedev')],
   [/healthtech|медицин|здравоохран|health ?care|medtech/i, msg('Healthtech')], [/недвижимост|real estate|proptech/i, msg('Real estate')],
-  [/логистик|logistics|supply chain/i, msg('Logistics')], [/saas/i, msg('SaaS')],
+  [/логистик|логистическ|logistics|supply chain/i, msg('Logistics')], [/saas/i, msg('SaaS')],
 ]
 
 /** City patterns (Russian stems and English names) → English label (shown through `t`). */
@@ -64,8 +64,8 @@ const CITIES: [RegExp, string][] = [
   [/лимассол|кипр|limassol|cyprus/, msg('Limassol')], [/баку|baku/, msg('Baku')], [/ташкент|tashkent/, msg('Tashkent')], [/сеул|seoul/, msg('Seoul')], [/токио|tokyo/, msg('Tokyo')],
   [/варшав|warsaw/, msg('Warsaw')], [/прага|праге|праги|prague/, msg('Prague')], [/вильнюс|vilnius/, msg('Vilnius')], [/рига|риге|риги|\briga\b/, msg('Riga')],
   [/сан-?франциско|san francisco|\bsf\b|silicon valley|кремниев/, msg('San Francisco')], [/лос-?анджелес|los angeles/, msg('Los Angeles')], [/майами|miami/, msg('Miami')],
-  [/торонто|toronto/, msg('Toronto')], [/гонконг|hong kong/, msg('Hong Kong')], [/сидне[йе]|sydney/, msg('Sydney')], [/мадрид|madrid/, msg('Madrid')], [/рим[ае]?\b|\brome\b/, msg('Rome')],
-  [/милан|milan/, msg('Milan')], [/вен[аеы]\b|vienna/, msg('Vienna')], [/цюрих|zurich/, msg('Zurich')], [/женев|geneva/, msg('Geneva')], [/брюссел|brussels/, msg('Brussels')],
+  [/торонто|toronto/, msg('Toronto')], [/гонконг|hong kong/, msg('Hong Kong')], [/сидне[йе]|sydney/, msg('Sydney')], [/мадрид|madrid/, msg('Madrid')], [/(?<![а-яё])рим[ае]?(?![а-яё])|\brome\b/, msg('Rome')],
+  [/милан|milan/, msg('Milan')], [/(?<![а-яё])вен[аеы](?![а-яё])|vienna/, msg('Vienna')], [/цюрих|zurich/, msg('Zurich')], [/женев|geneva/, msg('Geneva')], [/брюссел|brussels/, msg('Brussels')],
   [/стокгольм|stockholm/, msg('Stockholm')], [/копенгаген|copenhagen/, msg('Copenhagen')], [/хельсинки|helsinki/, msg('Helsinki')], [/таллин|tallinn/, msg('Tallinn')],
   [/киев|киеве|kyiv|kiev/, msg('Kyiv')], [/афин|athens/, msg('Athens')], [/будапешт|budapest/, msg('Budapest')], [/абу-?даби|abu dhabi/, msg('Abu Dhabi')], [/доха|дохе|doha/, msg('Doha')],
 ]
@@ -145,6 +145,10 @@ function extractInto(d: PersonDraft, text: string, people: Person[], now: number
   if (!d.city && !toCity) {
     // English: "a designer in Berlin" — a known city after "in" / "from"
     for (const mm of l.matchAll(/\b(?:in|from)\s+([a-z-]+(?:\s[a-z]+)?)/g)) { const c = cityIn(mm[1]!); if (c) { d.city = c; break } }
+  }
+  if (!d.city && !toCity) {
+    // Russian: "продакт в Дубае", "стартапа в Берлине" — a known city after "в" / "во" / "из" (`\b` knows no Cyrillic, hence the lookbehind)
+    for (const mm of l.matchAll(/(?<![а-яё])(?:в|во|из)\s+([а-яё-]+)/g)) { const c = cityIn(mm[1]!); if (c) { d.city = c; break } }
   }
 
   // family

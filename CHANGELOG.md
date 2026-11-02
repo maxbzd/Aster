@@ -4,10 +4,16 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Fixed
+
+- Russian notes: a city after a bare "в" / "из" ("дизайнер в Берлине") is now found, "Вены" and "Рима" match (JavaScript's `\\b` does not see Cyrillic), and "логистической" counts as logistics.
+
 ### Added
 
 - Sync no longer loses edits made on two devices offline. Rows are merged field by field against their common ancestor (tags as sets, notes word by word, appended lines kept on both sides); only a same-field clash falls back to "the newer wins", and the older value is kept in a conflict log. A sync cycle is now pull, merge, push, pull. See [docs/CLOUD.md](docs/CLOUD.md).
 - Optimistic concurrency in `sync_push`: new migration `20261014000000_sync_push_base_ts.sql` declines a write made on a version the cloud no longer holds. **Apply it to your Supabase project**; without it everything still works, with the old whole-row rule.
+- A multilingual extraction benchmark (`tests/ai/extraction.corpus.ts`): 56 notes in the 7 interface languages, scored on person, role, city and field. It measures the rule-based engine at 100% in English and Russian and about 0% elsewhere, which is the starting point for [an on-device neural extractor](docs/NEURAL.md).
+- iPhone and iPad in a Safari tab, where the browser deletes a site's data after 7 idle days: the onboarding explains it before anything is typed in and shows how to add Aster to the Home Screen; the home screen reminds until it is installed and asks for backups sooner.
 - A content policy in the built `index.html`, copied from `public/_headers`. GitHub Pages cannot send headers, so the hosted app ran with no policy at all.
 
 ## [1.0.0] - 2026-10-22
