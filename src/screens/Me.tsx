@@ -28,6 +28,7 @@ import { AstraStar } from '@/components/astra/Astra'
 import { useAstraStatus } from '@/ai/hooks'
 import { cloudEnabled } from '@/cloud/config'
 import { LanguagePicker } from '@/components/LanguagePicker'
+import { isDataAtRisk } from '@/lib/storage'
 import { t, tn } from '@/i18n'
 
 export function Me() {
@@ -217,7 +218,7 @@ export function Me() {
           </div>
           <Row icon={DeviceMobileIcon} iconColor="#7fd6ff" label={t('Install on your phone')}
             sub={t('iPhone: Share → “Add to Home Screen”. Android: menu → “Install app”')} chevron={false} />
-          <Row icon={LockSimpleIcon} label={cloudOn ? t('Your data is here and in the cloud') : t('Your data stays with you')} sub={cloudOn ? t("Everything is stored on the device and copied to your protected account. Astra's keys never go to the cloud.") : t('Everything is stored on this device. {v}', { v: persisted === false ? t('The browser may clear storage — install the app to your Home Screen, make backups or sign in to the cloud.') : t('Make backups or sign in to the cloud.') })} chevron={false} />
+          <Row icon={LockSimpleIcon} label={cloudOn ? t('Your data is here and in the cloud') : t('Your data stays with you')} sub={cloudOn ? t("Everything is stored on the device and copied to your protected account. Astra's keys never go to the cloud.") : t('Everything is stored on this device. {v}', { v: isDataAtRisk() ? t('Safari deletes the data of a website after 7 days without use: add Aster to your Home Screen and keep backups.') : persisted === false ? t('The browser may clear storage — install the app to your Home Screen, make backups or sign in to the cloud.') : t('Make backups or sign in to the cloud.') })} chevron={false} />
           {!cloudOn && <Row icon={FlaskIcon} label={t('Load demo data')} sub={t('32 people and 23 reserve contacts — fictional, replaces current data')} onClick={async () => { await wipeAll(); await saveSettings({ name: settings.name, photo: settings.photo, onboarded: true, createdAt: settings.createdAt, demo: true }); await (await import('@/data/demo')).loadDemo(); toast(t('Demo loaded')) }} />}
           {!wipe ? (
             <Row icon={TrashIcon} iconColor="#ff5f6d" label={<span className="text-danger">{t('Delete all data')}</span>} onClick={() => setWipe(true)} />
