@@ -453,7 +453,7 @@ export async function testConnection(): Promise<{ ok: boolean; message: string }
   const ai = await activeAi()
   if (!ai) return { ok: false, message: t("Astra isn't connected") }
   try {
-    const r = await astraJSON(ai, { task: 'test', schema: () => import('zod/v4').then(z => z.object({ ok: z.boolean(), greeting: z.string() })), system: t('You are Astra. Answer ok=true and a short greeting in English (up to 6 words).'), content: t('Connection check'), effort: 'low', maxTokens: 2000 })
+    const r = await astraJSON(ai, { task: 'test', schema: () => import('@/ai/zod').then(z => z.object({ ok: z.boolean(), greeting: z.string() })), system: t('You are Astra. Answer ok=true and a short greeting in English (up to 6 words).'), content: t('Connection check'), effort: 'low', maxTokens: 2000 })
     return { ok: r.ok, message: r.greeting }
   } catch (e) {
     return { ok: false, message: friendlyError(e).message }
