@@ -153,3 +153,8 @@ export function topOccasionByPerson(list: Occasion[]) {
   for (const o of list) if (!m.has(o.personId)) m.set(o.personId, o)
   return m
 }
+
+export function occasionsFrom(people: Person[], interactions: Interaction[], reminders: { personId?: string; text: string; done: boolean; dueAt: number; id: string; createdAt: number }[], matches: MatchPair[], now = Date.now()) {
+  const list = computeOccasions(people, interactions, reminders, matches, now)
+  return { list, byPerson: topOccasionByPerson(list) }
+}

@@ -7,7 +7,7 @@ import { modelInfo } from './models'
 import { localMatches, type MatchPair } from './local/matches'
 import type { Intro, Person } from '@/data/types'
 import { reserveMatches } from './local/reserve'
-import { occasionsFrom } from './astra'
+import { occasionsFrom } from './local/occasions'
 
 /** Astra's status: whether a cloud model is connected. */
 export function useAstraStatus() {

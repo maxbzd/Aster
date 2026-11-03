@@ -6,7 +6,7 @@ import { join } from 'node:path'
 const DIST = 'dist'
 // The headroom was raised on purpose: the core holds the i18n runtime, bilingual name handling, lists, duplicates and family dates;
 // heavy screens (profile, graph, year recap, chat, voice) are lazy-loaded.
-const BUDGET = { entryKb: 135, initialKb: 340 } // gzip, KB
+const BUDGET = { entryKb: 95, initialKb: 300 } // gzip, KB (293.8 / 86.9 measured on 3 Nov 2026 after the search, the local engine and the reserve parser were moved out of the first download)
 
 const html = readFileSync(join(DIST, 'index.html'), 'utf8')
 const refs = [...html.matchAll(/(?:src|href)="\/?([^"]+\.js)"/g)].map(m => m[1])
