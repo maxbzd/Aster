@@ -43,7 +43,8 @@
     "eval": "node --env-file=.env.eval node_modules/vitest/vitest.mjs run tests/eval --reporter=basic",
     "i18n:check": "node scripts/i18n-check.mjs",
     "e2e:vault": "node scripts/e2e-vault.mjs",
-    "e2e:audit": "node scripts/e2e-audit.mjs"
+    "e2e:audit": "node scripts/e2e-audit.mjs",
+    "e2e:quota": "node scripts/e2e-quota.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",

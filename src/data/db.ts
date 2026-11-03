@@ -1,4 +1,5 @@
-import Dexie, { type DexieOptions, type EntityTable } from 'dexie'
+import Dexie, { type DBCore, type DexieOptions, type EntityTable } from 'dexie'
+import { reportWriteFailure, resolveFull, useStorageHealth } from '@/lib/storageHealth'
 import { backendFactory, backendKeyRange, initBackend } from '@/vault/backend'
 import type { AiCacheEntry, AiUsage, Capture, ChatMessage, Circle, Collection, Interaction, Intro, Lead, NetEvent, Person, Reminder, Settings } from './types'
 
@@ -26,6 +27,32 @@ export class AsterDB extends Dexie {
 
   constructor(name = 'aster', options?: DexieOptions) {
     super(name, options)
+    // Every write passes here: a refusal for lack of room is announced to the person (see StorageBanner), and still thrown,
+    // so the caller knows the change was not saved. A failed write changes nothing (the transaction is rolled back).
+    this.use({
+      stack: 'dbcore',
+      name: 'storage-guard',
+      create: (down: DBCore): DBCore => ({
+        ...down,
+        table: (tableName: string) => {
+          const table = down.table(tableName)
+          return {
+            ...table,
+            mutate: async req => {
+              try {
+                const result = await table.mutate(req)
+                // writes work again (room was made, or the browser allowed more): the notice has done its job
+                if (useStorageHealth.getState().full) resolveFull()
+                return result
+              } catch (error) {
+                reportWriteFailure(error)
+                throw error
+              }
+            },
+          }
+        },
+      }),
+    })
     this.version(1).stores({
       people: 'id, firstName, lastName, closeness, *circleIds, *tags, lastContactAt, updatedAt',
       interactions: 'id, date, *personIds, type',
