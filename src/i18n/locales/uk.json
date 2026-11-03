@@ -64,6 +64,7 @@
  "A meeting, call, chat or favor": "Зустріч, дзвінок, листування або допомога",
  "A millionaire with a fund in Dubai, can intro me in MENA": "Мільйонер, фонд у Дубаї, може дати інтро в MENA",
  "A name, e.g. “Laptop”": "Назва, наприклад «Ноутбук»",
+ "A new version is ready": "Нова версія готова",
  "A place or event": "Місце або подія",
  "A quiet week": "Спокійний тиждень",
  "A quiet week for new connections": "Спокійний тиждень для нових зв'язків",
@@ -1684,6 +1685,7 @@
   "Найближчі дні народження — {n} людини найближчими шістьма тижнями."
  ],
  "Upcoming dates": "Найближчі дати",
+ "Update": "Оновити",
  "Update the card “{name}”: {extra}": "Доповнити картку «{name}»: {extra}",
  "Upload a list": "Завантажити список",
  "Upload a list or file": "Завантажити список або файл",

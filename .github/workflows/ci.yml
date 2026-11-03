@@ -34,7 +34,8 @@ jobs:
 
   # In a real browser: with "Protect this device" on, nothing readable is left in IndexedDB (locked or unlocked), the right
   # password and the recovery key open the app, and no content-policy or Trusted Types violation occurs. Also: no request to any
-  # other origin, no serious accessibility violation on any screen, and the app opens offline.
+  # other origin, no serious accessibility violation on any screen, the app opens offline, a refused write for lack of room is announced, and a new version
+  # reaches an open app without being swapped under the person's hands.
   e2e:
     runs-on: ubuntu-latest
     steps:
@@ -57,3 +58,4 @@ jobs:
           BASE_URL=http://localhost:4174/ npm run e2e:vault
           BASE_URL=http://localhost:4174/ npm run e2e:audit
           BASE_URL=http://localhost:4174/ npm run e2e:quota
+          npm run e2e:update

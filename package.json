@@ -44,7 +44,8 @@
     "i18n:check": "node scripts/i18n-check.mjs",
     "e2e:vault": "node scripts/e2e-vault.mjs",
     "e2e:audit": "node scripts/e2e-audit.mjs",
-    "e2e:quota": "node scripts/e2e-quota.mjs"
+    "e2e:quota": "node scripts/e2e-quota.mjs",
+    "e2e:update": "node scripts/e2e-update.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
