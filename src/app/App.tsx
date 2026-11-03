@@ -2,7 +2,7 @@ import { t } from '@/i18n'
 import { StorageBanner } from '@/components/StorageBanner'
 import { useUpdate } from '@/lib/updates'
 import { AnimatePresence, LazyMotion, MotionConfig } from 'motion/react'
-import { lazy, Suspense, useEffect, useLayoutEffect, useRef, type ComponentType } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState, type ComponentType } from 'react'
 import { HashRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { useSettings } from '@/data/hooks'
 import { useUI } from './store'
@@ -16,7 +16,6 @@ import { Sidebar, TabBar } from '@/components/Nav'
 import { Toasts } from '@/components/Toasts'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { SheetHost, prefetchSheets } from '@/sheets/SheetHost'
-import { SearchOverlay } from '@/components/SearchOverlay'
 import { Today } from '@/screens/Today'
 import { People } from '@/screens/People'
 
@@ -45,6 +44,15 @@ const EventMode = lazyScreen(() => import('@/screens/EventMode'), 'EventMode')
 const Intros = lazyScreen(() => import('@/screens/Intros'), 'Intros')
 const Weekly = lazyScreen(() => import('@/screens/Weekly'), 'Weekly')
 const Reserve = lazyScreen(() => import('@/screens/Reserve'), 'Reserve')
+
+// the search (and Astra's local engine, the reserve parser and the name matching behind it) loads the first time it is opened
+const SearchOverlay = lazy(() => import('@/components/SearchOverlay').then(m => ({ default: m.SearchOverlay })))
+function LazySearch() {
+  const open = useUI(s => s.search)
+  const [wanted, setWanted] = useState(false)
+  if (open && !wanted) setWanted(true)
+  return wanted ? <Suspense fallback={null}><SearchOverlay /></Suspense> : null
+}
 
 const loadMotionFeatures = () => import('./motionFeatures').then(module => module.default)
 
@@ -222,7 +230,7 @@ function Shell() {
       </main>
       {!immersive && <TabBar />}
       <SheetHost />
-      <SearchOverlay />
+      <LazySearch />
       {settings.voice?.wake && <Suspense fallback={null}><VoiceHost /></Suspense>}
       <Toasts />
       <StorageBanner />

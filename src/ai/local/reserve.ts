@@ -1,7 +1,7 @@
 import type { Lead, Person } from '@/data/types'
 import type { Drafts } from '../schemas'
 import { fullName, jobLine, lcFirst } from '@/lib/format'
-import { leadText } from '@/data/leadParse'
+import { leadText } from '@/data/leadText'
 import { ASK_SYN } from './ask'
 import { expand } from './matches'
 import { getLocale, t } from '@/i18n'

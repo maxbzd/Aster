@@ -65,6 +65,18 @@ try {
     console.log(`• ${route.padEnd(10)} ${violations.length ? 'FAIL' : 'ok'}`)
   }
 
+  // the search is loaded the first time it is opened: it must open, find a person of the example data, and raise no error
+  await page.evaluate(() => { location.hash = '#/' })
+  await page.waitForTimeout(800)
+  await page.getByRole('button', { name: 'Search' }).first().click()
+  const find = page.getByPlaceholder(/find a person/i)
+  await find.waitFor()
+  await find.fill('Nina')
+  await page.waitForTimeout(800)
+  if (!(await page.locator('body').innerText()).includes('Nina')) failures.push('search: opened, but found nobody called Nina in the example data')
+  console.log('• search opens on first use and finds people')
+  await page.keyboard.press('Escape')
+
   // reflow and text size (WCAG 1.4.4 and 1.4.10): at the width of a small phone with text enlarged to 200 %, nothing may need sideways scrolling
   await page.setViewportSize({ width: 320, height: 568 })
   await page.evaluate(() => { document.documentElement.style.fontSize = '200%' })
