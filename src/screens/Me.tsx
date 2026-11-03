@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
   AddressBookIcon, CameraIcon, CheckCircleIcon, CirclesThreeIcon, CloudArrowDownIcon, CloudCheckIcon, PlugsConnectedIcon, CloudArrowUpIcon, DeviceMobileIcon,
-  DownloadSimpleIcon, FlaskIcon, LockSimpleIcon, PulseIcon, TrashIcon, VaultIcon,
+  DownloadSimpleIcon, FlaskIcon, LockSimpleIcon, PulseIcon, TrashIcon, VaultIcon, ShieldCheckIcon,
 } from '@phosphor-icons/react'
 import { Page } from '@/components/Page'
 import { PageHeader } from '@/components/PageHeader'
@@ -30,6 +30,7 @@ import { cloudEnabled } from '@/cloud/config'
 import { LanguagePicker } from '@/components/LanguagePicker'
 import { isDataAtRisk } from '@/lib/storage'
 import { isEncryptedBackup } from '@/data/backupFormat'
+import { useVaultState } from '@/vault/state'
 import { t, tn } from '@/i18n'
 
 export function Me() {
@@ -43,6 +44,7 @@ export function Me() {
   const circles = useCircles()
   const ints = useAllInteractions()
   const open = useUI(s => s.open)
+  const vaultOn = useVaultState(s => s.state === 'unlocked')
   const toast = useUI(s => s.toast)
   const nav = useNavigate()
   const [wipe, setWipe] = useState(false)
@@ -215,6 +217,8 @@ export function Me() {
             <div className="mb-2.5 text-[13px] text-fg-3">{t('Language')}</div>
             <LanguagePicker />
           </div>
+          <Row icon={ShieldCheckIcon} iconColor="#5fe3b0" label={t('Protect this device')}
+            sub={vaultOn ? t('On: your data is encrypted here') : t('Encrypt your people and notes with a password or a passkey')} onClick={() => open({ kind: 'vault' })} />
           <Row icon={DeviceMobileIcon} iconColor="#7fd6ff" label={t('Install on your phone')}
             sub={t('iPhone: Share → “Add to Home Screen”. Android: menu → “Install app”')} chevron={false} />
           <Row icon={LockSimpleIcon} label={cloudOn ? t('Your data is here and in the cloud') : t('Your data stays with you')} sub={cloudOn ? t("Everything is stored on the device and copied to your protected account. Astra's keys never go to the cloud.") : t('Everything is stored on this device. {v}', { v: isDataAtRisk() ? t('Safari deletes the data of a website after 7 days without use: add Aster to your Home Screen and keep backups.') : persisted === false ? t('The browser may clear storage — install the app to your Home Screen, make backups or sign in to the cloud.') : t('Make backups or sign in to the cloud.') })} chevron={false} />
