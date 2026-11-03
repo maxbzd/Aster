@@ -12,6 +12,10 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 - Automatic copies into a folder (Chrome, Edge, Android Chrome): an encrypted copy every day without asking for a password. Each is sealed to a public key (X25519 + ML-KEM-768, so it also holds against a future quantum computer); the matching private key exists only as a passphrase you choose, and is needed only to restore. The last 14 copies are kept. The folder and key stay on the device and are not part of backups or sync.
 - A shared crypto layer in `src/crypto/` (password sealing, hybrid sealing to a public key) with tests.
 
+### Changed
+
+- The on-device assistant now reads notes in Spanish, German, French, Portuguese and Ukrainian too (who was met, role, city, field), not only English and Russian: `src/ai/local/langs.ts`. On the first set of sentences it went from about 0% to 100% in those languages; on a second set written afterwards and not used for tuning, the first run scored 67% (see [docs/NEURAL.md](docs/NEURAL.md)), which is the number to keep in mind.
+
 ### Fixed
 
 - Russian notes: a city after a bare "в" / "из" ("дизайнер в Берлине") is now found, "Вены" and "Рима" match (JavaScript's `\\b` does not see Cyrillic), and "логистической" counts as logistics.
