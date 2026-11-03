@@ -1,4 +1,4 @@
-import * as z from 'zod/v4'
+import * as z from '@/ai/zod'
 
 const CHANNEL_TYPES = ['phone', 'telegram', 'whatsapp', 'email', 'instagram', 'linkedin', 'x', 'website'] as const
 const INTERACTION_TYPES = ['meeting', 'call', 'message', 'event', 'favor_given', 'favor_got', 'gift', 'note'] as const
