@@ -1,4 +1,6 @@
+import { t } from '@/i18n'
 import { StorageBanner } from '@/components/StorageBanner'
+import { useUpdate } from '@/lib/updates'
 import { AnimatePresence, LazyMotion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, type ComponentType } from 'react'
 import { HashRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
@@ -45,6 +47,16 @@ const Weekly = lazyScreen(() => import('@/screens/Weekly'), 'Weekly')
 const Reserve = lazyScreen(() => import('@/screens/Reserve'), 'Reserve')
 
 const loadMotionFeatures = () => import('./motionFeatures').then(module => module.default)
+
+/** Tells the person that a new version is ready; it is applied only when they say so (or at the next launch). */
+function UpdateNotice() {
+  const ready = useUpdate(s => s.ready)
+  const toast = useUI(s => s.toast)
+  useEffect(() => {
+    if (ready) toast(t('A new version is ready'), 'info', { label: t('Update'), run: () => useUpdate.getState().apply?.() }, true)
+  }, [ready, toast])
+  return null
+}
 
 export default function App() {
   return (
@@ -170,6 +182,7 @@ function Shell() {
         <SheetHost />
         <Toasts />
         <StorageBanner />
+        <UpdateNotice />
         <div className="grain" />
       </>
     )
@@ -213,6 +226,7 @@ function Shell() {
       {settings.voice?.wake && <Suspense fallback={null}><VoiceHost /></Suspense>}
       <Toasts />
       <StorageBanner />
+      <UpdateNotice />
       <div className="grain" />
     </>
   )

@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config'
 // Отдельный конфиг: без PWA-плагина и Tailwind, чтобы тесты стартовали мгновенно.
 export default defineConfig({
   plugins: [react()],
-  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
+  resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)), 'virtual:pwa-register': fileURLToPath(new URL('./tests/stubs/pwa-register.ts', import.meta.url)) } },
   test: {
     environment: 'happy-dom',
     setupFiles: ['tests/setup.ts'],

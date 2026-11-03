@@ -45,7 +45,7 @@ interface UI {
   search: boolean
   setSearch: (v: boolean) => void
   toasts: Toast[]
-  toast: (text: string, icon?: Toast['icon'], action?: ToastAction) => void
+  toast: (text: string, icon?: Toast['icon'], action?: ToastAction, keep?: boolean) => void
   dismissToast: (id: number) => void
 }
 
@@ -57,10 +57,11 @@ export const useUI = create<UI>(set => ({
   search: false,
   setSearch: search => set({ search }),
   toasts: [],
-  toast: (text, icon = 'check', action) => {
+  toast: (text, icon = 'check', action, keep = false) => {
     const id = ++tid
     set(s => ({ toasts: [...s.toasts.slice(-2), { id, text, icon, action }] }))
-    setTimeout(() => set(s => ({ toasts: s.toasts.filter(toast2 => toast2.id !== id) })), action ? 6000 : 2600)
+    // `keep`: stays until it is answered or closed (a new version is ready: the person picks the moment)
+    if (!keep) setTimeout(() => set(s => ({ toasts: s.toasts.filter(toast2 => toast2.id !== id) })), action ? 6000 : 2600)
   },
   dismissToast: id => set(s => ({ toasts: s.toasts.filter(toast3 => toast3.id !== id) })),
 }))

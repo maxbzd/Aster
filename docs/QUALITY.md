@@ -15,14 +15,14 @@ Only Chromium was available, so **Firefox and Safari are not measured** (see Com
 | 4 | Speed | Lighthouse performance 0.64 → 0.80–0.83; blocking time 1360 → 60–170 ms; startup 333 → 339 KB gzip (the animation engine now loads after the first paint) | `npm run size` (budget 340 KB) | Largest paint 4.6 s on the throttled profile |
 | 5 | Accessibility | axe-core (WCAG 2.2 AA) on 15 screens: 0 serious or critical issues after fixes (was 88 name mismatches and 16 contrast failures); keyboard reachable; no horizontal scroll at 320 px; animations stop with reduced motion | `e2e:audit` | Screen-reader pass by a person; 200 % text zoom |
 | 6 | Usability | Not measured | none | A test with people who have not seen the app |
-| 7 | Offline | Reload with the network off opens the app | `e2e:audit` | Update-while-open scenario |
+| 7 | Offline and updates | Reload with the network off opens the app; **a new version is fetched in the background and announced ("A new version is ready — Update"), never swapped in under someone's hands** (it used to take over in the background, so screens not yet opened could lose their files); the app asks for new versions hourly and when it comes to the front | `e2e:audit`, `e2e:update` (builds two versions and updates one to the other in a real browser) | — |
 | 8 | Compatibility | Chromium only | none | Firefox, Safari / iOS |
 | 9 | Languages | 7; five are machine drafts not reviewed by native speakers | `i18n:check` | Native review |
 | 10 | Code | 1349 tests; coverage 73.8 → 77.9 % statements, 66.1 → 69.5 % branches (the developer-only eval harness is not counted); the lock screen, the vault sheet, lists, bulk edit, duplicates, preferences, family, the year story and the graph now have tests | `test:coverage` with a floor (77 / 68 / 69 / 81) | Goal 85 %: the largest gaps are the capture screen, the person sheet, profile sections, the reserve import, voice control |
 | 11 | Supply chain | GitHub Actions pinned by commit hash and kept current by Dependabot; `npm audit` clean at high severity | `npm audit`, signatures | Reproducible build check |
 | 12 | Documentation | Security model, architecture, cloud, language guide | review | Threat model needs a "what we do not protect" table kept in step |
 | 13 | Energy and memory | JS heap 10–50 MB with 300 rows per table; the year story's progress bar now runs in the browser (CSS) instead of a script on every frame, pauses when held or hidden, and does not advance by itself with "reduce motion" | unit tests | — |
-| 14 | User rights | Full export, delete all, open JSON formats | unit tests | A test that the export restores byte for byte |
+| 14 | User rights | Full export, delete all, open JSON formats; **export → wipe → import → export gives the same data, field for field; importing twice changes nothing; an import that fails halfway rolls back and leaves what was there; a damaged file is refused before anything is touched** | unit tests | — |
 | 15 | Open project | Contributing guide, security policy, code of conduct | review | — |
 
 ## How to repeat the measurements
