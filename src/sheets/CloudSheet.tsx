@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react'
-import { ArrowsClockwiseIcon, CheckCircleIcon, CloudIcon, CloudSlashIcon, SignOutIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react'
+import { useEffect, useState, type FormEvent } from 'react'
+import { ArrowCounterClockwiseIcon, ArrowsClockwiseIcon, CheckCircleIcon, CloudIcon, CloudSlashIcon, SignOutIcon, TrashIcon, WarningCircleIcon } from '@phosphor-icons/react'
 import { Sheet } from '@/components/Sheet'
 import { Field, TextInput } from '@/components/forms'
 import { GlassButton, Group, PrimaryButton, Row, Segmented } from '@/components/ui'
 import { MIN_PASSWORD, validEmail } from '@/cloud/auth'
 import { deleteAccount, resetPassword, resync, setNewPassword, signIn, signOut, signUp, syncNow, UnsyncedError } from '@/cloud/cloud'
+import { conflictLog } from '@/cloud/engine'
 import { statusLine } from '@/cloud/status'
 import { useCloud } from '@/cloud/store'
 import { useUI } from '@/app/store'
@@ -141,6 +142,10 @@ function NewPassword({ onDone }: { onDone: () => void }) {
 function Account({ onClose }: { onClose: () => void }) {
   const cloud = useCloud()
   const toast = useUI(s => s.toast)
+  const open = useUI(s => s.open)
+  const [replaced, setReplaced] = useState(0)
+  // how many edits lost a clash: refreshed whenever a sync finishes
+  useEffect(() => { void conflictLog().then(l => setReplaced(l.length)) }, [cloud.lastSyncAt])
   const [busy, setBusy] = useState<null | 'sync' | 'resync' | 'out' | 'del'>(null)
   const [confirm, setConfirm] = useState<null | 'out' | 'del'>(null)
   const [error, setError] = useState<string | null>(null)
@@ -182,6 +187,7 @@ function Account({ onClose }: { onClose: () => void }) {
         <Group>
           <Row icon={ArrowsClockwiseIcon} label={t('Sync now')} sub={t('This usually happens on its own, a couple of seconds after an edit')}
             onClick={busy ? undefined : () => void run('sync', syncNow, t('Done'))} trailing={busy === 'sync' ? <span className="text-[12.5px] text-fg-3">…</span> : undefined} />
+          {replaced > 0 && <Row icon={ArrowCounterClockwiseIcon} iconColor="#ffd27a" label={t('Replaced edits')} sub={tn(replaced, '{n} edit was replaced by a newer one. You can bring it back.', '{n} edits were replaced by newer ones. You can bring them back.')} onClick={() => open({ kind: 'syncHistory' })} />}
           <Row icon={ArrowsClockwiseIcon} iconColor="#7fd6ff" label={t('Full resync')} sub={t('If devices disagree: re-uploads everything in both directions')}
             onClick={busy ? undefined : () => void run('resync', resync, t('Resynced'))} trailing={busy === 'resync' ? <span className="text-[12.5px] text-fg-3">…</span> : undefined} />
         </Group>

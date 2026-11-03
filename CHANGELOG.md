@@ -4,6 +4,10 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added
+
+- **Replaced edits** (Cloud): when two devices change the same field and the newer edit wins, the older value is kept in a list. You can bring it back with one tap (it is saved as a new edit and syncs like any other), or copy it when it sits inside a list item.
+
 ### Added (encryption)
 
 - **Trusted Types.** The content policy now also requires them for scripts: the browser refuses any string that is about to become code (`innerHTML`, `eval`-like calls, a script or worker address). The one exception is a default policy (`public/tt-policy.js`) that lets through only script addresses on the app's own origin, which is what registering the service worker needs. Checked in Chromium across every screen: no violations. zod no longer tries to compile schemas with `new Function` (that was the one thing that tripped it).

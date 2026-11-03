@@ -93,3 +93,23 @@ describe('restoring an encrypted backup', () => {
     await waitFor(async () => expect(await db.people.count()).toBeGreaterThan(10))
   })
 })
+
+describe('the list of replaced edits', () => {
+  it('shows what lost, brings a value back, and can be cleared', async () => {
+    const p = (await db.people.toArray())[0]!
+    await db.syncMeta.put({ key: 'conflicts', value: [{ table: 'people', id: p.id, path: 'city', lost: 'Лиссабон', kept: 'remote', at: Date.now() }, { table: 'people', id: p.id, path: 'topics[id:t1].text', lost: 'старый текст', kept: 'remote', at: Date.now() }] })
+    const { user } = renderApp('/me')
+    await screen.findByText('Резервная копия')
+    act(() => useUI.getState().open({ kind: 'syncHistory' }))
+    expect(await screen.findByText('Замещённые правки')).toBeInTheDocument()
+    expect((await screen.findAllByText(new RegExp(p.firstName))).length).toBe(2)
+    expect(screen.getByText('Лиссабон')).toBeInTheDocument()
+    // the entry inside a list item cannot be restored automatically: it offers a copy instead
+    expect(screen.getAllByRole('button', { name: 'Восстановить' })).toHaveLength(1)
+    expect(screen.getByRole('button', { name: 'Скопировать' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Восстановить' }))
+    await waitFor(async () => expect((await db.people.get(p.id))?.city).toBe('Лиссабон'))
+    await user.click(await screen.findByRole('button', { name: 'Очистить список' }))
+    expect(await screen.findByText(/Ничего не заменялось/)).toBeInTheDocument()
+  })
+})
