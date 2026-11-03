@@ -38,17 +38,20 @@ export class AsterDB extends Dexie {
           const table = down.table(tableName)
           return {
             ...table,
-            mutate: async req => {
-              try {
-                const result = await table.mutate(req)
-                // writes work again (room was made, or the browser allowed more): the notice has done its job
-                if (useStorageHealth.getState().full) resolveFull()
-                return result
-              } catch (error) {
-                reportWriteFailure(error)
-                throw error
-              }
-            },
+            // `.then` on the promise Dexie gave us, not async/await: a native promise in the middle would let a transaction
+            // commit before the rest of its work has run
+            mutate: req =>
+              table.mutate(req).then(
+                result => {
+                  // writes work again (room was made, or the browser allowed more): the notice has done its job
+                  if (useStorageHealth.getState().full) resolveFull()
+                  return result
+                },
+                (error: unknown) => {
+                  reportWriteFailure(error)
+                  throw error
+                },
+              ),
           }
         },
       }),
