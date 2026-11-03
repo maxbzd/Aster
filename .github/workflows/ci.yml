@@ -31,3 +31,26 @@ jobs:
       - run: npm run test:coverage
       - run: npm run build
       - run: npm run size
+
+  # In a real browser: with "Protect this device" on, nothing readable is left in IndexedDB (locked or unlocked), the right
+  # password and the recovery key open the app, and no content-policy or Trusted Types violation occurs.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build
+      - name: Nothing readable on disk
+        run: |
+          npx vite preview --port 4174 --strictPort &
+          for i in $(seq 1 30); do curl -sf http://localhost:4174/ >/dev/null && break; sleep 1; done
+          BASE_URL=http://localhost:4174/ npm run e2e:vault
