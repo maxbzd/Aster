@@ -1,4 +1,4 @@
-import * as z from 'zod/v4'
+import * as z from '@/ai/zod'
 import { blankPerson } from '@/data/actions'
 import { DAY, toISODate } from '@/lib/format'
 import type { Circle, Interaction, Person } from '@/data/types'
