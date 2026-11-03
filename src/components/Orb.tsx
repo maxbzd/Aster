@@ -1,4 +1,4 @@
-import { animate, motion, useMotionValue, useTransform } from 'motion/react'
+import { animate, m as mo, useMotionValue, useTransform } from 'motion/react'
 import { useEffect } from 'react'
 
 const TONES = {
@@ -51,12 +51,12 @@ export function Orb({ value, tone, size = 240, label }: { value: number; tone: O
       {/* progress arc */}
       <svg aria-hidden="true" viewBox="0 0 100 100" className="absolute inset-0 -rotate-90" style={{ overflow: 'visible' }}>
         <circle cx="50" cy="50" r="46" fill="none" stroke="rgb(255 255 255 / 0.07)" strokeWidth="0.6" />
-        <motion.circle cx="50" cy="50" r="46" fill="none" stroke="rgb(255 255 255 / 0.85)" strokeWidth="0.9" strokeLinecap="round" style={{ strokeDasharray: dash }} />
+        <mo.circle cx="50" cy="50" r="46" fill="none" stroke="rgb(255 255 255 / 0.85)" strokeWidth="0.9" strokeLinecap="round" style={{ strokeDasharray: dash }} />
       </svg>
       <div className="relative text-center" style={{ color: '#1a0f08' }}>
-        <motion.div className="tnum font-semibold leading-none" style={{ fontSize: size * 0.27, letterSpacing: '-0.05em', color: 'rgb(20 12 30 / 0.88)' }}>
+        <mo.div className="tnum font-semibold leading-none" style={{ fontSize: size * 0.27, letterSpacing: '-0.05em', color: 'rgb(20 12 30 / 0.88)' }}>
           {shown}
-        </motion.div>
+        </mo.div>
         {label && <div className="micro mt-2" style={{ color: 'rgb(20 12 30 / 0.6)' }}>{label}</div>}
       </div>
     </div>

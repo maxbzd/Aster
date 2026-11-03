@@ -12,10 +12,10 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -33,14 +33,15 @@ jobs:
       - run: npm run size
 
   # In a real browser: with "Protect this device" on, nothing readable is left in IndexedDB (locked or unlocked), the right
-  # password and the recovery key open the app, and no content-policy or Trusted Types violation occurs.
+  # password and the recovery key open the app, and no content-policy or Trusted Types violation occurs. Also: no request to any
+  # other origin, no serious accessibility violation on any screen, and the app opens offline.
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v7
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -54,3 +55,4 @@ jobs:
           npx vite preview --port 4174 --strictPort &
           for i in $(seq 1 30); do curl -sf http://localhost:4174/ >/dev/null && break; sleep 1; done
           BASE_URL=http://localhost:4174/ npm run e2e:vault
+          BASE_URL=http://localhost:4174/ npm run e2e:audit

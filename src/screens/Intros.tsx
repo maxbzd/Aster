@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowLeftIcon, ArrowsClockwiseIcon, XIcon } from '@phosphor-icons/react'
@@ -64,7 +64,7 @@ export function Intros() {
             <div className="flex flex-col gap-3">
               <AnimatePresence initial={false}>
                 {pairs.map((m, i) => (
-                  <motion.div key={`${m.a.id}-${m.b.id}`} layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05 } }} exit={{ opacity: 0, x: -40 }}
+                  <mo.div key={`${m.a.id}-${m.b.id}`} layout initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0, transition: { delay: i * 0.05 } }} exit={{ opacity: 0, x: -40 }}
                     className="glass glow-card rounded-[28px] p-4" style={{ ['--glow' as string]: 'rgb(127 214 255 / 0.22)', ['--gx' as string]: '50%', ['--gy' as string]: '0%' }}>
                     <div className="flex items-center">
                       <Avatar person={m.a} size={48} />
@@ -81,7 +81,7 @@ export function Intros() {
                       <button type="button" onClick={() => open({ kind: 'intro', aId: m.a.id, bId: m.b.id, reason: m.reason, value: m.value })} className="press btn-primary h-11 flex-1 text-[15px]">{t('Introduce')}</button>
                       <button type="button" aria-label={t('Not a fit')} onClick={async () => { await setIntroStatus(m, 'dismissed'); toast(t('Pair hidden'), 'info') }} className="press btn-glass h-11 w-11 !px-0"><XIcon size={16} /></button>
                     </div>
-                  </motion.div>
+                  </mo.div>
                 ))}
               </AnimatePresence>
             </div>

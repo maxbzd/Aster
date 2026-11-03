@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 
 /** A large title that "collapses" into a compact glass bar on scroll (iOS). */
@@ -15,7 +15,7 @@ export function PageHeader({ title, eyebrow, actions, compactTitle }: { title: R
     <>
       <AnimatePresence>
         {compact && (
-          <motion.div
+          <mo.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
@@ -28,7 +28,7 @@ export function PageHeader({ title, eyebrow, actions, compactTitle }: { title: R
                 <div className="flex items-center gap-2 [&_button]:!h-8 [&_button]:!w-8">{actions}</div>
               </div>
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
       <header className="flex items-end justify-between gap-4 px-1 pb-2 pt-[calc(18px+var(--safe-top))]">

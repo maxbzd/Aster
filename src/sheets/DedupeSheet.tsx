@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { CheckCircleIcon, GitMergeIcon } from '@phosphor-icons/react'
 import { Sheet } from '@/components/Sheet'
@@ -49,7 +49,7 @@ function Group({ group, onSkip }: { group: DuplicateGroup; onSkip: () => void })
   }
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginTop: -12 }} className="glass overflow-hidden rounded-[24px]">
+    <mo.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginTop: -12 }} className="glass overflow-hidden rounded-[24px]">
       <div className="flex items-center gap-2 px-4 pt-3.5 text-[12.5px] text-fg-3"><GitMergeIcon size={15} className="text-fg-2" /> {group.reasons.join(' · ')}</div>
       <div className="px-2 pb-1 pt-1.5">
         {group.people.map(p => {
@@ -72,7 +72,7 @@ function Group({ group, onSkip }: { group: DuplicateGroup; onSkip: () => void })
         <button type="button" onClick={onSkip} className="press h-11 flex-1 rounded-full border border-line text-[14.5px] font-medium text-fg-2">{t('Different people')}</button>
         <PrimaryButton className="!h-11 flex-1 !text-[14.5px]" disabled={busy} onClick={merge}>{t('Merge')}{' '}{others.length > 1 ? `(${others.length + 1})` : ''}</PrimaryButton>
       </div>
-    </motion.div>
+    </mo.div>
   )
 }
 

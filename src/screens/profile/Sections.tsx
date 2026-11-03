@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import {
@@ -290,7 +290,7 @@ export function ReciprocitySection({ p, ints }: { p: Person; ints: Interaction[]
             <div className="text-[13.5px] text-fg-2">{t('Who starts the conversation')}</div>
             <div className="mt-3 flex h-3 gap-[3px] overflow-hidden rounded-full">
               {[{ v: r.me, c: '#a796ff' }, { v: r.both, c: 'rgb(255 255 255 / 0.35)' }, { v: r.them, c: '#ffb36b' }].map((s, i) => s.v > 0 && (
-                <motion.div key={i} initial={{ flexGrow: 0 }} animate={{ flexGrow: s.v }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="rounded-full" style={{ background: s.c, boxShadow: i !== 1 ? `0 0 12px ${s.c}88` : undefined }} />
+                <mo.div key={i} initial={{ flexGrow: 0 }} animate={{ flexGrow: s.v }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} className="rounded-full" style={{ background: s.c, boxShadow: i !== 1 ? `0 0 12px ${s.c}88` : undefined }} />
               ))}
             </div>
             <div className="mt-2.5 flex justify-between text-[12.5px] text-fg-3">
@@ -311,7 +311,7 @@ export function ReciprocitySection({ p, ints }: { p: Person; ints: Interaction[]
               <span className="text-fg-2">{t('Help for you')}{' '}<b className="tnum text-fg">{got}</b></span>
             </div>
             <div className="mt-3 flex h-2.5 gap-1 overflow-hidden rounded-full">
-              <motion.div initial={{ width: 0 }} animate={{ width: `${(given / (given + got)) * 100}%` }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="rounded-full bg-mint" style={{ boxShadow: '0 0 12px rgb(95 227 176 / 0.6)' }} />
+              <mo.div initial={{ width: 0 }} animate={{ width: `${(given / (given + got)) * 100}%` }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} className="rounded-full bg-mint" style={{ boxShadow: '0 0 12px rgb(95 227 176 / 0.6)' }} />
               <div className="flex-1 rounded-full bg-warm" style={{ boxShadow: '0 0 12px rgb(255 210 122 / 0.5)' }} />
             </div>
             <div className="mt-3 text-[13px] text-fg-3">{given > got ? t("You invest more in this connection — that's a good investment.") : got > given ? t("You've been helped more often — a great reason to do something in return.") : t('The relationship is in mutual balance.')}</div>

@@ -232,7 +232,7 @@ export function Me() {
         </Group>
       </div>
 
-      <div className="mt-10 text-center text-[12.5px] text-fg-4">{t('Aster 1.0 · made with care for people')}</div>
+      <div className="mt-10 text-center text-[12.5px] text-fg-3">{t('Aster 1.0 · made with care for people')}</div>
     </Page>
   )
 }

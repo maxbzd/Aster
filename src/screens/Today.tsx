@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { lazy, Suspense, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
@@ -85,62 +85,62 @@ export function Today() {
         <div className="lg:invisible"><Logo size={20} /></div>
         <div className="flex items-center gap-2">
           <IconButton icon={MagnifyingGlassIcon} label={t('Search')} onClick={() => setSearch(true)} size={40} />
-          <Link to="/me" className="press">
+          <Link to="/me" className="press" aria-label={t('Profile')}>
             {settings && <Avatar person={{ id: 'me', firstName: settings.name || t('Me'), photo: settings.photo }} size={40} />}
           </Link>
         </div>
       </div>
 
-      <motion.section variants={stagger.container} initial="hidden" animate="show" className="relative">
-        <motion.div variants={stagger.item} className="mt-7 px-1">
+      <mo.section variants={stagger.container} initial="hidden" animate="show" className="relative">
+        <mo.div variants={stagger.item} className="mt-7 px-1">
           <div className="micro text-fg-3">{weekday(now)} · {dateLong(now, false)}</div>
           <h1 className="mt-3 text-[30px] font-semibold leading-[1.05] tracking-[-0.03em]">
             {greeting()},<br />
             <span className="display text-[50px] leading-[1.1] tracking-[-0.02em]">{first}</span>
           </h1>
-        </motion.div>
+        </mo.div>
 
         {empty ? (
-          <motion.div variants={stagger.item} className="mt-10">
+          <mo.div variants={stagger.item} className="mt-10">
             <Empty
               icon={UserCirclePlusIcon}
               title={t('Your universe is empty for now')}
               text={t("Add the first person — someone you recently met or don't want to lose.")}
               action={<PrimaryButton onClick={() => open({ kind: 'addPerson' })}>{t('Add a person')}</PrimaryButton>}
             />
-          </motion.div>
+          </mo.div>
         ) : (
           <>
             {/* Network pulse */}
-            <motion.button variants={stagger.item} type="button" onClick={() => nav('/pulse')} className="press mx-auto mt-4 flex w-full flex-col items-center">
+            <mo.button variants={stagger.item} type="button" onClick={() => nav('/pulse')} className="press mx-auto mt-4 flex w-full flex-col items-center">
               <Orb value={health.score} tone={hl.tone} size={236} label={t('network pulse')} />
               <div className="-mt-1 text-center">
                 <div className="text-[19px] font-semibold tracking-[-0.01em]">{hl.title}</div>
                 <div className="mt-1 text-[14px] text-fg-3">{tn(health.tracked, '{inRhythm} of {n} connection on rhythm', '{inRhythm} of {n} connections on rhythm', { inRhythm: health.inRhythm })}</div>
               </div>
-            </motion.button>
+            </mo.button>
 
-            <motion.div variants={stagger.item} className="mt-7 grid grid-cols-3 gap-2.5">
+            <mo.div variants={stagger.item} className="mt-7 grid grid-cols-3 gap-2.5">
               <StatTile icon={ChatCircleDotsIcon} value={due.length} label={t('waiting for contact')} color={WARMTH_COLORS.cooling} onClick={() => nav('/review')} />
               <StatTile icon={CakeIcon} value={dates.length} label={dates.length === 1 ? t('date this month') : t('dates this month')} color="#ff8fb8" onClick={() => document.getElementById('bdays')?.scrollIntoView({ behavior: 'smooth', block: 'center' })} />
               <StatTile icon={SparkleIcon} value={contacts30} label={t('contacts this month')} color={WARMTH_COLORS.hot} onClick={() => nav('/pulse')} />
-            </motion.div>
+            </mo.div>
 
             {nudge && <Suspense fallback={null}><InstallNudge onSnooze={() => setNudge(false)} /></Suspense>}
 
             {needsBackup && (
-              <motion.div variants={stagger.item} className="glass mt-5 flex items-center gap-3 rounded-[22px] py-3 pl-4 pr-3">
+              <mo.div variants={stagger.item} className="glass mt-5 flex items-center gap-3 rounded-[22px] py-3 pl-4 pr-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-warm/15 text-warm"><CloudArrowDownIcon size={18} /></span>
                 <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-fg-2">{settings?.lastBackupAt ? t('Your backup is out of date.') : t('Your data lives only on this device.')}{' '}{t('Save a copy — it takes 5 seconds.')}</span>
                 <button type="button" onClick={() => useUI.getState().open({ kind: 'backup' })} className="press hit rounded-full bg-fg px-3.5 py-2 text-[13px] font-semibold text-ink">{t('Download')}</button>
                 <button type="button" aria-label={t('Remind me later')} onClick={() => saveSettings({ backupSnoozeUntil: Date.now() + (atRisk ? 4 : 14) * 86400000 })} className="press hit grid h-8 w-8 shrink-0 place-items-center rounded-full text-fg-3"><XIcon size={14} /></button>
-              </motion.div>
+              </mo.div>
             )}
 
-            <motion.div variants={stagger.item}><OrbitaSuggestionsCard /></motion.div>
+            <mo.div variants={stagger.item}><OrbitaSuggestionsCard /></mo.div>
 
             {/* Astra */}
-            <motion.div variants={stagger.item} className="mt-9">
+            <mo.div variants={stagger.item} className="mt-9">
               <AstraHub
                 birthdays={dates.filter(d => d.days <= 7).length}
                 cooling={coolingClose(people ?? [], now).length}
@@ -150,11 +150,11 @@ export function Today() {
                 onAsk={() => nav('/chat')}
                 onEvent={() => nav('/event')}
               />
-            </motion.div>
+            </mo.div>
 
             {/* Reasons to write */}
             {occasions.filter(o => o.kind !== 'silence').length > 0 && (
-              <motion.div variants={stagger.item}>
+              <mo.div variants={stagger.item}>
                 <SectionTitle count={occasions.filter(o => o.kind !== 'silence').length}>{t('Reasons to reach out')}</SectionTitle>
                 <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
                   {occasions.filter(o => o.kind !== 'silence').slice(0, 10).map(o => {
@@ -162,19 +162,19 @@ export function Today() {
                     return p ? <OccasionCard key={o.id} o={o} p={p} onWrite={() => open({ kind: 'draft', personId: p.id, occasion: o })} /> : null
                   })}
                 </div>
-              </motion.div>
+              </mo.div>
             )}
 
             {/* Matchmaker */}
             {matches.length > 0 && (
-              <motion.div variants={stagger.item}>
+              <mo.div variants={stagger.item}>
                 <SectionTitle count={matches.length} action={t('All')} onAction={() => nav('/intros')}>{t('Could be introduced')}</SectionTitle>
                 <MatchCard m={matches[0]} onOpen={() => open({ kind: 'intro', aId: matches[0].a.id, bId: matches[0].b.id, reason: matches[0].reason, value: matches[0].value })} />
-              </motion.div>
+              </mo.div>
             )}
 
             {/* Whom to write to */}
-            <motion.div variants={stagger.item}>
+            <mo.div variants={stagger.item}>
               <SectionTitle count={due.length} action={due.length ? t('Review') : undefined} onAction={() => nav('/review')}>{t('Get in touch')}</SectionTitle>
               {due.length === 0 ? (
                 <div className="glass glow-card flex items-center gap-4 rounded-[26px] p-5" style={{ ['--glow' as string]: 'rgb(95 227 176 / 0.25)' }}>
@@ -200,29 +200,29 @@ export function Today() {
                   )}
                 </div>
               )}
-            </motion.div>
+            </mo.div>
 
             {/* Person of the day */}
             {potd && (
-              <motion.div variants={stagger.item}>
+              <mo.div variants={stagger.item}>
                 <SectionTitle>{t('Recall today')}</SectionTitle>
                 <LampCard p={potd.p} now={now} occasion={occByPerson.get(potd.p.id)} />
-              </motion.div>
+              </mo.div>
             )}
 
             {/* Reminders */}
             {openReminders.length > 0 && (
-              <motion.div variants={stagger.item}>
+              <mo.div variants={stagger.item}>
                 <SectionTitle count={openReminders.length} action={t('Add')} onAction={() => open({ kind: 'reminder' })}>{t('Reminders')}</SectionTitle>
                 <Group>
                   {openReminders.slice(0, 5).map(r => <ReminderRow key={r.id} r={r} person={r.personId ? byId.get(r.personId) : undefined} />)}
                 </Group>
-              </motion.div>
+              </mo.div>
             )}
 
             {/* Dates: birthdays, anniversaries, jubilees */}
             {dates.length > 0 && (
-              <motion.div variants={stagger.item} id="bdays">
+              <mo.div variants={stagger.item} id="bdays">
                 <SectionTitle count={dates.length}>{t('Upcoming dates')}</SectionTitle>
                 <div className="-mx-4 flex snap-x gap-2.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6">
                   {dates.map(d => (
@@ -238,19 +238,19 @@ export function Today() {
                     </Link>
                   ))}
                 </div>
-              </motion.div>
+              </mo.div>
             )}
 
             {/* Recently */}
             {recent.length > 0 && (
-              <motion.div variants={stagger.item}>
+              <mo.div variants={stagger.item}>
                 <SectionTitle action={t('Log')} onAction={() => open({ kind: 'log' })}>{t('Recently')}</SectionTitle>
                 <Timeline items={recent} people={byId} />
-              </motion.div>
+              </mo.div>
             )}
           </>
         )}
-      </motion.section>
+      </mo.section>
     </Page>
   )
 }
@@ -276,7 +276,7 @@ function DueCard({ p, now, circles, occasion }: { p: Person; now: number; circle
   const topic = p.topics.find(topic2 => !topic2.done)
   const circle = circles.find(c => p.circleIds.includes(c.id))
   return (
-    <motion.div layout className="glass rounded-[26px] p-4">
+    <mo.div layout className="glass rounded-[26px] p-4">
       <button type="button" onClick={() => nav(`/person/${p.id}`)} className="flex w-full items-center gap-3.5 text-left">
         <Avatar person={p} size={50} warmth={w.level} ring />
         <div className="min-w-0 flex-1">
@@ -309,7 +309,7 @@ function DueCard({ p, now, circles, occasion }: { p: Person; now: number; circle
           <ClockCountdownIcon size={18} />
         </button>
       </div>
-    </motion.div>
+    </mo.div>
   )
 }
 

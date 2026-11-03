@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { ArrowsClockwiseIcon, ChatTeardropTextIcon, CheckCircleIcon, ClockCounterClockwiseIcon, HandHeartIcon, PaperPlaneTiltIcon, SealWarningIcon, SparkleIcon, UserIcon } from '@phosphor-icons/react'
 import { Sheet } from '@/components/Sheet'
@@ -44,7 +44,7 @@ export function BriefSheet({ personId, onClose }: { personId: string; onClose: (
       {loading || !b ? (
         <AstraThinking kind="brief" className="pt-16" />
       ) : (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+        <mo.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <div className="mb-3 flex items-center justify-between">
             <SourceBadge source={res!.source} error={res!.error} />
             {status.connected && <button type="button" onClick={() => load(true)} className="press flex items-center gap-1.5 text-[13px] text-fg-3 hover:text-fg"><ArrowsClockwiseIcon size={14} />{' '}{t('Refresh')}</button>}
@@ -94,7 +94,7 @@ export function BriefSheet({ personId, onClose }: { personId: string; onClose: (
             )}
           </div>
           {p && <p className="mt-5 text-center text-[12px] text-fg-4">{t('The brief is built from the card')}{' '}{fullName(p)}{' '}{t('and your history')}</p>}
-        </motion.div>
+        </mo.div>
       )}
     </Sheet>
   )

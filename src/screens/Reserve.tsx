@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CheckIcon, DownloadSimpleIcon, FileArrowUpIcon, ListChecksIcon, MagnifyingGlassIcon, PlusIcon, SortAscendingIcon, StarIcon, TagIcon, TrashIcon, VaultIcon, XCircleIcon,
@@ -211,7 +211,7 @@ export function Reserve() {
       {/* Bulk action bar */}
       <AnimatePresence>
         {selecting && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ type: 'spring', stiffness: 460, damping: 36 }}
+          <mo.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} transition={{ type: 'spring', stiffness: 460, damping: 36 }}
             className="fixed inset-x-0 bottom-[calc(92px+var(--safe-bottom))] z-40 flex justify-center px-4 lg:bottom-8 lg:pl-[264px]">
             <div className="glass-strong flex h-14 items-center gap-1 rounded-full pl-5 pr-1.5">
               <span className="tnum mr-2 text-[14.5px] font-medium">{selected.size ? t('Selected {size}', { size: selected.size }) : t('Choose people')}</span>
@@ -220,7 +220,7 @@ export function Reserve() {
               <BarBtn icon={TrashIcon} label={t('Delete')} danger disabled={!selected.size} onClick={removeSelected} />
               <button type="button" aria-label={t('Done')} onClick={exitSelect} className="press grid h-11 w-11 place-items-center rounded-full bg-fg text-ink"><CheckIcon size={18} weight="bold" /></button>
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
 

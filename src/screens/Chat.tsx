@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ArrowLeftIcon, ArrowUpIcon, MicrophoneIcon, StopIcon, TrashSimpleIcon } from '@phosphor-icons/react'
@@ -89,7 +89,7 @@ export function Chat() {
           {empty && <Welcome onPick={send} />}
           {(messages ?? []).map(m => <Bubble key={m.id} m={m} byId={byId} onFollow={send} />)}
           <AnimatePresence>
-            {pending && <motion.div key="p" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><AstraThinking kind="ask" /></motion.div>}
+            {pending && <mo.div key="p" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><AstraThinking kind="ask" /></mo.div>}
           </AnimatePresence>
           <div ref={end} />
         </div>
@@ -117,32 +117,32 @@ export function Chat() {
 
 function Welcome({ onPick }: { onPick: (q: string) => void }) {
   return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center pt-10 text-center">
+    <mo.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center pt-10 text-center">
       <AstraStar size={56} />
       <h1 className="display mt-5 text-[30px] leading-tight">{t('Ask what you remember')}<br />{t('about your people')}</h1>
       <p className="mt-3 max-w-[340px] text-[14.5px] leading-relaxed text-fg-3">{t("I know all your records: promises, conversations, agreements. I answer from them and don't make things up.")}</p>
       <div className="mt-7 flex w-full flex-col gap-2.5">
         {chatExamples().map((q, i) => (
-          <motion.button key={q} type="button" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }} onClick={() => onPick(q)}
-            className="press glass rounded-[22px] px-4 py-3.5 text-left text-[15px]">{q}</motion.button>
+          <mo.button key={q} type="button" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }} onClick={() => onPick(q)}
+            className="press glass rounded-[22px] px-4 py-3.5 text-left text-[15px]">{q}</mo.button>
         ))}
       </div>
-    </motion.div>
+    </mo.div>
   )
 }
 
 function Bubble({ m, byId, onFollow }: { m: ChatMessage; byId: Map<string, Person>; onFollow: (q: string) => void }) {
   if (m.role === 'user') {
     return (
-      <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="flex justify-end">
+      <mo.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} className="flex justify-end">
         <div className="max-w-[86%] whitespace-pre-line rounded-[22px] rounded-br-[8px] bg-white/[0.1] px-4 py-2.5 text-[15.5px] leading-relaxed">{m.text}</div>
-      </motion.div>
+      </mo.div>
     )
   }
   const cards = (m.cards ?? []).map(c => ({ ...c, p: byId.get(c.id) })).filter((c): c is { id: string; reason: string; p: Person } => !!c.p)
   const quotes = m.quotes ?? []
   return (
-    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-start gap-2.5">
+    <mo.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-start gap-2.5">
       <div className="max-w-[94%] rounded-[24px] rounded-bl-[8px] p-1" style={astraGlow}>
         <div className="whitespace-pre-line px-3.5 py-2.5 text-[15.5px] leading-relaxed">{m.text}</div>
       </div>
@@ -186,6 +186,6 @@ function Bubble({ m, byId, onFollow }: { m: ChatMessage; byId: Map<string, Perso
         </div>
       )}
       {m.source && <SourceBadge source={m.source} />}
-    </motion.div>
+    </mo.div>
   )
 }

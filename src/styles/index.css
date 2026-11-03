@@ -8,7 +8,8 @@
   --color-ink-2: #0b0c14;
   --color-fg: #f4f4f7;
   --color-fg-2: rgb(235 235 245 / 0.64);
-  --color-fg-3: rgb(235 235 245 / 0.40);
+  /* 0.54 keeps secondary text at 4.5:1 or better on the dark surfaces (0.40 measured 3.3:1) */
+  --color-fg-3: rgb(235 235 245 / 0.54);
   --color-fg-4: rgb(235 235 245 / 0.22);
   --color-line: rgb(255 255 255 / 0.075);
   --color-line-2: rgb(255 255 255 / 0.13);

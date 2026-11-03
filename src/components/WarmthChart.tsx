@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useId, useMemo, useRef, useState } from 'react'
 import type { WarmthPoint } from '@/data/history'
 import { WARMTH_COLORS } from '@/lib/colors'
@@ -98,17 +98,17 @@ export function WarmthChart({ points }: { points: WarmthPoint[] }) {
           if (p.activity <= 0) return null
           const h = Math.max(4, (p.activity / geo.maxAct) * BAR_H)
           return (
-            <motion.rect key={p.t} x={geo.x(i) - 1.8} y={H - PAD.b + 4 + BAR_H - h} width="3.6" height={h} rx="1.8" fill="rgb(255 255 255)" opacity={hover === i ? 0.7 : 0.28}
+            <mo.rect key={p.t} x={geo.x(i) - 1.8} y={H - PAD.b + 4 + BAR_H - h} width="3.6" height={h} rx="1.8" fill="rgb(255 255 255)" opacity={hover === i ? 0.7 : 0.28}
               initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} transition={{ duration: 0.7, delay: Math.min(i * 0.012, 0.6), ease: [0.22, 1, 0.36, 1] }}
               style={{ transformOrigin: 'center bottom', transformBox: 'fill-box' }} />
           )
         })}
 
-        {geo.area && <motion.path d={geo.area} fill={`url(#area-${id})`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.3 }} />}
+        {geo.area && <mo.path d={geo.area} fill={`url(#area-${id})`} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1, delay: 0.3 }} />}
         {geo.line && (
           <>
-            <motion.path d={geo.line} fill="none" stroke={`url(#line-${id})`} strokeWidth="5" strokeLinecap="round" opacity="0.5" filter={`url(#glow-${id})`} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }} />
-            <motion.path d={geo.line} fill="none" stroke={`url(#line-${id})`} strokeWidth="2.2" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }} />
+            <mo.path d={geo.line} fill="none" stroke={`url(#line-${id})`} strokeWidth="5" strokeLinecap="round" opacity="0.5" filter={`url(#glow-${id})`} initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }} />
+            <mo.path d={geo.line} fill="none" stroke={`url(#line-${id})`} strokeWidth="2.2" strokeLinecap="round" initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }} />
           </>
         )}
 

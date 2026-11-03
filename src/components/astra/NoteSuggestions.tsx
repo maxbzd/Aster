@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { BellSimpleIcon, CakeIcon, ChatTeardropTextIcon, GiftIcon, HandHeartIcon, HouseLineIcon, MagnifyingGlassIcon, SparkleIcon, TagIcon, type Icon } from '@phosphor-icons/react'
 import { astraNoteSuggest, quickNoteSuggestions } from '@/ai/astra'
@@ -87,14 +87,14 @@ export function NoteSuggestions({ text, person }: { text: string; person: Person
           {items.map(i => {
             const k = KIND[i.kind]
             return (
-              <motion.button key={keyOf(i)} type="button" layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
+              <mo.button key={keyOf(i)} type="button" layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.85 }}
                 onClick={() => apply(i)}
                 className="press flex max-w-full items-center gap-1.5 rounded-full border py-1.5 pl-2 pr-3 text-left text-[13px]"
                 style={{ borderColor: `color-mix(in srgb, ${k.color} 35%, transparent)`, background: `color-mix(in srgb, ${k.color} 10%, transparent)` }}>
                 <k.icon size={14} weight="bold" style={{ color: k.color }} className="shrink-0" />
                 <span className="truncate"><span className="text-fg-3">{k.label}:</span> {i.kind === 'birthday' && i.due_date ? i.due_date.replace(/^--/, '').split('-').reverse().join('.') : i.text}{i.kind === 'reminder' && i.due_date ? <span className="text-fg-3"> · {dateShort(fromISODate(i.due_date))}</span> : null}</span>
                 <span className="ml-0.5 shrink-0 font-semibold" style={{ color: k.color }}>+</span>
-              </motion.button>
+              </mo.button>
             )
           })}
         </AnimatePresence>

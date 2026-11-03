@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { CameraIcon, PlusIcon, TrashIcon, XIcon } from '@phosphor-icons/react'
@@ -188,9 +188,9 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
       {/* Additional sections */}
       <AnimatePresence initial={false}>
         {[...shown].map(k => (
-          <motion.div key={k} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+          <mo.div key={k} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <ExtraSection k={k} draft={draft} set={set} />
-          </motion.div>
+          </mo.div>
         ))}
       </AnimatePresence>
 
