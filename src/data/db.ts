@@ -1,5 +1,5 @@
 import Dexie, { type DexieOptions, type EntityTable } from 'dexie'
-import { backendFactory, backendKeyRange } from '@/vault/backend'
+import { backendFactory, backendKeyRange, initBackend } from '@/vault/backend'
 import type { AiCacheEntry, AiUsage, Capture, ChatMessage, Circle, Collection, Interaction, Intro, Lead, NetEvent, Person, Reminder, Settings } from './types'
 
 export class AsterDB extends Dexie {
@@ -73,6 +73,7 @@ export interface OutboxEntry {
 export interface SyncMetaEntry { key: string; value: unknown }
 
 // The storage underneath is chosen when the database is first opened: the browser's own, or (with encryption on) a memory copy.
+initBackend('aster.vault')
 export const db = new AsterDB('aster', { indexedDB: backendFactory, IDBKeyRange: backendKeyRange })
 
 export const uid = () =>
