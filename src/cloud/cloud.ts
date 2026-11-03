@@ -149,6 +149,7 @@ export async function setNewPassword(password: string): Promise<void> {
 
 export const syncNow = () => controller?.syncNow() ?? Promise.resolve()
 export const resync = () => controller?.resync() ?? Promise.resolve()
+export const reencryptCloud = () => controller?.reencrypt() ?? Promise.resolve()
 
 export class UnsyncedError extends Error {
   constructor(public pending: number) {
