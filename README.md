@@ -96,6 +96,7 @@ Astra has two brains. The **basic brain** runs on your device, is free and sends
 
 ## Privacy and your data
 
+- **Protect this device** encrypts everything on it with a password, a passkey or a recovery key; **encrypted backups** and **encrypted cloud data** do the same for files and for your own server. What each protects, and where it ends: [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
 - With no cloud configured, nothing leaves your device. There is no analytics and no telemetry.
 - When you use a cloud model, only what is needed for the task is sent: one person's card or a compact list of your network
   without phone numbers or emails. You can turn off sharing of notes and history. Astra produces drafts only and never sends messages.
