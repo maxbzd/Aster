@@ -27,6 +27,7 @@ export type SheetState =
   | { kind: 'claude' }
   | { kind: 'backup' }
   | { kind: 'vault' }
+  | { kind: 'syncHistory' }
   | { kind: 'restore'; mode: 'replace' | 'merge'; file: unknown }
   | { kind: 'lead'; id: ID }
   | { kind: 'leadEdit'; id?: ID; smart?: string; keep?: { source?: string; tags?: string[] } }
