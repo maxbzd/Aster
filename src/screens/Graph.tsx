@@ -1,5 +1,5 @@
 import { AnimatePresence, m as mo } from 'motion/react'
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ArrowRightIcon, GraphIcon, XIcon } from '@phosphor-icons/react'
 import { Page } from '@/components/Page'
@@ -89,7 +89,7 @@ export function Graph() {
           </div>
 
           <div className="relative mt-4 overflow-hidden rounded-[30px] border border-line" style={{ background: 'radial-gradient(90% 70% at 50% 30%, rgb(124 92 255 / 0.10), transparent 70%), rgb(8 9 16 / 0.9)' }} onClick={() => { setSel(null); setFocus(null) }}>
-            <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', height: 'auto' }} role="img" aria-label={t('Graph of connections between people')}>
+            <svg viewBox={`0 0 ${W} ${H}`} width="100%" style={{ display: 'block', height: 'auto' }} role="group" aria-label={t('Graph of connections between people')}>
               <defs>
                 {g.clusters.map(c => {
                   const col = clusterColor(c.id)
@@ -143,19 +143,26 @@ export function Graph() {
                 const on = lit(p.id)
                 const isSel = sel === p.id
                 return (
-                  <mo.g key={p.id} style={{ cursor: 'pointer', transformBox: 'fill-box', transformOrigin: 'center' }}
+                  <Fragment key={p.id}>
+                  <mo.g style={{ cursor: 'pointer', transformBox: 'fill-box', transformOrigin: 'center' }}
                     initial={{ scale: 0, opacity: 0 }} animate={{ scale: isSel ? 1.25 : 1, opacity: on ? 1 : 0.18 }}
                     transition={{ type: 'spring', stiffness: 380, damping: 24, delay: isSel ? 0 : 0.12 + i * 0.018 }}
+                    // a person in the graph is a button for the keyboard and for screen readers too; the name starts with the initials
+                    // drawn on it, so that "click AB" works by voice
+                    role="button" tabIndex={0} aria-pressed={isSel} aria-label={`${(p.firstName[0] ?? '') + (p.lastName?.[0] ?? '')}, ${fullName(p)}`}
+                    onKeyDown={ev => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ev.stopPropagation(); haptic(8); setSel(isSel ? null : p.id) } }}
                     onClick={ev => { ev.stopPropagation(); haptic(8); setSel(isSel ? null : p.id) }}>
                     {isBridge && (
                       <circle className="pulse-ring ambient" cx={pt.x} cy={pt.y} r={r + 3} fill="none" stroke="#ffd9a8" strokeWidth="1.2" />
                     )}
                     <circle cx={pt.x} cy={pt.y} r={r} fill={`url(#node-${cl})`} stroke={isSel ? '#fff' : '#05060a'} strokeWidth={isSel ? 2 : 1.6} />
                     <text x={pt.x} y={pt.y + 3} textAnchor="middle" fontSize={Math.max(7.5, r * 0.78)} fontWeight="700" fill="#fff" style={{ pointerEvents: 'none' }}>{(p.firstName[0] ?? '') + (p.lastName?.[0] ?? '')}</text>
-                    {(isBridge || isSel) && (
-                      <text x={pt.x} y={pt.y + r + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#f5f5fa" opacity="0.9" style={{ pointerEvents: 'none', paintOrder: 'stroke', stroke: '#05060a', strokeWidth: 3 }}>{p.firstName}</text>
-                    )}
                   </mo.g>
+                  {/* the name under a bridge or a chosen person is not part of the button (its name already says who it is) */}
+                  {(isBridge || isSel) && (
+                    <text aria-hidden="true" x={pt.x} y={pt.y + r + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#f5f5fa" opacity="0.9" style={{ pointerEvents: 'none', paintOrder: 'stroke', stroke: '#05060a', strokeWidth: 3 }}>{p.firstName}</text>
+                  )}
+                  </Fragment>
                 )
               })}
             </svg>

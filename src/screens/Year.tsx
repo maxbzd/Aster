@@ -1,4 +1,4 @@
-import { AnimatePresence, m as mo } from 'motion/react'
+import { AnimatePresence, m as mo, useReducedMotion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { XIcon } from '@phosphor-icons/react'
@@ -48,19 +48,21 @@ export function Year() {
   const slides = useMemo(() => SLIDES.filter(s => s.show(review)), [review])
 
   const [idx, setIdx] = useState(0)
-  // the progress bar moves directly through a ref: there is no need to re-render the whole screen 60 times a second
-  const bar = useRef<HTMLDivElement>(null)
   const [copied, setCopied] = useState(false)
-  const paused = useRef(false)
-  const elapsed = useRef(0)
-  const lastTick = useRef(0)
+  // holding the screen, or leaving the tab, pauses the slide; with "reduce motion" nothing advances by itself
+  const [held, setHeld] = useState(false)
+  const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden)
+  const reduced = useReducedMotion()
   const press = useRef<{ t: number; x: number } | null>(null)
+  useEffect(() => {
+    const onVisibility = () => setHidden(document.hidden)
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [])
   const safeIdx = Math.min(idx, slides.length - 1)
   const isLast = safeIdx === slides.length - 1
 
   const go = useCallback((to: number) => {
-    elapsed.current = 0
-    if (bar.current) bar.current.style.transform = 'scaleX(0)'
     setIdx(Math.max(0, Math.min(slides.length - 1, to)))
   }, [slides.length])
   const next = useCallback(() => { haptic(5); go(safeIdx + 1) }, [go, safeIdx])
@@ -68,24 +70,6 @@ export function Year() {
   const close = useCallback(() => nav(-1), [nav])
 
   useEffect(() => { go(0) }, [year]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // the timer runs while the screen is not pressed and the tab is open; it does not advance on the last slide
-  useEffect(() => {
-    if (isLast) return
-    let raf = 0
-    lastTick.current = performance.now()
-    const tick = (value: number) => {
-      const dt = value - lastTick.current
-      lastTick.current = value
-      if (!paused.current && !document.hidden) elapsed.current += dt
-      const p = Math.min(1, elapsed.current / SLIDE_MS)
-      if (bar.current) bar.current.style.transform = `scaleX(${p})`
-      if (p >= 1) { go(safeIdx + 1); return }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [safeIdx, isLast, go])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -111,10 +95,10 @@ export function Year() {
   const onDown = (e: React.PointerEvent) => {
     if ((e.target as HTMLElement).closest('a,button,[data-nav-ignore]')) { press.current = null; return }
     press.current = { t: performance.now(), x: e.clientX }
-    paused.current = true
+    setHeld(true)
   }
   const onUp = (e: React.PointerEvent) => {
-    paused.current = false
+    setHeld(false)
     const p = press.current
     press.current = null
     if (!p) return
@@ -125,7 +109,7 @@ export function Year() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] select-none overflow-hidden bg-[#05060a] text-white" onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={() => { paused.current = false; press.current = null }} role="presentation">
+    <div className="fixed inset-0 z-[60] select-none overflow-hidden bg-[#05060a] text-white" onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={() => { setHeld(false); press.current = null }} role="presentation">
       {/* slide background: three drifting spots of colour */}
       <AnimatePresence initial={false}>
         <mo.div key={slide.key} aria-hidden className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.9 }}>
@@ -139,7 +123,14 @@ export function Year() {
       <div className="absolute inset-x-0 top-0 z-10 flex gap-1.5 px-4 pt-[calc(14px+var(--safe-top))]">
         {slides.map((s, i) => (
           <div key={s.key} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/25">
-            <div ref={i === safeIdx ? bar : undefined} className="h-full w-full origin-left rounded-full bg-white will-change-transform" style={{ transform: i < safeIdx || (i === safeIdx && isLast) ? 'scaleX(1)' : 'scaleX(0)' }} />
+            {i === safeIdx && !isLast && !reduced ? (
+              // the browser runs this on its own (no script per frame); when it ends, the next slide begins
+              <div key={`${year}-${s.key}`} data-testid="slide-progress" className="year-progress h-full w-full origin-left rounded-full bg-white will-change-transform"
+                style={{ animationDuration: `${SLIDE_MS}ms`, animationPlayState: held || hidden ? 'paused' : 'running' }}
+                onAnimationEnd={() => go(safeIdx + 1)} />
+            ) : (
+              <div className="h-full w-full origin-left rounded-full bg-white" style={{ transform: i < safeIdx || (i === safeIdx && (isLast || reduced)) ? 'scaleX(1)' : 'scaleX(0)' }} />
+            )}
           </div>
         ))}
       </div>

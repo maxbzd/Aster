@@ -17,8 +17,11 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}', 'api/**/*.ts'],
-      exclude: ['src/main.tsx', 'src/data/demo/**', 'src/**/*.d.ts'],
+      // the eval harness and its screen are developer tools that call real models: they are run by hand (npm run eval)
+      exclude: ['src/main.tsx', 'src/data/demo/**', 'src/**/*.d.ts', 'src/ai/eval/**', 'src/screens/Eval.tsx'],
       reporter: ['text-summary', 'html', 'json-summary'],
+      // a floor, not a goal: coverage may only go up (measured 77.9 / 69.5 / 70.3 / 82.0 on 3 Nov 2026)
+      thresholds: { statements: 77, branches: 68, functions: 69, lines: 81 },
     },
   },
 })
