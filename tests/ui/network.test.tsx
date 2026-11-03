@@ -149,6 +149,9 @@ describe('backups in the app', () => {
     await seed({ demo: true })
     const { user } = renderApp('/me')
     await user.click(await screen.findByText('Резервная копия'))
+    // the row opens a sheet; an encrypted file is the default, a plain one is a choice
+    await user.click(await screen.findByText('Обычный файл'))
+    await user.click(screen.getByRole('button', { name: 'Сохранить файл копии' }))
     await waitFor(() => expect(downloaded()).toHaveLength(1))
     expect(downloaded()[0][0]).toMatch(/^aster-backup-\d{4}-\d{2}-\d{2}\.json$/)
     expect(JSON.parse(downloaded()[0][1] as string).app).toBe('aster')
@@ -156,11 +159,13 @@ describe('backups in the app', () => {
     expect(await screen.findByText(/последняя/)).toBeInTheDocument()
   })
 
-  it('the backup reminder on the home screen: shown, downloads, can be closed', async () => {
+  it('the backup reminder on the home screen: shown, opens the backup sheet, goes away once a backup is saved', async () => {
     await seed({ demo: true })
     const { user } = renderApp('/')
     expect(await screen.findByText(/Данные живут только на этом устройстве/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Скачать' }))
+    await user.click(await screen.findByText('Обычный файл'))
+    await user.click(screen.getByRole('button', { name: 'Сохранить файл копии' }))
     await waitFor(() => expect(downloaded()).toHaveLength(1))
     await waitFor(() => expect(screen.queryByText(/Данные живут только на этом устройстве/)).not.toBeInTheDocument())
   })
