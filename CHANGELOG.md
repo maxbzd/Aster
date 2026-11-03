@@ -4,6 +4,12 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 
 ## [Unreleased]
 
+### Added (encryption)
+
+- Encrypted backups. **Profile → Backup** now offers an encrypted file (Argon2id → AES-256-GCM, the password is chosen when saving) or a plain one. Restoring recognises an encrypted file and asks for the password.
+- Automatic copies into a folder (Chrome, Edge, Android Chrome): an encrypted copy every day without asking for a password. Each is sealed to a public key (X25519 + ML-KEM-768, so it also holds against a future quantum computer); the matching private key exists only as a passphrase you choose, and is needed only to restore. The last 14 copies are kept. The folder and key stay on the device and are not part of backups or sync.
+- A shared crypto layer in `src/crypto/` (password sealing, hybrid sealing to a public key) with tests.
+
 ### Fixed
 
 - Russian notes: a city after a bare "в" / "из" ("дизайнер в Берлине") is now found, "Вены" and "Рима" match (JavaScript's `\\b` does not see Cyrillic), and "логистической" counts as logistics.

@@ -21,7 +21,7 @@ import {
   coolingClose, dueContacts, healthLabel, networkHealth, personOfTheDay, warmthOf, WARMTH_LABEL, contactAnchor } from '@/data/logic'
 import { WARMTH_COLORS } from '@/lib/colors'
 import { ago, dateLong, daysBetween, greeting, jobLine, weekday, dateShort } from '@/lib/format'
-import { backupToFile, saveSettings, snooze } from '@/data/actions'
+import { saveSettings, snooze } from '@/data/actions'
 import { useQuickLog } from '@/app/reach'
 import { useUI } from '@/app/store'
 import { OrbitaSuggestionsCard } from '@/bridge/Bits'
@@ -61,7 +61,6 @@ export function Today() {
   // birthdays (family's included) and important dates: anniversaries, name days, jubilees
   const dates = useMemo(() => upcomingDates(everyone ?? [], 30, now), [everyone, now])
   const potd = useMemo(() => personOfTheDay((people ?? []).filter(p => !due.slice(0, 3).some(d => d.p.id === p.id)), now), [people, due, now])
-  const toast = useUI(s => s.toast)
   const cloudOn = useCloud(c => !!c.userId)
   // Safari in a tab may delete everything after 7 idle days: remind to install, and ask for backups sooner and more often
   const atRisk = useMemo(() => isDataAtRisk(), [])
@@ -133,7 +132,7 @@ export function Today() {
               <motion.div variants={stagger.item} className="glass mt-5 flex items-center gap-3 rounded-[22px] py-3 pl-4 pr-3">
                 <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-warm/15 text-warm"><CloudArrowDownIcon size={18} /></span>
                 <span className="min-w-0 flex-1 text-[13.5px] leading-snug text-fg-2">{settings?.lastBackupAt ? t('Your backup is out of date.') : t('Your data lives only on this device.')}{' '}{t('Save a copy — it takes 5 seconds.')}</span>
-                <button type="button" onClick={async () => { await backupToFile(); toast(t('Backup saved')) }} className="press hit rounded-full bg-fg px-3.5 py-2 text-[13px] font-semibold text-ink">{t('Download')}</button>
+                <button type="button" onClick={() => useUI.getState().open({ kind: 'backup' })} className="press hit rounded-full bg-fg px-3.5 py-2 text-[13px] font-semibold text-ink">{t('Download')}</button>
                 <button type="button" aria-label={t('Remind me later')} onClick={() => saveSettings({ backupSnoozeUntil: Date.now() + (atRisk ? 4 : 14) * 86400000 })} className="press hit grid h-8 w-8 shrink-0 place-items-center rounded-full text-fg-3"><XIcon size={14} /></button>
               </motion.div>
             )}

@@ -33,7 +33,7 @@ export interface Remote {
 }
 
 /** Settings fields that live only on this device (API keys, the date of the last backup file). */
-export const DEVICE_ONLY_SETTINGS = ['ai', 'stt', 'voice', 'lastBackupAt', 'backupSnoozeUntil'] as const
+export const DEVICE_ONLY_SETTINGS = ['ai', 'stt', 'voice', 'lastBackupAt', 'backupSnoozeUntil', 'autoBackup'] as const
 const isDeviceOnly = (path: string) => DEVICE_ONLY_SETTINGS.some(k => path === k || path.startsWith(`${k}.`))
 
 /** The server rejected a record for good (bad format, too large): retrying will not help, and it is not a network failure. */

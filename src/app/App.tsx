@@ -111,6 +111,15 @@ function Shell() {
     useUI.getState().toast(returnText(r), r === 'ok' ? 'check' : 'info')
     useUI.getState().open({ kind: 'ticktick' })
   }, [onboarded])
+  // an encrypted copy into the chosen folder, if one is due (it is lazy: most people never set it up)
+  useEffect(() => {
+    if (!onboarded) return
+    const run = () => { void import('@/data/autoBackup').then(m => m.runAutoBackup()) }
+    run()
+    const onVisible = () => { if (document.visibilityState === 'visible') run() }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [onboarded])
   // ask the browser not to clear storage: all the data lives only there
   useEffect(() => { if (onboarded) navigator.storage?.persist?.().catch(() => undefined) }, [onboarded])
   // after the first render, load the remaining screens and sheets in the background: transitions are instant and offline works

@@ -10,7 +10,7 @@ import { Avatar } from '@/components/Avatar'
 import { Aurora } from '@/components/Aurora'
 import { Group, Row } from '@/components/ui'
 import { useAllInteractions, useCircles, useCounts, usePeople, useSettings } from '@/data/hooks'
-import { BackupError, backupToFile, importBackup, saveSettings, wipeAll } from '@/data/actions'
+import { BackupError, importBackup, saveSettings, wipeAll } from '@/data/actions'
 import { toVCard } from '@/data/vcard'
 import { leadsToCSV } from '@/data/leads'
 import { db } from '@/data/db'
@@ -29,6 +29,7 @@ import { useAstraStatus } from '@/ai/hooks'
 import { cloudEnabled } from '@/cloud/config'
 import { LanguagePicker } from '@/components/LanguagePicker'
 import { isDataAtRisk } from '@/lib/storage'
+import { isEncryptedBackup } from '@/data/backupFormat'
 import { t, tn } from '@/i18n'
 
 export function Me() {
@@ -66,10 +67,7 @@ export function Me() {
     open({ kind: 'importVcf', text: await f.text() })
   }
 
-  const backup = async () => {
-    await backupToFile()
-    toast(t('Backup saved'))
-  }
+  const backup = () => open({ kind: 'backup' })
 
   const restore = async (mode: 'replace' | 'merge') => {
     const f = await pickFile('application/json,.json')
@@ -77,6 +75,7 @@ export function Me() {
     try {
       let data: unknown
       try { data = JSON.parse(await f.text()) } catch { throw new BackupError(t("This file doesn't look like an Aster backup")) }
+      if (isEncryptedBackup(data)) { open({ kind: 'restore', mode, file: data }); return }
       const n = await importBackup(data, { mode })
       toast(mode === 'merge' ? t('Added from the backup: {v}', { v: n }) : t('Data restored'))
     } catch (e) {
