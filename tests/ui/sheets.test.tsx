@@ -1,218 +1,132 @@
 import { act, screen, waitFor, within } from '@testing-library/react'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { useUI, type SheetState } from '@/app/store'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { useUI } from '@/app/store'
 import { db } from '@/data/db'
-import { openChannel } from '@/lib/contact'
-import { seed, renderApp, watchConsole } from './harness'
+import { t } from '@/i18n'
+import { personOf } from '../cloud/rows'
+import { renderApp, seed } from './harness'
 
-vi.mock('@/lib/contact', async orig => ({ ...(await orig<typeof import('@/lib/contact')>()), openChannel: vi.fn() }))
+const dialog = () => within(screen.getByRole('dialog'))
+const open = (sheet: Parameters<ReturnType<typeof useUI.getState>['open']>[0]) => act(() => useUI.getState().open(sheet))
 
-const dialog = () => screen.findByRole('dialog')
-const open = (s: Exclude<SheetState, null>) => act(() => useUI.getState().open(s))
-const byName = async (name: string) => (await db.people.filter(p => p.firstName === name).first())!
+beforeEach(() => seed({ demo: false }))
+afterEach(() => { act(() => useUI.getState().close()) })
 
-describe('Astra: connecting a model', () => {
-  beforeEach(() => seed({ demo: true }))
+describe('lists', () => {
+  it('refuses a list without a name, then creates it with the people chosen for it', async () => {
+    await db.people.bulkAdd([personOf('p1', { firstName: 'Ольга' }), personOf('p2', { firstName: 'Игорь' })])
+    const { user } = renderApp('/people')
+    await screen.findByText(/Ольга/)
+    open({ kind: 'collectionEdit', addPersonIds: ['p1', 'p2'] })
+    await screen.findByRole('dialog')
+    await user.click(dialog().getByRole('button', { name: t('Create list') }))
+    expect(await dialog().findByText(t('Give the list a name'))).toBeInTheDocument()
+    expect(await db.collections.count()).toBe(0)
 
-  it('modes, key, consent and model are saved; the check is unavailable without consent', async () => {
-    const bad = watchConsole()
-    const { user } = renderApp('/me')
-    await screen.findByText('Профиль')
-    await user.click(await screen.findByText('Астра'))
-    const d = within(await dialog())
-    expect(d.getByText('Работает на устройстве')).toBeInTheDocument()
-    await user.click(d.getByRole('button', { name: 'Свой ключ' }))
-    const key = await d.findByPlaceholderText('sk-ant-…')
-    expect(key).toHaveAttribute('type', 'password')
-    await user.click(d.getByRole('button', { name: 'Показать' }))
-    expect(key).toHaveAttribute('type', 'text')
-    await user.type(key, 'sk-ant-test')
-    expect(d.getByRole('button', { name: 'Проверить подключение' })).toBeDisabled()
-    await user.click(d.getByText('Понимаю, как обрабатываются данные'))
-    await waitFor(() => expect(d.getByRole('button', { name: 'Проверить подключение' })).toBeEnabled())
-    await user.click(d.getByText('Claude Sonnet 5.5'))
-    await user.click(d.getByText('Искать новости о людях'))
-    await waitFor(async () => {
-      const ai = (await db.settings.get('me'))?.ai
-      expect(ai).toMatchObject({ mode: 'key', apiKey: 'sk-ant-test', model: 'claude-sonnet-5-5', webSearch: true })
-      expect(ai?.consentAt).toBeGreaterThan(0)
-    })
-    expect((await screen.findAllByText(/Подключена/)).length).toBeGreaterThan(0)
-    expect(bad).toEqual([])
+    await user.type(dialog().getByLabelText(t('List name')), 'К ужину')
+    await user.click(dialog().getByRole('button', { name: t('Create list') }))
+    await waitFor(async () => expect(await db.collections.count()).toBe(1))
+    const list = (await db.collections.toArray())[0]!
+    expect(list.name).toContain('К ужину')
+    expect(list.personIds.sort()).toEqual(['p1', 'p2'])
   })
 
-  it('the "Proxy" mode (hidden until chosen) asks for an address and a token', async () => {
-    const me = (await db.settings.get('me'))!
-    await db.settings.put({ ...me, ai: { mode: 'proxy', model: 'claude-opus-5-5', shareNotes: true, webSearch: false } })
-    const { user } = renderApp('/me')
-    await user.click(await screen.findByText('Астра'))
-    const d = within(await dialog())
-    expect(d.getByRole('button', { name: 'Прокси' })).toBeInTheDocument()
-    expect(await d.findByPlaceholderText(/aster.example.com/)).toBeInTheDocument()
-    expect(d.getByPlaceholderText('пароль к серверу')).toHaveAttribute('type', 'password')
-  })
+  it('a quick-start preset fills in the name, and a list can be deleted without losing its people', async () => {
+    await db.people.add(personOf('p1', { firstName: 'Ольга' }))
+    const { user } = renderApp('/people')
+    await screen.findByText(/Ольга/)
+    open({ kind: 'collectionEdit', addPersonIds: ['p1'] })
+    await screen.findByRole('dialog')
+    const quick = dialog().getByText(t('Quick start')).parentElement!
+    const preset = within(quick).getAllByRole('button')[0]!
+    await user.click(preset)
+    expect((dialog().getByLabelText(t('List name')) as HTMLInputElement).value).not.toBe('') // the preset named it
+    await user.click(dialog().getByRole('button', { name: t('Create list') }))
+    await waitFor(async () => expect(await db.collections.count()).toBe(1))
+    const id = (await db.collections.toArray())[0]!.id
 
-  it('"Device" hides the cloud settings, withdrawing consent turns Astra off', async () => {
-    const { user } = renderApp('/me')
-    await user.click(await screen.findByText('Астра'))
-    const d = within(await dialog())
-    await user.click(d.getByRole('button', { name: 'Свой ключ' }))
-    await user.type(await d.findByPlaceholderText('sk-ant-…'), 'k')
-    await user.click(d.getByText('Понимаю, как обрабатываются данные'))
-    await waitFor(async () => expect((await db.settings.get('me'))?.ai?.consentAt).toBeDefined())
-    await user.click(d.getByText('Понимаю, как обрабатываются данные'))
-    await waitFor(async () => expect((await db.settings.get('me'))?.ai?.consentAt).toBeUndefined())
-    await user.click(d.getByRole('button', { name: 'Устройство' }))
-    await waitFor(() => expect(d.queryByPlaceholderText('sk-ant-…')).not.toBeInTheDocument())
+    act(() => useUI.getState().close())
+    open({ kind: 'collectionEdit', id })
+    await user.click(await dialog().findByRole('button', { name: t('Delete list') }))
+    await user.click(await dialog().findByRole('button', { name: t('Really delete? The people stay') }))
+    await waitFor(async () => expect(await db.collections.count()).toBe(0))
+    expect(await db.people.get('p1')).toBeDefined()
   })
 })
 
-describe('Circles', () => {
-  beforeEach(() => seed({ demo: true }))
-  it('a new circle, renaming, order, colour, deleting removes the circle from people', async () => {
-    const { user } = renderApp('/me')
-    await user.click(await screen.findByText('Круги'))
-    const d = within(await dialog())
-    const before = await db.circles.count()
-    await user.click(d.getByRole('button', { name: 'Новый круг' }))
-    await waitFor(async () => expect(await db.circles.count()).toBe(before + 1))
-    const input = await d.findByDisplayValue('Новый круг')
-    await user.clear(input)
-    await user.type(input, 'Соседи')
-    expect(input).toHaveValue('Соседи') // letters are not lost while the database write "catches up"
-    await waitFor(async () => expect((await db.circles.filter(c => c.name === 'Соседи').count())).toBe(1))
-    await user.click(await d.findByRole('button', { name: 'Океан' }))
-    await waitFor(async () => expect((await db.circles.filter(c => c.name === 'Соседи').first())?.palette).toBe('ocean'))
-    // order: move up
-    const circle = (await db.circles.filter(c => c.name === 'Соседи').first())!
-    await user.click(d.getAllByRole('button', { name: 'Выше' })[d.getAllByRole('button', { name: 'Выше' }).length - 1])
-    await waitFor(async () => expect((await db.circles.get(circle.id))?.order).toBeLessThan(before))
-    // deletion
-    const work = (await db.circles.filter(c => c.name === 'Работа').first())!
-    expect(await db.people.where('circleIds').equals(work.id).count()).toBeGreaterThan(0)
-    await user.click(d.getAllByRole('button', { name: 'Удалить круг' })[0])
-    await waitFor(async () => expect(await db.circles.get(work.id)).toBeUndefined())
-    await waitFor(async () => expect(await db.people.where('circleIds').equals(work.id).count()).toBe(0))
+describe('changing several people at once', () => {
+  it('shows what will change in words, then applies it to everyone chosen and to nobody else', async () => {
+    await db.people.bulkAdd([personOf('a', { firstName: 'Анна' }), personOf('b', { firstName: 'Борис' }), personOf('c', { firstName: 'Вера' })])
+    const { user } = renderApp('/people')
+    await screen.findByText(/Анна/)
+    open({ kind: 'bulk', personIds: ['a', 'b'] })
+    await screen.findByRole('dialog')
+    const apply = await dialog().findByRole('button', { name: t('Fill in at least one field') })
+    expect(apply).toBeDisabled()
+
+    await user.type(dialog().getAllByPlaceholderText(t("Don't change"))[0]!, 'Лиссабон')
+    await user.type(dialog().getByPlaceholderText(t('investor, dubai')), 'инвестор, друг')
+    expect(await dialog().findByText(/Лиссабон/, { selector: 'div' })).toBeInTheDocument()
+    await user.click(dialog().getByRole('button', { name: t('Apply to {count}', { count: 2 }) }))
+
+    await waitFor(async () => expect((await db.people.get('a'))?.city).toBe('Лиссабон'))
+    expect((await db.people.get('b'))?.city).toBe('Лиссабон')
+    expect((await db.people.get('a'))?.tags).toEqual(expect.arrayContaining(['инвестор', 'друг']))
+    expect((await db.people.get('c'))?.city).toBeFalsy()
   })
 })
 
-describe('Introduction: the "Introduce" sheet', () => {
-  beforeEach(() => seed({ demo: true }))
-  it('three messages; "Send" copies and marks the pair as "asked"; "Introduced" creates a link', async () => {
-    const hasan = await byName('Хасан')
-    const mark = await byName('Марк')
-    const { user } = renderApp('/')
-    await screen.findByText(/тонус сети/i)
-    open({ kind: 'intro', aId: hasan.id, bId: mark.id, reason: 'Хасан ищет инвестора', value: 'Взаимная польза' })
-    const d = within(await dialog())
-    const box = await d.findByRole('textbox')
-    expect((box as HTMLTextAreaElement).value).toContain('Хасан')
-    await user.click(d.getByRole('button', { name: 'Марк' }))
-    await waitFor(() => expect((d.getByRole('textbox') as HTMLTextAreaElement).value).toContain('Марк'))
-    await user.click(d.getByRole('button', { name: 'Отправить' }))
-    await waitFor(() => expect(openChannel).toHaveBeenCalled())
-    await waitFor(async () => expect((await db.intros.toArray())[0]?.status).toBe('asked'))
-    open({ kind: 'intro', aId: hasan.id, bId: mark.id, reason: 'Хасан ищет инвестора', value: 'Взаимная польза' })
-    await user.click(await within(await dialog()).findByRole('button', { name: 'Познакомлены' }))
-    await waitFor(async () => expect((await db.intros.toArray())[0]?.status).toBe('done'))
-    await waitFor(async () => expect((await db.people.get(hasan.id))?.links.some(l => l.personId === mark.id)).toBe(true))
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+describe('duplicates', () => {
+  it('finds the same person under two cards, merges them into one and keeps what both knew', async () => {
+    await db.people.bulkAdd([
+      personOf('d1', { firstName: 'Алексей', lastName: 'Петров', channels: [{ type: 'email', value: 'alex@example.com' }] }),
+      personOf('d2', { firstName: 'Alexey', lastName: 'Petrov', city: 'Берлин' }),
+      personOf('x', { firstName: 'Мария' }),
+    ])
+    const { user } = renderApp('/people')
+    await screen.findByText(/Мария/)
+    open({ kind: 'dedupe' })
+    await screen.findByRole('dialog')
+    expect((await dialog().findAllByText(/Алексей|Alexey/)).length).toBeGreaterThan(0)
+    await user.click(await dialog().findByRole('button', { name: new RegExp(`^${t('Merge')}`) }))
+    await waitFor(async () => expect(await db.people.count()).toBe(2))
+    const left = (await db.people.toArray()).find(p => /Алексей|Alexey/.test(p.firstName))!
+    expect(left.city).toBe('Берлин') // empty fields are filled from the other card
+    expect(left.channels).toEqual([{ type: 'email', value: 'alex@example.com' }])
+  })
+
+  it('says so when there are none', async () => {
+    await db.people.bulkAdd([personOf('a', { firstName: 'Анна' }), personOf('b', { firstName: 'Борис' })])
+    renderApp('/people')
+    await screen.findByText(/Анна/)
+    open({ kind: 'dedupe' })
+    expect(await dialog().findByText(t('No duplicates'))).toBeInTheDocument()
   })
 })
 
-describe('Import .vcf', () => {
-  beforeEach(() => seed({ demo: true }))
-  const vcf = ['BEGIN:VCARD', 'FN:Новая Контактова', 'TEL:+7 900 111 22 33', 'END:VCARD', 'BEGIN:VCARD', 'FN:Алина Воронцова', 'END:VCARD'].join('\r\n')
-  it('shows what was found, skips those already existing by name and adds the rest', async () => {
-    const { user } = renderApp('/')
-    await screen.findByText(/тонус сети/i)
-    const before = await db.people.count()
-    open({ kind: 'importVcf', text: vcf })
-    const d = within(await dialog())
-    expect(await d.findByText(/Нашёл 2 контакта, новых — 1/)).toBeInTheDocument()
-    await user.click(d.getByRole('button', { name: 'Добавить 1' }))
-    await waitFor(async () => expect(await db.people.count()).toBe(before + 1))
-    const added = await db.people.filter(p => p.firstName === 'Новая').first()
-    expect(added).toMatchObject({ lastName: 'Контактова', closeness: 4 })
+describe('preferences, dates and family', () => {
+  it('saves hobbies and allergies for a person', async () => {
+    await db.people.add(personOf('p1', { firstName: 'Ольга' }))
+    const { user } = renderApp('/people')
+    await screen.findByText(/Ольга/)
+    open({ kind: 'prefs', personId: 'p1' })
+    await screen.findByRole('dialog')
+    const hobby = await dialog().findByPlaceholderText(t('Add a hobby and press Enter'))
+    await user.type(hobby, 'керамика{Enter}')
+    await user.type(dialog().getByPlaceholderText(t("Gluten, nuts, doesn't eat meat")), 'орехи')
+    await user.click(dialog().getByRole('button', { name: t('Save') }))
+    await waitFor(async () => expect((await db.people.get('p1'))?.prefs?.hobbies).toContain('керамика'))
+    expect((await db.people.get('p1'))?.prefs?.allergies ?? '').toContain('орехи')
   })
-  it('an empty file: a clear message and an inactive button', async () => {
-    renderApp('/')
-    await screen.findByText(/тонус сети/i)
-    open({ kind: 'importVcf', text: 'ничего' })
-    const d = within(await dialog())
-    expect(await d.findByText('В файле нет контактов')).toBeInTheDocument()
-    expect(d.getByRole('button', { name: 'Добавить 0' })).toBeDisabled()
+
+  it('adds a member of the family as a separate person linked to the owner', async () => {
+    await db.people.add(personOf('p1', { firstName: 'Ольга' }))
+    const { user } = renderApp('/people')
+    await screen.findByText(/Ольга/)
+    open({ kind: 'family', ownerId: 'p1' })
+    await screen.findByRole('dialog')
+    await user.type(dialog().getByPlaceholderText(t('Eve')), 'Маша')
+    await user.click(dialog().getByRole('button', { name: t('Add') }))
+    await waitFor(async () => expect((await db.people.toArray()).some(p => p.familyOf === 'p1' && p.firstName === 'Маша')).toBe(true))
   })
 })
-
-describe('Brief and draft', () => {
-  beforeEach(() => seed({ demo: true }))
-  it('the pre-meeting brief is built from the card', async () => {
-    const nina = await byName('Нина')
-    const { user } = renderApp(`/person/${nina.id}`)
-    await user.click(await screen.findByRole('button', { name: 'Бриф' }))
-    const d = within(await dialog())
-    expect(await d.findByText(/Нина — /)).toBeInTheDocument()
-  })
-
-  it('a draft: tones, editing the text, "Write" opens the channel and offers to log the contact', async () => {
-    const nina = await byName('Нина')
-    renderApp('/')
-    await screen.findByText(/тонус сети/i)
-    open({ kind: 'draft', personId: nina.id })
-    const d = within(await dialog())
-    const box = (await d.findByRole('textbox')) as HTMLTextAreaElement
-    expect(box.value).toContain('Нина')
-    const warm = box.value
-    await userEventFor().click(d.getByRole('button', { name: 'Коротко' }))
-    await waitFor(() => expect((d.getByRole('textbox') as HTMLTextAreaElement).value).not.toBe(warm))
-    await userEventFor().click(d.getByRole('button', { name: /Написать в Telegram/ }))
-    expect(openChannel).toHaveBeenCalledWith(expect.objectContaining({ type: 'telegram' }))
-    const done = await screen.findByRole('button', { name: 'Отправлено' })
-    await userEventFor().click(done)
-    await waitFor(async () => expect((await db.interactions.where('personIds').equals(nina.id).toArray()).some(i => i.type === 'message' && i.note)).toBe(true))
-  })
-})
-
-describe('A person\'s card: editing', () => {
-  beforeEach(() => seed({ demo: true }))
-  it('changes fields, adds a channel, a tag and a rhythm; "Save" writes to the database', async () => {
-    const bad = watchConsole()
-    const nina = await byName('Нина')
-    const { user } = renderApp(`/person/${nina.id}`)
-    await screen.findAllByText('Нина Чернова')
-    await user.click(screen.getAllByRole('button', { name: 'Изменить' })[0])
-    const d = within(await dialog())
-    const company = await d.findByPlaceholderText('Где работает')
-    await user.clear(company)
-    await user.type(company, 'Новая компания')
-    await user.click(d.getByRole('button', { name: /Email|Почта/ }).closest('button') as HTMLElement)
-    await user.type(d.getByPlaceholderText('name@mail.com'), 'nina@new.io')
-    await user.click(d.getByRole('button', { name: 'Сохранить' }))
-    await waitFor(async () => {
-      const p = await db.people.get(nina.id)
-      expect(p?.company).toBe('Новая компания')
-      expect(p?.channels.some(c => c.type === 'email' && c.value === 'nina@new.io')).toBe(true)
-    })
-    expect(bad).toEqual([])
-  })
-
-  it('changing the rhythm on the card', async () => {
-    const nina = await byName('Нина')
-    const { user } = renderApp(`/person/${nina.id}`)
-    await user.click(await screen.findByRole('button', { name: /Ритм общения/ }))
-    await user.click(await screen.findByRole('button', { name: 'Раз в месяц' }))
-    await waitFor(async () => expect((await db.people.get(nina.id))?.cadenceDays).toBe(30))
-    await user.click(await screen.findByRole('button', { name: /Ритм общения/ }))
-    await user.click(await screen.findByRole('button', { name: 'Без ритма' }))
-    await waitFor(async () => expect((await db.people.get(nina.id))?.cadenceDays).toBe(0))
-  })
-})
-
-function userEventFor() {
-  if (!userEventModule) userEventModule = createUser()
-  return userEventModule
-}
-let userEventModule: ReturnType<typeof createUser> | undefined
-import userEvent from '@testing-library/user-event'
-function createUser() { return userEvent.setup({ pointerEventsCheck: 0 }) }
