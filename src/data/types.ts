@@ -234,6 +234,8 @@ export interface Settings {
   voice?: VoiceSettings
   /** automatic encrypted copies into a folder: on this device only (the folder handle cannot travel) */
   autoBackup?: AutoBackupSettings
+  /** the key that seals the cloud copy: on this device only, never synced and never in a backup */
+  e2e?: { key: string; id: string }
 }
 
 /**

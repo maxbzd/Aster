@@ -115,10 +115,13 @@ async function checksum(key: Uint8Array): Promise<Uint8Array> {
 }
 
 /** 32 random bytes plus a 2-byte check, written as 11 groups of 5 characters: easy to read aloud and to catch a typo in. */
+export async function formatRecoveryKey(bytes: Uint8Array): Promise<string> {
+  return base32(new Uint8Array([...bytes, ...(await checksum(bytes))])).match(/.{1,5}/g)!.join('-');
+}
+
 export async function newRecoveryKey(): Promise<{ bytes: Uint8Array<ArrayBuffer>; text: string }> {
   const bytes = randomBytes(32);
-  const text = base32(new Uint8Array([...bytes, ...(await checksum(bytes))])).match(/.{1,5}/g)!.join('-');
-  return { bytes, text };
+  return { bytes, text: await formatRecoveryKey(bytes) };
 }
 
 /** @returns the 32 bytes, or `null` when the text is not a recovery key (a typo, a missing group) */
