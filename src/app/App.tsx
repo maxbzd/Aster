@@ -1,3 +1,4 @@
+import { StorageBanner } from '@/components/StorageBanner'
 import { AnimatePresence, LazyMotion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, type ComponentType } from 'react'
 import { HashRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
@@ -168,6 +169,7 @@ function Shell() {
         <Onboarding />
         <SheetHost />
         <Toasts />
+        <StorageBanner />
         <div className="grain" />
       </>
     )
@@ -210,6 +212,7 @@ function Shell() {
       <SearchOverlay />
       {settings.voice?.wake && <Suspense fallback={null}><VoiceHost /></Suspense>}
       <Toasts />
+      <StorageBanner />
       <div className="grain" />
     </>
   )

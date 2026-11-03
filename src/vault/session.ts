@@ -6,6 +6,7 @@ import {
   createVault as makeVault, openWithPasskeySecret, openWithPassword, openWithRecoveryKey, rowKey,
   withNewPassword, withNewRecoveryKey, withPasskey, withoutPasskey, type VaultHeader,
 } from './keys';
+import { reportWriteFailure } from '@/lib/storageHealth';
 import { deleteJournal, hasJournal, openJournal, openRow, sealRow, slot, type JournalStore } from './store';
 
 /**
@@ -244,6 +245,8 @@ export function createVaultRuntime(cfg: VaultConfig) {
         await journal.deleteRows(dels);
       } catch (e) {
         for (const [k, v] of batch) if (!dirty.has(k)) dirty.set(k, v); // try again with the next change or on leaving
+        // the encrypted copy on disk is behind the memory copy: if the disk is full, say so now, while the tab is still open
+        reportWriteFailure(e);
         throw e;
       }
     }).catch(() => undefined);

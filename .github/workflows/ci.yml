@@ -56,3 +56,4 @@ jobs:
           for i in $(seq 1 30); do curl -sf http://localhost:4174/ >/dev/null && break; sleep 1; done
           BASE_URL=http://localhost:4174/ npm run e2e:vault
           BASE_URL=http://localhost:4174/ npm run e2e:audit
+          BASE_URL=http://localhost:4174/ npm run e2e:quota

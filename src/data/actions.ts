@@ -192,7 +192,19 @@ export async function exportBackup() {
 export async function backupToFile() {
   const data = await exportBackup()
   download(`aster-backup-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(data), 'application/json')
-  await saveSettings({ lastBackupAt: Date.now() })
+  // the file is already saved: if the storage is full, only the reminder date is lost, which must not look like a failed backup
+  await saveSettings({ lastBackupAt: Date.now() }).catch(() => undefined)
+}
+
+/**
+ * Makes room without touching anything the person wrote: the cache of AI answers is rebuilt on demand. (Deleting needs
+ * no free space, so it works exactly when writing does not.)
+ * @returns how many cached answers were removed
+ */
+export async function freeUpSpace(): Promise<number> {
+  const count = await db.aiCache.count()
+  await db.aiCache.clear()
+  return count
 }
 
 export const BACKUP_VERSION = 4
