@@ -18,10 +18,10 @@ Only Chromium was available, so **Firefox and Safari are not measured** (see Com
 | 7 | Offline | Reload with the network off opens the app | `e2e:audit` | Update-while-open scenario |
 | 8 | Compatibility | Chromium only | none | Firefox, Safari / iOS |
 | 9 | Languages | 7; five are machine drafts not reviewed by native speakers | `i18n:check` | Native review |
-| 10 | Code | 1316 tests; coverage 73.8 % statements, 66.1 % branches | `test:coverage` | Raise coverage; add a floor |
+| 10 | Code | 1349 tests; coverage 73.8 → 77.9 % statements, 66.1 → 69.5 % branches (the developer-only eval harness is not counted); the lock screen, the vault sheet, lists, bulk edit, duplicates, preferences, family, the year story and the graph now have tests | `test:coverage` with a floor (77 / 68 / 69 / 81) | Goal 85 %: the largest gaps are the capture screen, the person sheet, profile sections, the reserve import, voice control |
 | 11 | Supply chain | GitHub Actions pinned by commit hash and kept current by Dependabot; `npm audit` clean at high severity | `npm audit`, signatures | Reproducible build check |
 | 12 | Documentation | Security model, architecture, cloud, language guide | review | Threat model needs a "what we do not protect" table kept in step |
-| 13 | Energy and memory | JS heap 10–50 MB with 300 rows per table; the year story animates by script for ~60 s | none | Move that animation to the compositor |
+| 13 | Energy and memory | JS heap 10–50 MB with 300 rows per table; the year story's progress bar now runs in the browser (CSS) instead of a script on every frame, pauses when held or hidden, and does not advance by itself with "reduce motion" | unit tests | — |
 | 14 | User rights | Full export, delete all, open JSON formats | unit tests | A test that the export restores byte for byte |
 | 15 | Open project | Contributing guide, security policy, code of conduct | review | — |
 

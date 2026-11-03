@@ -192,6 +192,10 @@ button { cursor: pointer; }
 @keyframes pulse-dot { 0%, 100% { transform: scale(0.7); opacity: 0.4 } 50% { transform: scale(1.5); opacity: 0.08 } }
 html[data-calm] .ambient, html[data-overlay] .ambient { animation-play-state: paused !important; }
 
+/* the year story: one slide's progress bar, run by the browser instead of by a script on every frame */
+.year-progress { animation: year-progress linear forwards; }
+@keyframes year-progress { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
