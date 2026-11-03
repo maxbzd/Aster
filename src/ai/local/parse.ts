@@ -2,6 +2,7 @@ import type { Person } from '@/data/types'
 import type { CapturePlan, NoteSuggestions, PersonDraft } from '../schemas'
 import { DAY, startOfDay, toISODate } from '@/lib/format'
 import { msg, t, tn } from '@/i18n'
+import { CITIES_MORE, CITY_AFTER, INDUSTRIES_MORE, NAME_AFTER_DE, NAME_AFTER_ROMANCE, NAME_AFTER_UK, NAME_BEFORE_DE, ROLES_MORE, ukNameToNominative } from './langs'
 import {
   cap, clauses, findMentioned, lower, nameToNominative, parseBirthday, parseWhen, personNameRe, surnameToNominative, trimPunct, wordRe,
 } from './text'
@@ -69,6 +70,10 @@ const CITIES: [RegExp, string][] = [
   [/стокгольм|stockholm/, msg('Stockholm')], [/копенгаген|copenhagen/, msg('Copenhagen')], [/хельсинки|helsinki/, msg('Helsinki')], [/таллин|tallinn/, msg('Tallinn')],
   [/киев|киеве|kyiv|kiev/, msg('Kyiv')], [/афин|athens/, msg('Athens')], [/будапешт|budapest/, msg('Budapest')], [/абу-?даби|abu dhabi/, msg('Abu Dhabi')], [/доха|дохе|doha/, msg('Doha')],
 ]
+// the other languages go in front: "directora técnica" must be seen before the generic "director" inside it
+ROLES.unshift(...ROLES_MORE)
+INDUSTRIES.push(...INDUSTRIES_MORE)
+CITIES.push(...CITIES_MORE)
 const cityIn = (s: string) => {
   const key = CITIES.find(([re]) => re.test(lower(s)))?.[1]
   return key ? t(key) : undefined
@@ -148,7 +153,11 @@ function extractInto(d: PersonDraft, text: string, people: Person[], now: number
   }
   if (!d.city && !toCity) {
     // Russian: "продакт в Дубае", "стартапа в Берлине" — a known city after "в" / "во" / "из" (`\b` knows no Cyrillic, hence the lookbehind)
-    for (const mm of l.matchAll(/(?<![а-яё])(?:в|во|из)\s+([а-яё-]+)/g)) { const c = cityIn(mm[1]!); if (c) { d.city = c; break } }
+    for (const mm of l.matchAll(/(?<![а-яёіїєґ])(?:в|во|у|из|із)\s+([а-яёіїєґ'’-]+)/g)) { const c = cityIn(mm[1]!); if (c) { d.city = c; break } }
+  }
+  if (!d.city && !toCity) {
+    // Spanish, German, French, Portuguese, Ukrainian: a known city after a small word like "en", "à", "aus", "em"
+    for (const mm of query.matchAll(CITY_AFTER)) { const c = cityIn(mm[1]!); if (c) { d.city = c; break } }
   }
 
   // family
@@ -341,13 +350,14 @@ export function localCapture(text: string, people: Person[], now = Date.now()): 
 
   // new people: «познакомился с Артёмом Беловым», «зовут Катя», "met Katie Smith"
   const fresh: { first: string; last?: string; instr?: string }[] = []
-  for (const re of [NAME_AFTER, NAMED, NAME_AFTER_EN, NAMED_EN]) {
+  for (const re of [NAME_AFTER, NAMED, NAME_AFTER_EN, NAMED_EN, NAME_AFTER_ROMANCE, NAME_AFTER_DE, NAME_BEFORE_DE, NAME_AFTER_UK]) {
     const m = src.match(re)
     if (!m) continue
-    const latin = re === NAME_AFTER_EN || re === NAMED_EN
-    if (latin && fresh.length) continue
-    const first = latin ? m[1]! : nameToNominative(m[1]!)
-    const last = m[2] && !/^(На|В|Из|И|У|По|О)$/.test(m[2]) && !(latin && STARTERS_EN.test(m[2])) ? (latin ? m[2] : surnameToNominative(m[2])) : undefined
+    const uk = re === NAME_AFTER_UK
+    const latin = re === NAME_AFTER_EN || re === NAMED_EN || re === NAME_AFTER_ROMANCE || re === NAME_AFTER_DE || re === NAME_BEFORE_DE
+    if ((latin || uk) && fresh.length) continue
+    const first = latin ? m[1]! : uk ? ukNameToNominative(m[1]!) : nameToNominative(m[1]!)
+    const last = m[2] && !/^(На|В|Из|И|У|По|О)$/.test(m[2]) && !(latin && STARTERS_EN.test(m[2])) ? (latin ? m[2] : uk ? m[2] : surnameToNominative(m[2])) : undefined
     fresh.push({ first, last, instr: re === NAME_AFTER ? [m[1], m[2] && last ? m[2] : ''].filter(Boolean).join(' ') : undefined })
     if (m[3]) for (const extra of m[3].split(/,|\sи\s|\sand\s/).map(s => s.trim()).filter(Boolean)) fresh.push({ first: latin ? extra : nameToNominative(extra) })
   }

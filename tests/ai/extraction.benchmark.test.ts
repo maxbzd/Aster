@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { localCapture } from '@/ai/local/parse'
 import { setLocale } from '@/i18n'
 import { CORPUS, scoreExtractor, type Extracted } from './extraction.corpus'
+import { HELD_OUT } from './extraction.heldout'
 
 /** The on-device rule-based engine as an extractor: the first person card it makes from the note. */
 const regexEngine = (text: string): Extracted => {
@@ -21,10 +22,21 @@ describe('extraction benchmark: the rule-based engine', () => {
     const pct = (x: number) => `${Math.round(x * 100)}%`.padStart(4)
     const rows = Object.entries(score).map(([lang, s]) => `${lang.padEnd(4)} n=${s.notes} person ${pct(s.person)}  role ${pct(s.role)}  city ${pct(s.city)}  field ${pct(s.field)}  whole ${pct(s.whole)}`)
     if (process.env.BENCH_OUT) appendFileSync(process.env.BENCH_OUT, `${rows.join('\n')}\n`)
-    // the two languages the engine is built for must stay perfect on this corpus, whatever else changes
-    expect(score.en.whole).toBe(1)
-    expect(score.ru.whole).toBe(1)
+    // every language the engine reads must stay perfect on this corpus, whatever else changes
+    for (const lang of ['en', 'ru', 'es', 'de', 'fr', 'pt', 'uk'] as const) expect(score[lang].whole, lang).toBe(1)
     expect(CORPUS.length).toBe(56)
+  })
+})
+
+describe('extraction benchmark: sentences the rules were not written for', () => {
+  it('measures the held-out set', async () => {
+    const score = await scoreExtractor(regexEngine, HELD_OUT)
+    const pct = (x: number) => `${Math.round(x * 100)}%`.padStart(4)
+    const rows = Object.entries(score).map(([lang, s]) => `${lang.padEnd(4)} n=${s.notes} person ${pct(s.person)}  role ${pct(s.role)}  city ${pct(s.city)}  field ${pct(s.field)}  whole ${pct(s.whole)}`)
+    if (process.env.BENCH_OUT) appendFileSync(process.env.BENCH_OUT, `held-out\n${rows.join('\n')}\n`)
+    expect(HELD_OUT.length).toBe(24)
+    // fitted after the first measurement (see docs/NEURAL.md), so from here it only guards against a step back
+    expect(score.all.whole).toBe(1)
   })
 })
 
