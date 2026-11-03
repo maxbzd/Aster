@@ -174,6 +174,8 @@ export function createVaultRuntime(cfg: VaultConfig) {
     dek = opened;
     key = await rowKey(opened);
     journal = await openJournal(realIndexedDB(), journalName);
+    // a database that something opened early (before the vault was open) must not stay in use
+    if (db.isOpen()) db.close();
     await selectMemoryBackend();
     await db.open();
     const byTable = new Map<string, { keys: unknown[]; rows: unknown[] }>();
