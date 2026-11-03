@@ -46,9 +46,37 @@ try {
       const result = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })
       return result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0].target.join(' ').slice(0, 80)}`)
     })
+    // keyboard: every control reached with Tab shows where the focus is (drawn shapes inside an SVG draw their own ring and are not tested here)
+    await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
+    const hidden = new Set()
+    for (let step = 0; step < 40; step += 1) {
+      await page.keyboard.press('Tab')
+      const bare = await page.evaluate(() => {
+        const e = document.activeElement
+        if (!e || e === document.body || e instanceof SVGElement) return null
+        const style = getComputedStyle(e)
+        const ring = (style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0) || (style.boxShadow && style.boxShadow !== 'none')
+        return ring ? null : `${e.tagName.toLowerCase()} "${(e.getAttribute('aria-label') || e.textContent || '').trim().slice(0, 30)}"`
+      })
+      if (bare) hidden.add(bare)
+    }
+    if (hidden.size) failures.push(`focus ${route}: no visible focus on ${[...hidden].join(', ')}`)
     if (violations.length) failures.push(`accessibility ${route}: ${violations.join('; ')}`)
     console.log(`• ${route.padEnd(10)} ${violations.length ? 'FAIL' : 'ok'}`)
   }
+
+  // reflow and text size (WCAG 1.4.4 and 1.4.10): at the width of a small phone with text enlarged to 200 %, nothing may need sideways scrolling
+  await page.setViewportSize({ width: 320, height: 568 })
+  await page.evaluate(() => { document.documentElement.style.fontSize = '200%' })
+  for (const route of ROUTES) {
+    await page.evaluate((hash) => { location.hash = `#${hash}` }, route)
+    await page.waitForTimeout(800)
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+    if (overflow > 1) failures.push(`reflow ${route}: ${overflow}px too wide at 320 px with text at 200 %`)
+  }
+  console.log(`• reflow at 320 px with text at 200 %: ${failures.some((f) => f.startsWith('reflow')) ? 'FAIL' : 'ok'}`)
+  await page.evaluate(() => { document.documentElement.style.fontSize = '' })
+  await page.setViewportSize({ width: 390, height: 844 })
 
   if (foreign.size) failures.push(`privacy: requests to other origins: ${[...foreign].join(', ')}`)
   console.log(`• requests to other origins: ${foreign.size}`)

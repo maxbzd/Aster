@@ -137,6 +137,8 @@ button { cursor: pointer; }
   color: var(--color-fg);
 }
 .field::placeholder { color: var(--color-fg-4); }
+/* the field has no frame of its own, so the focus is drawn around the text itself (WCAG 2.4.7) */
+.field:focus-visible { outline: 2px solid rgb(157 140 255 / 0.7); outline-offset: 3px; border-radius: 8px; }
 
 }
 
