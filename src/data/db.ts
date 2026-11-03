@@ -1,4 +1,5 @@
-import Dexie, { type EntityTable } from 'dexie'
+import Dexie, { type DexieOptions, type EntityTable } from 'dexie'
+import { backendFactory, backendKeyRange } from '@/vault/backend'
 import type { AiCacheEntry, AiUsage, Capture, ChatMessage, Circle, Collection, Interaction, Intro, Lead, NetEvent, Person, Reminder, Settings } from './types'
 
 export class AsterDB extends Dexie {
@@ -23,8 +24,8 @@ export class AsterDB extends Dexie {
   /** the conversation with Astra, on this device only */
   chat!: EntityTable<ChatMessage, 'id'>
 
-  constructor(name = 'aster') {
-    super(name)
+  constructor(name = 'aster', options?: DexieOptions) {
+    super(name, options)
     this.version(1).stores({
       people: 'id, firstName, lastName, closeness, *circleIds, *tags, lastContactAt, updatedAt',
       interactions: 'id, date, *personIds, type',
@@ -71,7 +72,8 @@ export interface OutboxEntry {
 }
 export interface SyncMetaEntry { key: string; value: unknown }
 
-export const db = new AsterDB()
+// The storage underneath is chosen when the database is first opened: the browser's own, or (with encryption on) a memory copy.
+export const db = new AsterDB('aster', { indexedDB: backendFactory, IDBKeyRange: backendKeyRange })
 
 export const uid = () =>
   (crypto.randomUUID?.() ?? `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`)

@@ -16,7 +16,6 @@ import { SheetHost, prefetchSheets } from '@/sheets/SheetHost'
 import { SearchOverlay } from '@/components/SearchOverlay'
 import { Today } from '@/screens/Today'
 import { People } from '@/screens/People'
-import { Me } from '@/screens/Me'
 
 // Secondary screens are loaded on demand (offline, the service worker caches them anyway)
 const screenLoaders: (() => Promise<unknown>)[] = []
@@ -25,6 +24,8 @@ const lazyScreen = <K extends string>(load: () => Promise<Record<K, ComponentTyp
   const C = lazy<ComponentType>(() => load().then(m => ({ default: m[name] })))
   return () => <Suspense fallback={null}><C /></Suspense>
 }
+// the profile screen is a tab, but it is rarely the first one: it loads in the background right after the first render
+const Me = lazyScreen(() => import('@/screens/Me'), 'Me')
 const PersonProfile = lazyScreen(() => import('@/screens/PersonProfile'), 'PersonProfile')
 const Onboarding = lazyScreen(() => import('@/screens/Onboarding'), 'Onboarding')
 const Orbit = lazyScreen(() => import('@/screens/Orbit'), 'Orbit')
