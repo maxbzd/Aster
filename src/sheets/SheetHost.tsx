@@ -24,6 +24,8 @@ const loaders = {
   bridge: () => import('./BridgeSheet').then(m => ({ default: m.BridgeSheet as SheetComponent })),
   ticktick: () => import('./TickTickSheet').then(m => ({ default: m.TickTickSheet as SheetComponent })),
   claude: () => import('./ClaudeSheet').then(m => ({ default: m.ClaudeSheet as SheetComponent })),
+  backup: () => import('./BackupSheet').then(m => ({ default: m.BackupSheet as SheetComponent })),
+  restore: () => import('./RestoreSheet').then(m => ({ default: m.RestoreSheet as SheetComponent })),
   family: () => import('./FamilySheet').then(m => ({ default: m.FamilySheet as SheetComponent })),
   dateEdit: () => import('./DateSheet').then(m => ({ default: m.DateSheet as SheetComponent })),
   prefs: () => import('./PrefsSheet').then(m => ({ default: m.PrefsSheet as SheetComponent })),
@@ -56,6 +58,8 @@ export function SheetHost() {
             {sheet.kind === 'log' && <S.log personIds={sheet.personIds} type={sheet.type} interactionId={sheet.interactionId} onClose={close} />}
             {sheet.kind === 'reminder' && <S.reminder personId={sheet.personId} text={sheet.text} onClose={close} />}
             {sheet.kind === 'circles' && <S.circles onClose={close} />}
+            {sheet.kind === 'backup' && <S.backup onClose={close} />}
+            {sheet.kind === 'restore' && <S.restore mode={sheet.mode} file={sheet.file} onClose={close} />}
             {sheet.kind === 'importVcf' && <S.importVcf text={sheet.text} onClose={close} />}
             {sheet.kind === 'brief' && <S.brief personId={sheet.personId} onClose={close} />}
             {sheet.kind === 'draft' && <S.draft personId={sheet.personId} occasion={sheet.occasion} onClose={close} />}

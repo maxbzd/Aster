@@ -232,6 +232,28 @@ export interface Settings {
   stt?: SttSettings
   /** voice control: on this device only */
   voice?: VoiceSettings
+  /** automatic encrypted copies into a folder: on this device only (the folder handle cannot travel) */
+  autoBackup?: AutoBackupSettings
+}
+
+/**
+ * Automatic backups sealed to a public key: nothing secret is needed at the moment of writing, so the app can save a
+ * copy every day without asking for the passphrase. Only the passphrase (Argon2id with this salt) gives the private key back.
+ */
+export interface AutoBackupSettings {
+  /** base64 salt of the Argon2id run that turns the passphrase into the key pair */
+  salt: string
+  m: number
+  t: number
+  p: number
+  /** base64 of the hybrid (X25519 + ML-KEM-768) public key */
+  publicKey: string
+  /** the name of the chosen folder, for display */
+  folder: string
+  /** a copy every this many days */
+  everyDays: number
+  /** when the last automatic copy was written */
+  lastAt?: number
 }
 
 export type SttProvider = 'off' | 'openai' | 'managed'

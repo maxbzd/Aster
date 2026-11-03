@@ -25,6 +25,8 @@ export type SheetState =
   | { kind: 'bridge' }
   | { kind: 'ticktick' }
   | { kind: 'claude' }
+  | { kind: 'backup' }
+  | { kind: 'restore'; mode: 'replace' | 'merge'; file: unknown }
   | { kind: 'lead'; id: ID }
   | { kind: 'leadEdit'; id?: ID; smart?: string; keep?: { source?: string; tags?: string[] } }
   | { kind: 'leadImport'; file?: File; text?: string }
