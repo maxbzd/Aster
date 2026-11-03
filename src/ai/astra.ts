@@ -1,6 +1,6 @@
 import { db } from '@/data/db'
 import { addReminder, blankPerson, logInteraction, savePerson } from '@/data/actions'
-import type { ChatMessage, Closeness, Interaction, Person } from '@/data/types'
+import type { ChatMessage, Closeness, Person } from '@/data/types'
 import { DAY, fromISODate, fullName, jobLine, lcFirst, toISODate } from '@/lib/format'
 import { activeAi, astraJSON, astraWebText, friendlyError } from './client'
 import { dossier, memoryBlock, namesIndex, networkIndex, todayLine } from './context'
@@ -11,7 +11,9 @@ import { localCapture, localNoteSuggest } from './local/parse'
 import { localBrief } from './local/brief'
 import { localAsk } from './local/ask'
 import { localDrafts } from './local/drafts'
-import { computeOccasions, topOccasionByPerson, type Occasion } from './local/occasions'
+import { occasionsFrom, type Occasion } from './local/occasions'
+
+export { occasionsFrom }
 import { localMatches, type MatchPair } from './local/matches'
 import { localLeadDrafts } from './local/reserve'
 import { localWeekly, weekKey, type WeeklyData } from './local/weekly'
@@ -265,10 +267,6 @@ export async function astraNoteSuggest(text: string, personId: string): Promise<
 
 /* ---------- ⚡ Reasons and drafts ---------- */
 
-export function occasionsFrom(people: Person[], interactions: Interaction[], reminders: { personId?: string; text: string; done: boolean; dueAt: number; id: string; createdAt: number }[], matches: MatchPair[], now = Date.now()) {
-  const list = computeOccasions(people, interactions, reminders, matches, now)
-  return { list, byPerson: topOccasionByPerson(list) }
-}
 
 /** The person's language of communication, when it differs from the interface language: tells the model which language to write in. */
 const LANGUAGE_NAMES: Record<string, string> = { ru: 'Russian', en: 'English', es: 'Spanish', de: 'German', fr: 'French', pt: 'Portuguese', uk: 'Ukrainian' }
