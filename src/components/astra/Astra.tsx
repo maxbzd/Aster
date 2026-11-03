@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useId, useState } from 'react'
 import { useUI } from '@/app/store'
 import { t, msg } from '@/i18n'
@@ -14,7 +14,7 @@ export function AstraStar({ size = 24, thinking = false, className = '' }: { siz
           <span className="absolute left-1/2 top-[-2px] h-[4px] w-[4px] -translate-x-1/2 rounded-full bg-[#ffd9a8] shadow-[0_0_6px_2px_rgba(255,210,160,0.7)]" />
         </span>
       )}
-      <motion.svg viewBox="0 0 24 24" width={size} height={size} className="relative" animate={thinking ? { rotate: [0, 90, 180], scale: [1, 0.86, 1] } : { rotate: 0, scale: 1 }}
+      <mo.svg viewBox="0 0 24 24" width={size} height={size} className="relative" animate={thinking ? { rotate: [0, 90, 180], scale: [1, 0.86, 1] } : { rotate: 0, scale: 1 }}
         transition={thinking ? { duration: 1.6, repeat: Infinity, ease: 'easeInOut' } : { duration: 0.4 }}>
         <defs>
           <radialGradient id={id} cx="50%" cy="50%" r="50%">
@@ -24,7 +24,7 @@ export function AstraStar({ size = 24, thinking = false, className = '' }: { siz
           </radialGradient>
         </defs>
         <path d="M12 1.5c.6 5.6 4.9 9.9 10.5 10.5-5.6.6-9.9 4.9-10.5 10.5C11.4 16.9 7.1 12.6 1.5 12 7.1 11.4 11.4 7.1 12 1.5Z" fill={`url(#${id})`} />
-      </motion.svg>
+      </mo.svg>
     </span>
   )
 }
@@ -55,10 +55,10 @@ export function AstraThinking({ kind, className = '' }: { kind: keyof typeof PHR
       <AstraStar size={44} thinking />
       <div className="relative h-6 w-full overflow-hidden text-center">
         <AnimatePresence mode="wait">
-          <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}
+          <mo.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }}
             className="display text-[20px] text-fg-2">
             {t(PHRASES[kind][i]!)}
-          </motion.div>
+          </mo.div>
         </AnimatePresence>
       </div>
       <div className="h-[3px] w-40 overflow-hidden rounded-full bg-white/10">

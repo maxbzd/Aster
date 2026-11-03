@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import {
@@ -118,11 +118,11 @@ export function PersonProfile() {
 
       {/* Hero */}
       <div className="relative mt-4 flex flex-col items-center text-center">
-        <motion.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        <mo.div initial={{ scale: 0.85, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', stiffness: 260, damping: 22 }}
           className="relative grid h-[168px] w-[168px] place-items-center rounded-full"
           style={{ background: `radial-gradient(circle at 50% 35%, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0.03) 70%)`, boxShadow: `0 0 80px -10px ${g.a}88, inset 0 1px 0 rgb(255 255 255 / 0.15)` }}>
           <Avatar person={p} size={128} warmth={w.level} ring />
-        </motion.div>
+        </mo.div>
         <h1 className="mt-4 text-[31px] font-bold leading-tight tracking-[-0.03em]">{fullName(p)}</h1>
         {p.nickname && <div className="display -mt-0.5 text-[22px] text-fg-2">«{p.nickname}»</div>}
         {jobLine(p) && <div className="mt-1 text-[15.5px] text-fg-2">{jobLine(p)}</div>}
@@ -157,7 +157,7 @@ export function PersonProfile() {
       </div>
 
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
+        <mo.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
           {tab === 'overview' && (
             <>
               {/* Reason to write */}
@@ -215,14 +215,14 @@ export function PersonProfile() {
                   </button>
                   <AnimatePresence>
                     {cadenceOpen && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                      <mo.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                         <div className="flex flex-wrap gap-1.5 pt-4">
                           {CADENCE_OPTIONS.map(o => (
                             <Chip key={o.days} size="sm" active={w.cadence === o.days} onClick={async () => { await patchPerson(p.id, { cadenceDays: o.days }); setCadenceOpen(false) }}>{o.label}</Chip>
                           ))}
                         </div>
                         <EverydayToggle p={p} />
-                      </motion.div>
+                      </mo.div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -425,7 +425,7 @@ export function PersonProfile() {
               )}
             </>
           )}
-        </motion.div>
+        </mo.div>
       </AnimatePresence>
 
       <div className="mt-10 flex justify-center gap-2 text-[13px] text-fg-4">

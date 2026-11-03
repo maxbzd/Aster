@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { PaperPlaneTiltIcon, SparkleIcon } from '@phosphor-icons/react'
@@ -92,7 +92,7 @@ function TopCard({ t: item, i }: { t: WeakTie; i: number }) {
   const p = item.person
   const C = 2 * Math.PI * 22
   return (
-    <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + i * 0.09, type: 'spring', stiffness: 320, damping: 30 }}
+    <mo.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 + i * 0.09, type: 'spring', stiffness: 320, damping: 30 }}
       className="glass glow-card rounded-[28px] p-4" style={{ ['--glow' as string]: i === 0 ? 'rgb(255 190 110 / 0.40)' : 'rgb(124 92 255 / 0.28)', ['--gx' as string]: '90%', ['--gy' as string]: '0%' }}>
       <div className="flex items-center gap-3.5">
         <Avatar person={p} size={54} />
@@ -103,7 +103,7 @@ function TopCard({ t: item, i }: { t: WeakTie; i: number }) {
         <div className="relative grid h-[54px] w-[54px] shrink-0 place-items-center">
           <svg width="54" height="54" viewBox="0 0 54 54" className="-rotate-90" aria-hidden="true">
             <circle cx="27" cy="27" r="22" fill="none" stroke="rgb(255 255 255 / 0.08)" strokeWidth="4" />
-            <motion.circle cx="27" cy="27" r="22" fill="none" stroke="#ffd9a8" strokeWidth="4" strokeLinecap="round" strokeDasharray={C}
+            <mo.circle cx="27" cy="27" r="22" fill="none" stroke="#ffd9a8" strokeWidth="4" strokeLinecap="round" strokeDasharray={C}
               initial={{ strokeDashoffset: C }} animate={{ strokeDashoffset: C * (1 - item.score / 100) }} transition={{ duration: 1.1, delay: 0.3 + i * 0.1, ease: [0.22, 1, 0.36, 1] }} />
           </svg>
           <CountUp value={item.score} className="absolute text-[15px] font-bold" delay={0.3 + i * 0.1} />
@@ -118,6 +118,6 @@ function TopCard({ t: item, i }: { t: WeakTie; i: number }) {
         <button type="button" onClick={() => reach(p)} className="press btn-primary h-11 flex-1 text-[15px]"><PaperPlaneTiltIcon size={17} weight="bold" />{' '}{t('Write')}</button>
         <button type="button" onClick={() => nav(`/person/${p.id}`)} className="press btn-glass h-11 px-5">{t('Profile')}</button>
       </div>
-    </motion.div>
+    </mo.div>
   )
 }

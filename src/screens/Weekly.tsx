@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowLeftIcon, ArrowsClockwiseIcon, CakeIcon, PaperPlaneTiltIcon } from '@phosphor-icons/react'
@@ -38,7 +38,7 @@ export function Weekly() {
       </div>
 
       {!data ? <AstraThinking kind="weekly" className="pt-32" /> : (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
+        <mo.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="relative">
           <div className="mt-6 flex items-center justify-between">
             <span className="micro text-fg-3">{t('Weekly brief ·')}{' '}{data.range}</span>
             <SourceBadge source={data.source} />
@@ -131,7 +131,7 @@ export function Weekly() {
               <Group>{data.promises.map(r => <ReminderRow key={r.id} r={r} person={r.personId ? byId.get(r.personId) : undefined} />)}</Group>
             </>
           )}
-        </motion.div>
+        </mo.div>
       )}
     </Page>
   )

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import { MicrophoneIcon, XIcon } from '@phosphor-icons/react'
@@ -129,7 +129,7 @@ export function VoiceHost() {
       )}
       <AnimatePresence>
         {state.phase !== 'idle' && (
-          <motion.div key={state.phase} initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16 }} transition={{ type: 'spring', stiffness: 440, damping: 36 }}
+          <mo.div key={state.phase} initial={{ opacity: 0, y: 24, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 16 }} transition={{ type: 'spring', stiffness: 440, damping: 36 }}
             role="alertdialog" aria-label={t('Voice command')} className="fixed inset-x-3 bottom-[calc(96px+var(--safe-bottom))] z-[65] mx-auto max-w-[480px] rounded-[28px] p-1 lg:bottom-8 lg:left-[calc(264px+0.75rem)]" style={astraGlow}>
             <div className="rounded-[24px] bg-ink-2 p-4">
               {state.phase === 'working' && (<><div className="mb-1 text-[13px] text-fg-3">«{state.heard}»</div><AstraThinking kind="capture" /></>)}
@@ -169,7 +169,7 @@ export function VoiceHost() {
                 </div>
               )}
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
     </>

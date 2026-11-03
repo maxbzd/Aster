@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowLeftIcon } from '@phosphor-icons/react'
@@ -109,7 +109,7 @@ export function Pulse() {
       <div className="glass rounded-[28px] p-4">
         <div className="grid grid-flow-col grid-rows-7 gap-[4px]" style={{ gridAutoColumns: '1fr' }}>
           {data.grid.map(({ d, n }, i) => (
-            <motion.div key={d} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.002 }}
+            <mo.div key={d} initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.002 }}
               title={`${new Date(d).toLocaleDateString(intlTag())}: ${n}`}
               className="aspect-square rounded-[4px]"
               style={{
@@ -156,7 +156,7 @@ export function Pulse() {
             <div key={c} className="mb-3.5 last:mb-0">
               <div className="mb-1.5 flex justify-between text-[14px]"><span>{CLOSENESS[c].name}</span><span className="tnum text-fg-3">{n}</span></div>
               <div className="h-2 overflow-hidden rounded-full bg-white/[0.06]">
-                <motion.div initial={{ width: 0 }} animate={{ width: `${(n / max) * 100}%` }} transition={{ duration: 1, delay: c * 0.08, ease: [0.22, 1, 0.36, 1] }}
+                <mo.div initial={{ width: 0 }} animate={{ width: `${(n / max) * 100}%` }} transition={{ duration: 1, delay: c * 0.08, ease: [0.22, 1, 0.36, 1] }}
                   className="h-full rounded-full" style={{ background: ['#ffb36b', '#ff7ab8', '#a796ff', '#74a6ff'][c - 1], boxShadow: `0 0 10px ${['#ffb36b', '#ff7ab8', '#a796ff', '#74a6ff'][c - 1]}` }} />
               </div>
             </div>
@@ -182,12 +182,12 @@ function MetricBar({ label, value, avg, max, unit, avgLabel = t('usually') }: { 
       </div>
       <div className="relative mt-4 h-7">
         <div className="absolute inset-x-0 top-1/2 h-px -translate-y-1/2" style={{ background: 'linear-gradient(90deg, rgb(255 255 255 / 0.05), rgb(255 255 255 / 0.18), rgb(255 255 255 / 0.05))' }} />
-        <motion.div className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full"
+        <mo.div className="absolute top-1/2 h-[3px] -translate-y-1/2 rounded-full"
           initial={{ left: `${pa}%`, width: 0 }}
           animate={{ left: `${Math.min(pa, pv)}%`, width: `${Math.abs(pv - pa)}%` }}
           transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
           style={{ background: col, boxShadow: `0 0 10px ${col}` }} />
-        <motion.span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink" initial={{ left: `${pa}%` }} animate={{ left: `${pv}%` }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} style={{ background: col }} />
+        <mo.span className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ink" initial={{ left: `${pa}%` }} animate={{ left: `${pv}%` }} transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }} style={{ background: col }} />
         <span className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-line-2 bg-ink-2 px-2 py-0.5 text-[9.5px] font-bold uppercase tracking-[0.08em] text-fg-2" style={{ left: `clamp(30px, ${pa}%, calc(100% - 30px))` }}>{avgLabel}</span>
       </div>
     </div>

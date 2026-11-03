@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { ArrowsClockwiseIcon, BellSimpleIcon, CopyIcon, NewspaperIcon, PaperPlaneTiltIcon } from '@phosphor-icons/react'
 import { Sheet } from '@/components/Sheet'
@@ -95,7 +95,7 @@ export function DraftSheet({ personId, occasion: given, onClose }: { personId: s
       {loading || !res ? (
         <AstraThinking kind="drafts" className="pt-14" />
       ) : (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+        <mo.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
           <div className="mb-3 flex items-center justify-between">
             <SourceBadge source={res.source} error={res.error} />
             <div className="flex items-center gap-3">
@@ -121,7 +121,7 @@ export function DraftSheet({ personId, occasion: given, onClose }: { personId: s
             <textarea value={text} onChange={e => setText(e.target.value)} rows={Math.max(5, Math.ceil(text.length / 38))} className="field resize-none text-[17px] leading-relaxed" />
           </div>
           <p className="mt-3 px-1 text-[12.5px] leading-relaxed text-fg-4">{t("Edit freely — it's a draft. Astra never sends anything itself: the text is copied and the chat opens on your side.")}</p>
-        </motion.div>
+        </mo.div>
       )}
     </Sheet>
   )

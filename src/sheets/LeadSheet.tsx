@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowLeftIcon, ArrowsClockwiseIcon, BellSimpleIcon, ChatCircleDotsIcon, CopyIcon, PaperPlaneTiltIcon, PencilSimpleIcon, StarIcon, TrashIcon, UserPlusIcon } from '@phosphor-icons/react'
@@ -192,7 +192,7 @@ export function LeadSheet({ id, onClose }: { id: string; onClose: () => void }) 
 
       {mode === 'write' && (
         loading || !res ? <AstraThinking kind="lead" className="pt-14" /> : (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <mo.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
             <div className="mb-3 flex items-center justify-between">
               <SourceBadge source={res.source} error={res.error} />
               {status.connected && <button type="button" onClick={() => load(true)} className="press flex items-center gap-1.5 text-[13px] text-fg-3 hover:text-fg"><ArrowsClockwiseIcon size={14} />{' '}{t('Other options')}</button>}
@@ -202,7 +202,7 @@ export function LeadSheet({ id, onClose }: { id: string; onClose: () => void }) 
               <AutoText value={text} onChange={setText} />
             </div>
             <p className="mt-3 px-1 text-[12.5px] leading-relaxed text-fg-4">{t('A first touch — ask for little and keep it to the point. When you tap “Sent”,')}{' '}{lead.firstName}{' '}{t('moves from the reserve to your network and the message is logged in the history. Astra never sends anything on its own.')}</p>
-          </motion.div>
+          </mo.div>
         )
       )}
 

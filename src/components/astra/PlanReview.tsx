@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import type { ReactNode } from 'react'
 import { BellSimpleIcon, CheckIcon, XIcon } from '@phosphor-icons/react'
 import type { CapturePlan, PersonDraft } from '@/ai/schemas'
@@ -70,7 +70,7 @@ export function PlanReview({ plan, onChange, source, error, extras, onExtras, ph
       <div className="mt-5 flex flex-col gap-3">
         <AnimatePresence initial={false}>
           {plan.people.map((d, i) => (
-            <motion.div key={d.ref} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}
+            <mo.div key={d.ref} layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}
               className="glass glow-card overflow-hidden rounded-[26px]" style={{ ['--glow' as string]: d.existing_id ? 'rgb(124 92 255 / 0.25)' : 'rgb(95 227 176 / 0.25)', ['--gx' as string]: '0%', ['--gy' as string]: '0%' }}>
               <div className="flex items-center gap-3 p-4">
                 <Avatar person={{ id: d.existing_id ?? d.ref + d.first_name, firstName: d.first_name || '?', lastName: d.last_name ?? undefined, photo: (d.existing_id ? byId.get(d.existing_id)?.photo : undefined) ?? photos?.[d.ref] }} size={48} />
@@ -133,7 +133,7 @@ export function PlanReview({ plan, onChange, source, error, extras, onExtras, ph
                   </div>
                 ))}
               </div>
-            </motion.div>
+            </mo.div>
           ))}
         </AnimatePresence>
       </div>

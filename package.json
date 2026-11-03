@@ -42,7 +42,8 @@
     "check": "npm run typecheck && npm run lint && npm run i18n:check && npm run test && npm run build && npm run size",
     "eval": "node --env-file=.env.eval node_modules/vitest/vitest.mjs run tests/eval --reporter=basic",
     "i18n:check": "node scripts/i18n-check.mjs",
-    "e2e:vault": "node scripts/e2e-vault.mjs"
+    "e2e:vault": "node scripts/e2e-vault.mjs",
+    "e2e:audit": "node scripts/e2e-audit.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
@@ -75,6 +76,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.5",
+    "axe-core": "^4.14.0",
     "fake-indexeddb": "^6.2.7",
     "happy-dom": "^21.0.4",
     "sharp": "^0.35.5",
