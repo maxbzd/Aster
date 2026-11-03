@@ -34,6 +34,11 @@ Dexie (device) ──hook──▶ outbox ──push──▶ sync_push() ──
   are ordered), returns it in `conflicts`, and the device pulls, merges and pushes again. A sync cycle is therefore
   pull, merge, push, pull. This needs the `20261014000000_sync_push_base_ts.sql` migration; without it the app still works,
   but falls back to "the newer whole row wins" and an edit of a different field on another device can be lost.
+- **Encrypted cloud** (optional, Cloud → Encrypt cloud data). Records are sealed on the device with a key the server never sees, so `records.data`
+  holds `{ "_e2e": 1, "k": …, "iv": …, "c": … }`; `tbl`, `id`, `client_ts` and `deleted` stay readable because the server needs them to
+  order edits. Merging happens on the devices, after opening. A device without the key reads nothing and sends nothing; a new
+  device gets the key by a two-code exchange with an old one (quantum-safe, with check digits) or from the recovery key. What stops
+  working with it on: `mcp`, `bridge_*` and `ticktick` read records on the server. Details: [SECURITY_MODEL.md](SECURITY_MODEL.md).
 - **Cursor** `seq` is an increasing number of each accepted change. The client steps back by `PULL_OVERLAP` so it does not
   miss transactions committed later. Applying is idempotent (content is compared), so reading twice is harmless.
 - **Poison records**: if the server permanently rejects a record (too large, bad format), the batch is split in half, the

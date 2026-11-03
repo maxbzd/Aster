@@ -23,6 +23,8 @@ an example proxy in `api/`). Especially interesting:
 - leaks of API keys or tokens into backups, sync, logs or the browser;
 - cross-site scripting or content-policy bypasses in the web app.
 
+- weaknesses in the encryption: the vault (`src/vault`), the backups (`src/data/backupSeal.ts`), the encrypted cloud (`src/cloud/e2e.ts`), the key exchange (`src/crypto/pairing.ts`); how they work and where they stop is in [docs/SECURITY_MODEL.md](docs/SECURITY_MODEL.md).
+
 ## For people who host Aster
 
 - Keep `ALLOWED_EMAILS` and `ALLOWED_ORIGINS` set, and switch off public sign-ups in Supabase if the project is only for you.
