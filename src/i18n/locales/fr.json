@@ -64,6 +64,7 @@
  "A meeting, call, chat or favor": "Une rencontre, un appel, une discussion ou un service",
  "A millionaire with a fund in Dubai, can intro me in MENA": "Millionnaire avec un fonds à Dubaï, peut me mettre en relation dans la région MENA",
  "A name, e.g. “Laptop”": "Un nom, par ex. « Ordinateur portable »",
+ "A new version is ready": "Une nouvelle version est prête",
  "A place or event": "Un lieu ou un événement",
  "A quiet week": "Une semaine calme",
  "A quiet week for new connections": "Une semaine calme pour de nouveaux liens",
@@ -1670,6 +1671,7 @@
   "Prochains anniversaires : {n} personnes dans les six prochaines semaines."
  ],
  "Upcoming dates": "Prochaines dates",
+ "Update": "Mettre à jour",
  "Update the card “{name}”: {extra}": "Compléter la fiche « {name} » : {extra}",
  "Upload a list": "Importer une liste",
  "Upload a list or file": "Importer une liste ou un fichier",

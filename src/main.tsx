@@ -11,6 +11,7 @@ import { bootCloud } from './cloud/boot'
 import { initLocale } from './i18n'
 import { LocaleRoot } from './i18n/react'
 import { installCalm } from './lib/calm'
+import { startUpdates } from './lib/updates'
 import { installTickTick } from './ticktick/cycle'
 
 /** Everything that reads or writes the database waits for the vault (if encryption is on) to be open. */
@@ -20,6 +21,9 @@ function startServices() {
   installCalm()
   installTickTick()
 }
+
+// A new version waits for the person's go-ahead (or the next launch): see lib/updates.ts.
+startUpdates()
 
 // The language (saved choice or the browser's) is resolved before the first render, so nothing flashes in the wrong one.
 void initLocale().then(() => {

@@ -50,6 +50,15 @@ function preloadChunks(names: string[]): Plugin {
   }
 }
 
+/** Puts the build's name in the page (`BUILD_TAG`), so that a test can tell two builds of the same code apart. */
+function buildTag(): Plugin {
+  return {
+    name: 'aster:build-tag',
+    apply: 'build',
+    transformIndexHtml: () => [{ tag: 'meta', attrs: { name: 'build', content: process.env.BUILD_TAG ?? '' }, injectTo: 'head' as const }],
+  }
+}
+
 export default defineConfig({
   // Relative paths: the build works from the root of a domain (Cloudflare) and from a sub-path (GitHub Pages).
   base: './',
@@ -73,9 +82,12 @@ export default defineConfig({
     react(),
     tailwindcss(),
     cspMeta(),
+    buildTag(),
     preloadChunks(['motionFeatures']),
     VitePWA({
-      registerType: 'autoUpdate',
+      // a new version waits for the person (see src/lib/updates.ts); the page registers the service worker itself
+      registerType: 'prompt',
+      injectRegister: false,
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'Aster: your network',
