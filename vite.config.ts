@@ -32,6 +32,24 @@ function cspMeta(): Plugin {
   }
 }
 
+/**
+ * Chunks that the first screen needs but that the entry only asks for once it runs (lazy screens, the animation engine):
+ * announce them in the page head so the browser fetches them in parallel with the entry instead of one round trip later.
+ */
+function preloadChunks(names: string[]): Plugin {
+  return {
+    name: 'aster:preload-chunks',
+    apply: 'build',
+    transformIndexHtml: {
+      order: 'post',
+      handler(_html, ctx) {
+        const files = Object.keys(ctx.bundle ?? {}).filter((file) => names.some((name) => file.startsWith(`assets/${name}-`)) && file.endsWith('.js'))
+        return files.map((file) => ({ tag: 'link', attrs: { rel: 'modulepreload', crossorigin: '', href: `./${file}` }, injectTo: 'head' as const }))
+      },
+    },
+  }
+}
+
 export default defineConfig({
   // Relative paths: the build works from the root of a domain (Cloudflare) and from a sub-path (GitHub Pages).
   base: './',
@@ -43,7 +61,6 @@ export default defineConfig({
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return
           if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react'
-          if (/node_modules\/(motion|motion-dom|motion-utils|framer-motion)\//.test(id)) return 'motion'
           if (/node_modules\/(dexie|dexie-react-hooks)\//.test(id)) return 'db'
           if (/node_modules\/react-router/.test(id)) return 'router'
         },
@@ -56,6 +73,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     cspMeta(),
+    preloadChunks(['motionFeatures']),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg', 'apple-touch-icon.png'],

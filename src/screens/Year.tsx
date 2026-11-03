@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { XIcon } from '@phosphor-icons/react'
@@ -128,11 +128,11 @@ export function Year() {
     <div className="fixed inset-0 z-[60] select-none overflow-hidden bg-[#05060a] text-white" onPointerDown={onDown} onPointerUp={onUp} onPointerCancel={() => { paused.current = false; press.current = null }} role="presentation">
       {/* slide background: three drifting spots of colour */}
       <AnimatePresence initial={false}>
-        <motion.div key={slide.key} aria-hidden className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.9 }}>
+        <mo.div key={slide.key} aria-hidden className="absolute inset-0" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.9 }}>
           <div className="absolute inset-0" style={{ background: `radial-gradient(120% 80% at 50% 110%, ${c3}, #05060a 70%)` }} />
-          <motion.div className="absolute -left-[20%] -top-[10%] h-[70%] w-[90%] rounded-full opacity-60" style={{ background: `radial-gradient(closest-side, ${c1}, transparent)` }} animate={{ x: [0, 50, -20, 0], y: [0, 40, 10, 0] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }} />
-          <motion.div className="absolute -bottom-[15%] -right-[25%] h-[75%] w-[95%] rounded-full opacity-55" style={{ background: `radial-gradient(closest-side, ${c2}, transparent)` }} animate={{ x: [0, -60, 20, 0], y: [0, -30, -50, 0] }} transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }} />
-        </motion.div>
+          <mo.div className="absolute -left-[20%] -top-[10%] h-[70%] w-[90%] rounded-full opacity-60" style={{ background: `radial-gradient(closest-side, ${c1}, transparent)` }} animate={{ x: [0, 50, -20, 0], y: [0, 40, 10, 0] }} transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }} />
+          <mo.div className="absolute -bottom-[15%] -right-[25%] h-[75%] w-[95%] rounded-full opacity-55" style={{ background: `radial-gradient(closest-side, ${c2}, transparent)` }} animate={{ x: [0, -60, 20, 0], y: [0, -30, -50, 0] }} transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }} />
+        </mo.div>
       </AnimatePresence>
 
       {/* progress */}
@@ -147,11 +147,11 @@ export function Year() {
 
       {/* slide */}
       <AnimatePresence mode="wait" initial={false}>
-        <motion.div key={`${year}-${slide.key}`} className="absolute inset-0 mx-auto flex max-w-[460px] flex-col px-7 pb-[calc(44px+var(--safe-bottom))] pt-[calc(70px+var(--safe-top))]"
+        <mo.div key={`${year}-${slide.key}`} className="absolute inset-0 mx-auto flex max-w-[460px] flex-col px-7 pb-[calc(44px+var(--safe-bottom))] pt-[calc(70px+var(--safe-top))]"
           initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.35 }}>
           <div className="min-h-0 flex-1">{slide.render(review, ctx)}</div>
           {!isLast && <div className="pt-3 text-center text-[12px] text-white/40">{t('tap to go on · hold to pause')}</div>}
-        </motion.div>
+        </mo.div>
       </AnimatePresence>
     </div>
   )

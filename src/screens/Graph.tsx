@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { ArrowRightIcon, GraphIcon, XIcon } from '@phosphor-icons/react'
@@ -111,10 +111,10 @@ export function Graph() {
 
               {/* group auras */}
               {auras.map(({ c, cx, cy, r }) => (
-                <motion.g key={`a-${c.id}`} initial={{ opacity: 0 }} animate={{ opacity: focus !== null && focus !== c.id ? 0.25 : 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
+                <mo.g key={`a-${c.id}`} initial={{ opacity: 0 }} animate={{ opacity: focus !== null && focus !== c.id ? 0.25 : 1 }} transition={{ duration: 0.6, delay: 0.1 }}>
                   <circle cx={cx} cy={cy} r={r} fill={`url(#aura-${c.id})`} />
                   <text x={cx} y={cy - r + 20} textAnchor="middle" fontSize="9" fontWeight="700" letterSpacing="1.2" fill={clusterColor(c.id).to} opacity="0.75" style={{ textTransform: 'uppercase' }}>{c.name.length > 18 ? `${c.name.slice(0, 17)}…` : c.name}</text>
-                </motion.g>
+                </mo.g>
               ))}
 
               {/* links */}
@@ -125,7 +125,7 @@ export function Graph() {
                 const hot = sel && (e.a === sel || e.b === sel)
                 const cross = g.clusterOf.get(e.a) !== g.clusterOf.get(e.b)
                 return (
-                  <motion.line key={`${e.a}-${e.b}`} x1={A.x} y1={A.y} x2={B.x} y2={B.y} strokeLinecap="round"
+                  <mo.line key={`${e.a}-${e.b}`} x1={A.x} y1={A.y} x2={B.x} y2={B.y} strokeLinecap="round"
                     stroke={hot ? '#ffd9a8' : cross ? '#ffb36b' : '#ffffff'} strokeWidth={hot ? 1.8 : cross ? 1.2 : 0.9}
                     strokeDasharray={cross && !hot ? '3 3' : undefined}
                     initial={{ opacity: 0 }} animate={{ opacity: on ? (hot ? 0.95 : cross ? 0.5 : 0.18 + Math.min(e.w, 5) * 0.03) : 0.04 }} transition={{ duration: 0.5, delay: 0.25 + (i % 30) * 0.015 }} />
@@ -143,7 +143,7 @@ export function Graph() {
                 const on = lit(p.id)
                 const isSel = sel === p.id
                 return (
-                  <motion.g key={p.id} style={{ cursor: 'pointer', transformBox: 'fill-box', transformOrigin: 'center' }}
+                  <mo.g key={p.id} style={{ cursor: 'pointer', transformBox: 'fill-box', transformOrigin: 'center' }}
                     initial={{ scale: 0, opacity: 0 }} animate={{ scale: isSel ? 1.25 : 1, opacity: on ? 1 : 0.18 }}
                     transition={{ type: 'spring', stiffness: 380, damping: 24, delay: isSel ? 0 : 0.12 + i * 0.018 }}
                     onClick={ev => { ev.stopPropagation(); haptic(8); setSel(isSel ? null : p.id) }}>
@@ -155,7 +155,7 @@ export function Graph() {
                     {(isBridge || isSel) && (
                       <text x={pt.x} y={pt.y + r + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#f5f5fa" opacity="0.9" style={{ pointerEvents: 'none', paintOrder: 'stroke', stroke: '#05060a', strokeWidth: 3 }}>{p.firstName}</text>
                     )}
-                  </motion.g>
+                  </mo.g>
                 )
               })}
             </svg>
@@ -241,7 +241,7 @@ function Selected({ p, g, byId, onClose }: { p: Person; g: ReturnType<typeof ana
   const bridge = g.bridges.find(b => b.person.id === p.id)
   const cl = g.clusters.find(c => c.id === g.clusterOf.get(p.id))
   return (
-    <motion.div initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }}
+    <mo.div initial={{ opacity: 0, y: 30, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 20, scale: 0.97 }}
       transition={{ type: 'spring', stiffness: 460, damping: 36 }}
       className="glass-strong fixed inset-x-4 bottom-[calc(96px+var(--safe-bottom))] z-30 mx-auto max-w-[460px] rounded-[28px] p-4 lg:bottom-8 lg:left-[calc(264px+1rem)]">
       <div className="flex items-center gap-3.5">
@@ -261,6 +261,6 @@ function Selected({ p, g, byId, onClose }: { p: Person; g: ReturnType<typeof ana
         {bridge && t(' Connects different groups: introductions between them flow through this connection.')}
       </p>
       <button type="button" onClick={() => nav(`/person/${p.id}`)} className="press btn-glass mt-3 h-11 w-full">{t('Profile')}{' '}<ArrowRightIcon size={16} /></button>
-    </motion.div>
+    </mo.div>
   )
 }

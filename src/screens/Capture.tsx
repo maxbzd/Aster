@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { CameraIcon, FileTextIcon, KeyboardIcon, MicrophoneIcon, StopIcon, WaveformIcon, XIcon } from '@phosphor-icons/react'
@@ -137,7 +137,7 @@ export function Capture() {
 
       <AnimatePresence mode="wait">
         {stage === 'input' && (
-          <motion.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} className="relative mx-auto flex w-full max-w-[560px] flex-1 flex-col px-5">
+          <mo.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -10 }} className="relative mx-auto flex w-full max-w-[560px] flex-1 flex-col px-5">
             {mode === 'voice' ? (
               <div className="flex flex-1 flex-col items-center justify-center pt-4">
                 <VoiceOrb level={speech.level} active={speech.listening} />
@@ -206,11 +206,11 @@ export function Capture() {
                 <AstraStar size={16} />{' '}{t('Review')}
               </PrimaryButton>
             </div>
-          </motion.div>
+          </mo.div>
         )}
 
         {stt && (
-          <motion.div key="stt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-20 grid place-items-center bg-ink/85 px-8">
+          <mo.div key="stt" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-20 grid place-items-center bg-ink/85 px-8">
             <div className="w-full max-w-[340px] text-center">
               <AstraStar size={40} thinking />
               <div className="display mt-4 text-[24px]">{t('Transcribing the recording')}</div>
@@ -218,20 +218,20 @@ export function Capture() {
               <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full bg-fg transition-all" style={{ width: `${Math.max(6, (stt.done / stt.total) * 100)}%` }} /></div>
               <button type="button" onClick={() => abortStt.current?.abort()} className="press btn-glass mt-6 h-11 px-6">{t('Cancel')}</button>
             </div>
-          </motion.div>
+          </mo.div>
         )}
 
         {stage === 'thinking' && (
-          <motion.div key="thinking" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="relative flex flex-1 items-center justify-center px-6">
+          <mo.div key="thinking" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="relative flex flex-1 items-center justify-center px-6">
             <div className="w-full max-w-[420px]">
               <AstraThinking kind="capture" />
               <p className="mx-auto mt-2 max-w-[360px] text-center text-[14px] leading-relaxed text-fg-4">«{text.slice(0, 140)}{text.length > 140 ? '…' : ''}»</p>
             </div>
-          </motion.div>
+          </mo.div>
         )}
 
         {stage === 'review' && result && (
-          <motion.div key="review" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="relative mx-auto flex w-full max-w-[560px] flex-1 flex-col">
+          <mo.div key="review" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="relative mx-auto flex w-full max-w-[560px] flex-1 flex-col">
             <div className="flex-1 overflow-y-auto px-4 pb-6 pt-5">
               {result.plan.people.length ? (
                 <PlanReview plan={result.plan} onChange={plan => setResult(r => (r ? { ...r, plan } : r))} source={result.source} error={result.error} extras={extras} onExtras={setExtras} />
@@ -246,7 +246,7 @@ export function Capture() {
               <button type="button" onClick={() => setStage('input')} className="press btn-glass h-[52px] px-5">{t('Edit')}</button>
               <PrimaryButton className="flex-1" disabled={!result.plan.people.length || saving} onClick={save}>{saving ? t('Saving…') : t('Save all')}</PrimaryButton>
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
     </div>
@@ -259,7 +259,7 @@ function VoiceOrb({ level, active }: { level: number; active: boolean }) {
   return (
     <div className="relative grid h-[220px] w-[220px] place-items-center">
       {active && [0, 1, 2].map(i => (
-        <motion.span key={i} className="absolute inset-0 rounded-full border border-white/25"
+        <mo.span key={i} className="absolute inset-0 rounded-full border border-white/25"
           initial={{ scale: 0.6, opacity: 0.6 }} animate={{ scale: 1.5, opacity: 0 }} transition={{ duration: 2.4, repeat: Infinity, delay: i * 0.8, ease: 'easeOut' }} />
       ))}
       <div className="absolute inset-[-30%] rounded-full" style={{ background: 'radial-gradient(closest-side, rgb(255 160 100 / 0.45), rgb(124 92 255 / 0.18) 60%, transparent)', transform: `scale(${s})`, transition: 'transform 90ms linear' }} />

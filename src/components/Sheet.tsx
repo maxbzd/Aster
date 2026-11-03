@@ -1,4 +1,4 @@
-import { motion, useDragControls, type PanInfo } from 'motion/react'
+import { m as mo, useDragControls, type PanInfo } from 'motion/react'
 import { useEffect, type ReactNode } from 'react'
 import { XIcon } from '@phosphor-icons/react'
 import { useMediaQuery } from '@/data/hooks'
@@ -38,7 +38,7 @@ export function Sheet({ onClose, title, subtitle, children, footer, tall, glow =
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center">
-      <motion.div
+      <mo.div
         className="absolute inset-0 bg-black/55"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -46,7 +46,7 @@ export function Sheet({ onClose, title, subtitle, children, footer, tall, glow =
         transition={{ duration: 0.25 }}
         onClick={onClose}
       />
-      <motion.div
+      <mo.div
         role="dialog"
         aria-modal="true"
         className={`glass-strong relative flex w-full flex-col overflow-hidden rounded-t-[34px] md:max-w-[520px] md:rounded-[34px] ${tall ? 'h-[92dvh] md:h-[86dvh]' : 'max-h-[92dvh] md:max-h-[86dvh]'}`}
@@ -78,7 +78,7 @@ export function Sheet({ onClose, title, subtitle, children, footer, tall, glow =
         </div>
         <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-5">{children}</div>
         {footer && <div className="relative shrink-0 border-t border-line px-5 pb-[calc(16px+var(--safe-bottom))] pt-3">{footer}</div>}
-      </motion.div>
+      </mo.div>
     </div>
   )
 }

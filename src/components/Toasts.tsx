@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { BellRingingIcon, CheckIcon, InfoIcon } from '@phosphor-icons/react'
 import { useUI } from '@/app/store'
 
@@ -13,7 +13,7 @@ export function Toasts() {
         {toasts.map(toast => {
           const I = ICONS[toast.icon ?? 'check']
           return (
-            <motion.div
+            <mo.div
               key={toast.id}
               layout
               initial={{ opacity: 0, y: -18, scale: 0.92 }}
@@ -29,7 +29,7 @@ export function Toasts() {
                   {toast.action.label}
                 </button>
               )}
-            </motion.div>
+            </mo.div>
           )
         })}
       </AnimatePresence>

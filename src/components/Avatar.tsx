@@ -41,16 +41,16 @@ export const Avatar = memo(function Avatar({ person, size = 44, warmth, ring = f
           <img src={person.photo} alt="" className="h-full w-full object-cover" draggable={false} />
         ) : (
           <div
-            className="grid h-full w-full place-items-center font-semibold text-white"
+            className="grid h-full w-full place-items-center font-semibold text-white after:content-[attr(data-initials)]"
             style={{
               background: `radial-gradient(120% 90% at 20% 15%, ${g.a} 0%, transparent 55%), radial-gradient(100% 100% at 85% 90%, ${g.b} 0%, transparent 60%), linear-gradient(140deg, ${g.a}, ${g.deep})`,
               fontSize: size * 0.36,
               letterSpacing: '-0.02em',
               textShadow: '0 1px 8px rgb(0 0 0 / 0.25)',
             }}
-          >
-            {initials(person)}
-          </div>
+            aria-hidden="true"
+            data-initials={initials(person)}
+          />
         )}
       </div>
     </div>

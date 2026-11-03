@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { lazy, Suspense, useState } from 'react'
 import { AddressBookIcon, ArrowLeftIcon, CameraIcon, FlaskIcon, SparkleIcon } from '@phosphor-icons/react'
 import { SpaceBackground } from '@/components/Page'
@@ -57,12 +57,12 @@ export function Onboarding() {
             <button type="button" aria-label={t('Back')} onClick={() => setStep(s => s - 1)} className="press glass grid h-10 w-10 place-items-center rounded-full"><ArrowLeftIcon size={18} /></button>
           ) : <Logo />}
           <div className="flex gap-1.5">
-            {[0, 1, 2, 3].map(i => <motion.span key={i} animate={{ width: i === step ? 22 : 6, opacity: i <= step ? 1 : 0.3 }} className="h-1.5 rounded-full bg-fg" />)}
+            {[0, 1, 2, 3].map(i => <mo.span key={i} animate={{ width: i === step ? 22 : 6, opacity: i <= step ? 1 : 0.3 }} className="h-1.5 rounded-full bg-fg" />)}
           </div>
         </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
+        <AnimatePresence mode="wait" initial={false}>
+          <mo.div
             key={step}
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -124,13 +124,13 @@ export function Onboarding() {
                     const on = chosen.includes(c.name)
                     const pal = PALETTES[c.palette]
                     return (
-                      <motion.button key={c.name} type="button" whileTap={{ scale: 0.96 }}
+                      <mo.button key={c.name} type="button" whileTap={{ scale: 0.96 }}
                         onClick={() => { haptic(5); setChosen(x => (on ? x.filter(n => n !== c.name) : [...x, c.name])) }}
                         className={`glass glow-card flex items-center gap-3 rounded-[22px] p-3.5 text-left transition-opacity ${on ? '!border-white/30' : 'opacity-55'}`}
                         style={{ ['--glow' as string]: on ? pal.glow : 'transparent', ['--gx' as string]: '0%', ['--gy' as string]: '0%' }}>
                         <span className="grid h-10 w-10 place-items-center rounded-full text-[19px]" style={{ background: `linear-gradient(135deg, ${pal.from}88, ${pal.to}33)` }}>{c.emoji}</span>
                         <span className="text-[15px] font-semibold">{c.name}</span>
-                      </motion.button>
+                      </mo.button>
                     )
                   })}
                 </div>
@@ -152,7 +152,7 @@ export function Onboarding() {
                 </div>
               </>
             )}
-          </motion.div>
+          </mo.div>
         </AnimatePresence>
       </div>
       <div className="grain" />
@@ -193,9 +193,9 @@ function HeroOrbit() {
             return (
               <div key={i} className="absolute" style={{ left: 155 + Math.cos(a) * ring.r - ring.s / 2, top: 155 + Math.sin(a) * ring.r - ring.s / 2 }}>
                 <div style={{ animation: `${ri % 2 ? 'spin' : 'spin-rev'} ${ring.dur}s linear infinite` }}>
-                  <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + k * 0.08, type: 'spring', stiffness: 300, damping: 18 }}>
+                  <mo.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.3 + k * 0.08, type: 'spring', stiffness: 300, damping: 18 }}>
                     <Avatar person={p} size={ring.s} />
-                  </motion.div>
+                  </mo.div>
                 </div>
               </div>
             )

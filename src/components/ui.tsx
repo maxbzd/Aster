@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react'
 import type { Icon } from '@phosphor-icons/react'
 import { CaretRightIcon } from '@phosphor-icons/react'
@@ -68,7 +68,7 @@ export function Segmented<T extends string | number>({
             onClick={() => { haptic(5); onChange(o.value) }}
             className={`relative z-10 h-9 flex-1 rounded-full px-3 text-[13.5px] font-medium transition-colors ${on ? 'text-ink' : 'text-fg-2'}`}
           >
-            {on && <motion.span layoutId={`seg-${options.map(x => x.value).join('')}`} className="absolute inset-0 -z-10 rounded-full bg-fg" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
+            {on && <mo.span layoutId={`seg-${options.map(x => x.value).join('')}`} className="absolute inset-0 -z-10 rounded-full bg-fg" transition={{ type: 'spring', stiffness: 500, damping: 38 }} />}
             {o.label}
           </button>
         )

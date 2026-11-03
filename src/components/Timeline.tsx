@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { CheckIcon, PencilSimpleIcon, TrashIcon } from '@phosphor-icons/react'
 import type { Interaction, Person, Reminder } from '@/data/types'
@@ -22,7 +22,7 @@ export function Timeline({ items, people, showPeople = true, allowDelete, allowE
           const meta = INTERACTIONS[it.type]
           const ps = it.personIds.map(id => people.get(id)).filter(Boolean) as Person[]
           return (
-            <motion.div
+            <mo.div
               key={it.id}
               initial={{ opacity: 0, x: -6 }}
               animate={{ opacity: 1, x: 0, transition: { delay: Math.min(i, 8) * 0.03 } }}
@@ -64,7 +64,7 @@ export function Timeline({ items, people, showPeople = true, allowDelete, allowE
                   </div>
                 )}
               </div>
-            </motion.div>
+            </mo.div>
           )
         })}
       </div>

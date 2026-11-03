@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useDeferredValue, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
 import {
@@ -176,7 +176,7 @@ export function People() {
       {/* The selected list */}
       <AnimatePresence initial={false}>
         {activeList && (
-          <motion.div key={activeList.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+          <mo.div key={activeList.id} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
             <div className="mt-3 rounded-[24px] border border-line p-3.5" style={{ background: `linear-gradient(135deg, ${PALETTES[activeList.palette].from}1f, ${PALETTES[activeList.palette].to}0a)` }}>
               <div className="flex items-center gap-3">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-[21px]" style={{ background: `linear-gradient(135deg, ${PALETTES[activeList.palette].from}88, ${PALETTES[activeList.palette].to}33)` }}>{activeList.emoji}</span>
@@ -192,7 +192,7 @@ export function People() {
                 <Chip size="sm" icon={FileCsvIcon} onClick={() => { download(`${activeList.name}.csv`, collectionToCSV(activeList, everyone ?? [], leads ?? []), 'text/csv'); toast(t('Spreadsheet downloaded')) }}>{t('To a spreadsheet')}</Chip>
               </div>
             </div>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
 
@@ -268,13 +268,13 @@ export function People() {
       {/* Bulk action bar */}
       <AnimatePresence>
         {selecting && (
-          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ type: 'spring', stiffness: 460, damping: 36 }}
+          <mo.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 24 }} transition={{ type: 'spring', stiffness: 460, damping: 36 }}
             className="fixed inset-x-3 bottom-[calc(92px+var(--safe-bottom))] z-40 mx-auto flex max-w-[520px] items-center gap-1.5 rounded-full border border-white/12 bg-[rgb(16_17_28/0.97)] p-1.5 shadow-[0_18px_50px_-12px_rgba(0,0,0,0.9)] lg:bottom-6 lg:left-[var(--sidebar-w,0px)]">
             <span className="tnum min-w-0 flex-1 truncate pl-3.5 text-[14px] font-medium text-fg-2">{pickedIds.length ? t('{count} selected', { count: pickedIds.length }) : t('Select people')}</span>
             <button type="button" disabled={!pickedIds.length} onClick={() => open({ kind: 'collectionPick', personIds: pickedIds })} className="press h-11 shrink-0 rounded-full bg-white/[0.08] px-3.5 text-[13.5px] font-semibold disabled:opacity-35">{t('To a list')}</button>
             <button type="button" disabled={!pickedIds.length} onClick={() => { open({ kind: 'bulk', personIds: pickedIds }) }} className="press h-11 shrink-0 rounded-full bg-fg px-4 text-[13.5px] font-semibold text-ink disabled:opacity-35">{t('Edit people')}</button>
             <button type="button" aria-label={t('Finish selecting')} onClick={toggleSelect} className="press grid h-11 w-11 shrink-0 place-items-center rounded-full text-fg-3"><XIcon size={16} weight="bold" /></button>
-          </motion.div>
+          </mo.div>
         )}
       </AnimatePresence>
     </Page>
@@ -283,7 +283,7 @@ export function People() {
 
 function CircleCard({ label, emoji, count, glow, active, onClick, grad }: { label: string; emoji: string; count: number; glow: string; active: boolean; onClick: () => void; grad?: { from: string; to: string } }) {
   return (
-    <motion.button
+    <mo.button
       type="button"
       onClick={onClick}
       whileTap={{ scale: 0.96 }}
@@ -295,7 +295,7 @@ function CircleCard({ label, emoji, count, glow, active, onClick, grad }: { labe
         <span className="block truncate text-[14.5px] font-semibold">{label}</span>
         <span className="tnum block text-[12px] text-fg-3">{count}</span>
       </span>
-    </motion.button>
+    </mo.button>
   )
 }
 

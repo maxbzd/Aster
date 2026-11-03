@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { ArrowRightIcon, PaperPlaneTiltIcon, XIcon } from '@phosphor-icons/react'
@@ -140,7 +140,7 @@ export function Orbit() {
                 return (
                   <div key={p.id} className="absolute" style={{ left: x - ring.size / 2, top: y - ring.size / 2, width: ring.size, height: ring.size }}>
                     <div className="ambient" style={{ animationName: stars ? 'none' : ring.dir === 1 ? 'spin-rev' : 'spin', animationDuration: `${ring.dur}s`, animationTimingFunction: 'linear', animationIterationCount: 'infinite', animationPlayState: paused ? 'paused' : 'running' }}>
-                      <motion.button
+                      <mo.button
                         type="button"
                         aria-label={fullName(p)}
                         onClick={e => { e.stopPropagation(); haptic(8); setSel(p) }}
@@ -156,7 +156,7 @@ export function Orbit() {
                         )}
                         <Avatar person={p} size={ring.size} dim={w.level === 'cold'} />
                         {isSel && <span className="absolute -inset-1 rounded-full ring-2 ring-white/80" />}
-                      </motion.button>
+                      </mo.button>
                     </div>
                   </div>
                 )
@@ -190,7 +190,7 @@ export function Orbit() {
                 return (
                   <g key={`${m.a.id}-${m.b.id}`} className="cursor-pointer" onClick={e => { e.stopPropagation(); haptic(10); open({ kind: 'intro', aId: m.a.id, bId: m.b.id, reason: m.reason, value: m.value }) }}>
                     <path d={d} fill="none" stroke="url(#constellation)" strokeWidth={6} opacity={0.18} style={{ filter: 'blur(3px)' }} />
-                    <motion.path d={d} fill="none" stroke="url(#constellation)" strokeWidth={1.6} strokeLinecap="round" strokeDasharray="4 6"
+                    <mo.path d={d} fill="none" stroke="url(#constellation)" strokeWidth={1.6} strokeLinecap="round" strokeDasharray="4 6"
                       initial={{ pathLength: 0, opacity: 0 }} animate={{ pathLength: 1, opacity: 1 }} transition={{ duration: 0.9, delay: i * 0.12 }} />
                     <path d={d} fill="none" stroke="transparent" strokeWidth={18} />
                   </g>
@@ -250,7 +250,7 @@ function SelectedCard({ p, now, onClose }: { p: Person; now: number; onClose: ()
   const reach = useReachOut()
   const w = warmthOf(p, now)
   return (
-    <motion.div
+    <mo.div
       initial={{ opacity: 0, y: 30, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: 20, scale: 0.97 }}
@@ -270,6 +270,6 @@ function SelectedCard({ p, now, onClose }: { p: Person; now: number; onClose: ()
         <button type="button" onClick={() => reach(p)} className="press btn-primary h-11 flex-1 text-[15px]"><PaperPlaneTiltIcon size={17} weight="bold" />{' '}{t('Write')}</button>
         <button type="button" onClick={() => nav(`/person/${p.id}`)} className="press btn-glass h-11 flex-1">{t('Profile')}{' '}<ArrowRightIcon size={16} /></button>
       </div>
-    </motion.div>
+    </mo.div>
   )
 }

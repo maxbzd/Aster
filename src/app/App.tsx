@@ -1,4 +1,4 @@
-import { AnimatePresence, MotionConfig } from 'motion/react'
+import { AnimatePresence, LazyMotion, MotionConfig } from 'motion/react'
 import { lazy, Suspense, useEffect, useLayoutEffect, useRef, type ComponentType } from 'react'
 import { HashRouter, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router'
 import { useSettings } from '@/data/hooks'
@@ -43,13 +43,19 @@ const Intros = lazyScreen(() => import('@/screens/Intros'), 'Intros')
 const Weekly = lazyScreen(() => import('@/screens/Weekly'), 'Weekly')
 const Reserve = lazyScreen(() => import('@/screens/Reserve'), 'Reserve')
 
+const loadMotionFeatures = () => import('./motionFeatures').then(module => module.default)
+
 export default function App() {
   return (
-    <MotionConfig reducedMotion="user">
-      <HashRouter>
-        <Shell />
-      </HashRouter>
-    </MotionConfig>
+    // The animation engine loads after the first paint (`m` components render at once, their motion starts when it arrives),
+    // so it stays out of the startup download. `strict` fails loudly if a full `motion` component slips back in.
+    <LazyMotion features={loadMotionFeatures} strict>
+      <MotionConfig reducedMotion="user">
+        <HashRouter>
+          <Shell />
+        </HashRouter>
+      </MotionConfig>
+    </LazyMotion>
   )
 }
 

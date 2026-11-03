@@ -1,4 +1,4 @@
-import { AnimatePresence, motion, useMotionValue, useTransform, animate, type PanInfo } from 'motion/react'
+import { AnimatePresence, m as mo, useMotionValue, useTransform, animate, type PanInfo } from 'motion/react'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import { BellSimpleIcon, CheckIcon, ClockCountdownIcon, PaperPlaneTiltIcon, SparkleIcon, XIcon } from '@phosphor-icons/react'
@@ -59,7 +59,7 @@ export function Review() {
             <div className="mt-2 flex gap-1">
               {queue.map((_, i) => (
                 <div key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-white/15">
-                  <motion.div className="h-full bg-fg" initial={false} animate={{ width: i < index ? '100%' : '0%' }} />
+                  <mo.div className="h-full bg-fg" initial={false} animate={{ width: i < index ? '100%' : '0%' }} />
                 </div>
               ))}
             </div>
@@ -72,14 +72,14 @@ export function Review() {
         {queue && index < queue.length ? (
           <Deck queue={queue} index={index} onDecide={decide} />
         ) : queue ? (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center">
+          <mo.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col items-center text-center">
             <Orb value={100} tone="hot" size={200} />
             <h2 className="mt-4 text-[26px] font-semibold tracking-[-0.02em]">{queue.length ? t('Deck cleared') : people?.length ? t('All connections are on rhythm') : t('No one to review yet')}</h2>
             <p className="mt-2 max-w-[300px] text-[15px] leading-relaxed text-fg-3">
               {queue.length ? t('Marked: {done} · postponed: {later} · remind: {remind}', { done: stats.done, later: stats.later, remind: stats.remind }) : people?.length ? t('No one is waiting for your message right now. Great job.') : t('Add people — and a deck of who to write to will appear here.')}
             </p>
             <button type="button" onClick={() => nav('/')} className="press btn-primary mt-6"><SparkleIcon size={18} weight="fill" />{' '}{t('Done')}</button>
-          </motion.div>
+          </mo.div>
         ) : null}
       </div>
 
@@ -141,7 +141,7 @@ function CardItem({ p, depth, onDecide }: { p: Person; depth: number; onDecide: 
   const exit = exitDir === 'done' ? { x: 520, rotate: 20, opacity: 0 } : exitDir === 'later' ? { x: -520, rotate: -20, opacity: 0 } : exitDir === 'remind' ? { y: -700, opacity: 0 } : { x: 520, rotate: 20, opacity: 0 }
 
   return (
-    <motion.div
+    <mo.div
       className="absolute inset-0"
       style={{ zIndex: 10 - depth, transformOrigin: depth ? '50% 120%' : '50% 50%' }}
       initial={{ scale: 0.9, opacity: 0, y: 30 }}
@@ -149,7 +149,7 @@ function CardItem({ p, depth, onDecide }: { p: Person; depth: number; onDecide: 
       exit={{ ...exit, transition: { duration: 0.32, ease: [0.4, 0, 0.2, 1] } }}
       transition={{ type: 'spring', stiffness: 340, damping: 30 }}
     >
-    <motion.div
+    <mo.div
       className="h-full"
       style={{ x, y, rotate }}
       drag={top}
@@ -193,13 +193,13 @@ function CardItem({ p, depth, onDecide }: { p: Person; depth: number; onDecide: 
 
         {top && (
           <>
-            <motion.div style={{ opacity: okOpacity }} className="pointer-events-none absolute left-6 top-6 -rotate-12 rounded-xl border-[3px] border-mint px-3 py-1 text-[18px] font-extrabold uppercase tracking-wider text-mint">{t('We were in touch')}</motion.div>
-            <motion.div style={{ opacity: laterOpacity }} className="pointer-events-none absolute right-6 top-6 rotate-12 rounded-xl border-[3px] border-cold px-3 py-1 text-[18px] font-extrabold uppercase tracking-wider text-cold">{t('Later')}</motion.div>
-            <motion.div style={{ opacity: remindOpacity }} className="pointer-events-none absolute inset-x-0 top-[38%] mx-auto w-fit rounded-xl border-[3px] border-warm px-3 py-1 text-[18px] font-extrabold uppercase tracking-wider text-warm">{t('Remind')}</motion.div>
+            <mo.div style={{ opacity: okOpacity }} className="pointer-events-none absolute left-6 top-6 -rotate-12 rounded-xl border-[3px] border-mint px-3 py-1 text-[18px] font-extrabold uppercase tracking-wider text-mint">{t('We were in touch')}</mo.div>
+            <mo.div style={{ opacity: laterOpacity }} className="pointer-events-none absolute right-6 top-6 rotate-12 rounded-xl border-[3px] border-cold px-3 py-1 text-[18px] font-extrabold uppercase tracking-wider text-cold">{t('Later')}</mo.div>
+            <mo.div style={{ opacity: remindOpacity }} className="pointer-events-none absolute inset-x-0 top-[38%] mx-auto w-fit rounded-xl border-[3px] border-warm px-3 py-1 text-[18px] font-extrabold uppercase tracking-wider text-warm">{t('Remind')}</mo.div>
           </>
         )}
       </div>
-    </motion.div>
-    </motion.div>
+    </mo.div>
+    </mo.div>
   )
 }

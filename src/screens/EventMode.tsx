@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
@@ -245,7 +245,7 @@ function Review({ event, parsed, setParsed, onBack, onDone }: { event: NetEvent;
       <div className="mt-5 flex flex-col gap-2.5 pb-4">
         <AnimatePresence initial={false}>
           {parsed.map((p, i) => (
-            <motion.div key={p.capture.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: p.include ? 1 : 0.45, y: 0 }} className="glass flex gap-3 rounded-[24px] p-3.5">
+            <mo.div key={p.capture.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: p.include ? 1 : 0.45, y: 0 }} className="glass flex gap-3 rounded-[24px] p-3.5">
               {p.capture.photo ? <img src={p.capture.photo} alt="" className="h-[84px] w-[64px] shrink-0 rounded-[12px] object-cover" /> : <Avatar person={{ id: p.capture.id, firstName: p.draft.first_name || '?' }} size={52} />}
               <div className="min-w-0 flex-1">
                 <div className="flex gap-2">
@@ -257,7 +257,7 @@ function Review({ event, parsed, setParsed, onBack, onDone }: { event: NetEvent;
                 {p.capture.text && <p className="mt-1.5 line-clamp-2 text-[12.5px] leading-snug text-fg-4">{p.capture.text}</p>}
               </div>
               <button type="button" aria-label={p.include ? t("Don't save") : t('Save')} onClick={() => set(i, { include: !p.include })} className={`press grid h-7 w-7 shrink-0 place-items-center self-start rounded-full border-[1.5px] ${p.include ? 'border-mint bg-mint text-ink' : 'border-white/25'}`}>{p.include && <CheckIcon size={12} weight="bold" />}</button>
-            </motion.div>
+            </mo.div>
           ))}
         </AnimatePresence>
       </div>

@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { ArrowRightIcon } from '@phosphor-icons/react'
@@ -19,7 +19,7 @@ export function YearTeaser() {
   if (!r.hasData) return null
   return (
     <Link to={`/year?y=${year}`} className="press relative mt-6 block overflow-hidden rounded-[30px] p-5" style={{ background: 'linear-gradient(135deg, #3b2a9a 0%, #8a3fd0 45%, #ff7a3d 100%)' }}>
-      <motion.div aria-hidden className="absolute -right-10 -top-10 h-44 w-44 rounded-full" style={{ background: 'radial-gradient(closest-side, rgb(255 255 255 / 0.4), transparent)' }} animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }} />
+      <mo.div aria-hidden className="absolute -right-10 -top-10 h-44 w-44 rounded-full" style={{ background: 'radial-gradient(closest-side, rgb(255 255 255 / 0.4), transparent)' }} animate={{ scale: [1, 1.15, 1], opacity: [0.7, 1, 0.7] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }} />
       <div className="relative">
         <div className="micro text-white/75">{t('year in review')}</div>
         <div className="mt-2 flex items-end justify-between gap-3">

@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useMemo } from 'react'
 import { Link } from 'react-router'
 import { ArrowRightIcon, GraphIcon, SparkleIcon, TimerIcon } from '@phosphor-icons/react'
@@ -30,7 +30,7 @@ export function RhythmSuggestions({ people, ints, now }: { people: Person[]; int
       <div className="flex flex-col gap-2.5">
         <AnimatePresence initial={false}>
           {list.map(({ p, s }) => (
-            <motion.div key={p.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginTop: -10 }} className="glass overflow-hidden rounded-[24px] p-4">
+            <mo.div key={p.id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0, marginTop: -10 }} className="glass overflow-hidden rounded-[24px] p-4">
               <Link to={`/person/${p.id}`} className="flex items-center gap-3">
                 <Avatar person={p} size={40} />
                 <div className="min-w-0 flex-1">
@@ -46,7 +46,7 @@ export function RhythmSuggestions({ people, ints, now }: { people: Person[]; int
                 <button type="button" onClick={() => apply(p, s.suggested)} className="press h-10 flex-1 rounded-full bg-fg text-[14px] font-semibold text-ink">{t('Set:')}{' '}{cadenceLabel(s.suggested).toLowerCase()}</button>
                 <button type="button" onClick={() => keep(p)} className="press h-10 rounded-full border border-line px-4 text-[14px] text-fg-2">{t('Keep')}</button>
               </div>
-            </motion.div>
+            </mo.div>
           ))}
         </AnimatePresence>
       </div>
@@ -74,7 +74,7 @@ export function ReciprocityCard({ people, ints, now }: { people: Person[]; ints:
                   <span className="shrink-0 text-[12px] text-fg-3">{r.level === 'me' ? t('you') : t('they')} — {Math.round(Math.max(meShare, 1 - meShare) * 100)}%</span>
                 </div>
                 <div className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
-                  <motion.div className="h-full" initial={{ width: 0 }} animate={{ width: `${meShare * 100}%` }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} style={{ background: '#8f7cff' }} />
+                  <mo.div className="h-full" initial={{ width: 0 }} animate={{ width: `${meShare * 100}%` }} transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }} style={{ background: '#8f7cff' }} />
                   <div className="h-full flex-1" style={{ background: '#ffb36b', opacity: 0.8 }} />
                 </div>
                 <div className="mt-1 flex justify-between text-[11px] text-fg-4"><span>{t('you ·')}{' '}{r.me}</span><span>{t('they ·')}{' '}{r.them}</span></div>

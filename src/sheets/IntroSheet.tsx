@@ -1,4 +1,4 @@
-import { motion } from 'motion/react'
+import { m as mo } from 'motion/react'
 import { useEffect, useState } from 'react'
 import { CheckIcon, CopyIcon, PaperPlaneTiltIcon, XIcon } from '@phosphor-icons/react'
 import { Sheet } from '@/components/Sheet'
@@ -66,7 +66,7 @@ export function IntroSheet({ aId, bId, reason, value, onClose }: { aId: string; 
       <p className="mt-1.5 text-center text-[13.5px] text-fg-3">{value}</p>
 
       {!res || !texts ? <AstraThinking kind="drafts" className="pt-8" /> : (
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
+        <mo.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-6">
           <div className="mb-3 flex justify-between"><span className="micro text-fg-3">{t('Messages')}</span><SourceBadge source={res.source} error={res.error} /></div>
           <Segmented value={tab} onChange={setTab} options={[{ value: 'to_a', label: a.firstName }, { value: 'to_b', label: b.firstName }, { value: 'group', label: t('Group chat') }]} />
           <div className="glass mt-3 rounded-[24px] p-4">
@@ -77,7 +77,7 @@ export function IntroSheet({ aId, bId, reason, value, onClose }: { aId: string; 
             <li><b className="text-fg-2">2.</b>{' '}{t('When both are in, create a group chat and paste the third message.')}</li>
             <li><b className="text-fg-2">3.</b>{' '}{t('Tap “Introduced” — Astra will remember the connection and your help to both.')}</li>
           </ol>
-        </motion.div>
+        </mo.div>
       )}
     </Sheet>
   )
@@ -94,7 +94,7 @@ export function PairHero({ a, b, size = 64 }: { a: Person; b: Person; size?: num
       </div>
       <div className="absolute left-[95px] right-[95px] top-[calc(8px+32px)] h-px">
         <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgb(255 217 168 / 0.1), rgb(255 217 168 / 0.9), rgb(167 150 255 / 0.9), rgb(167 150 255 / 0.1))', boxShadow: '0 0 12px rgb(255 200 150 / 0.6)' }} />
-        <motion.span className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_3px_rgba(255,220,180,0.8)]"
+        <mo.span className="absolute top-1/2 h-2 w-2 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_3px_rgba(255,220,180,0.8)]"
           initial={{ left: '0%' }} animate={{ left: ['0%', '100%', '0%'] }} transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }} />
       </div>
       <div className="z-10 flex w-[110px] flex-col items-center text-center">

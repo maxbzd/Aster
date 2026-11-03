@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useId, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router'
 import {
@@ -55,9 +55,9 @@ function AddMenu({ onClose, desktop }: { onClose: () => void; desktop?: boolean 
   ]
   return (
     <>
-      <motion.div className="fixed inset-0 z-40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
+      <mo.div className="fixed inset-0 z-40" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}
         style={{ background: 'radial-gradient(80% 60% at 80% 100%, rgb(0 0 0 / 0.6), rgb(0 0 0 / 0.35))' }} />
-      <motion.div
+      <mo.div
         className={`glass-strong fixed z-50 w-[272px] overflow-hidden rounded-[26px] p-2 ${desktop ? 'bottom-24 left-5' : 'bottom-[calc(96px+var(--safe-bottom))] right-4'}`}
         style={{ transformOrigin: desktop ? 'bottom left' : 'bottom right' }}
         initial={{ opacity: 0, scale: 0.85, y: 10 }}
@@ -66,7 +66,7 @@ function AddMenu({ onClose, desktop }: { onClose: () => void; desktop?: boolean 
         transition={{ type: 'spring', stiffness: 520, damping: 34 }}
       >
         {items.map((it, i) => (
-          <motion.button
+          <mo.button
             key={it.label}
             type="button"
             initial={{ opacity: 0, y: 6 }}
@@ -79,9 +79,9 @@ function AddMenu({ onClose, desktop }: { onClose: () => void; desktop?: boolean 
               <span className="block text-[15px] font-medium">{it.label}</span>
               <span className="block text-[12.5px] text-fg-3">{it.sub}</span>
             </span>
-          </motion.button>
+          </mo.button>
         ))}
-      </motion.div>
+      </mo.div>
     </>
   )
 }
@@ -105,7 +105,7 @@ export function TabBar() {
             const on = isActive(tab.to, pathname)
             return (
               <NavLink key={tab.to} to={tab.to} onClick={() => haptic(5)} className="relative flex h-full w-[clamp(54px,16.5vw,72px)] flex-col items-center justify-center gap-[3px] rounded-full">
-                {on && <motion.span layoutId="tab-pill" className="absolute inset-0 rounded-full bg-white/[0.11]" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
+                {on && <mo.span layoutId="tab-pill" className="absolute inset-0 rounded-full bg-white/[0.11]" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
                 <tab.icon size={22} weight={on ? 'fill' : 'regular'} className={`relative transition-colors ${on ? 'text-fg' : 'text-fg-3'}`} />
                 <span className={`relative text-[10.5px] font-medium transition-colors ${on ? 'text-fg' : 'text-fg-3'}`}>{tab.label}</span>
               </NavLink>
@@ -123,9 +123,9 @@ export function TabBar() {
           className="press relative grid h-[64px] w-[64px] shrink-0 touch-none select-none place-items-center rounded-full text-ink"
           style={{ background: 'radial-gradient(circle at 35% 30%, #fff, #ffe2bd 45%, #b8a6ff 100%)', boxShadow: '0 10px 40px -6px rgb(255 190 130 / 0.55), 0 0 0 1px rgb(255 255 255 / 0.3) inset' }}
         >
-          <motion.span animate={{ rotate: menu ? 45 : 0 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
+          <mo.span animate={{ rotate: menu ? 45 : 0 }} transition={{ type: 'spring', stiffness: 500, damping: 30 }}>
             <PlusIcon size={26} weight="bold" />
-          </motion.span>
+          </mo.span>
         </button>
       </nav>
       <AnimatePresence>{menu && <AddMenu onClose={() => setMenu(false)} />}</AnimatePresence>
@@ -152,7 +152,7 @@ export function Sidebar() {
             const on = isActiveSide(tab.to, pathname)
             return (
               <NavLink key={tab.to} to={tab.to} className={`relative flex h-11 items-center gap-3 rounded-full px-3.5 text-[15px] font-medium transition-colors ${on ? 'text-fg' : 'text-fg-3 hover:text-fg-2'}`}>
-                {on && <motion.span layoutId="side-pill" className="absolute inset-0 rounded-full bg-white/[0.08]" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
+                {on && <mo.span layoutId="side-pill" className="absolute inset-0 rounded-full bg-white/[0.08]" transition={{ type: 'spring', stiffness: 520, damping: 40 }} />}
                 <tab.icon size={20} weight={on ? 'fill' : 'regular'} className="relative" />
                 <span className="relative">{tab.to === '/me' ? t('Profile') : tab.label}</span>
               </NavLink>

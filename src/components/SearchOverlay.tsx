@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { AnimatePresence, m as mo } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
@@ -120,8 +120,8 @@ function Search() {
 
   return (
     <div className="fixed inset-0 z-[55] flex justify-center px-3 pt-[calc(10px+var(--safe-top))] md:pt-[10vh]">
-      <motion.div className="absolute inset-0 bg-black/75" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close} />
-      <motion.div
+      <mo.div className="absolute inset-0 bg-black/75" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={close} />
+      <mo.div
         initial={{ opacity: 0, y: -12, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -147,7 +147,7 @@ function Search() {
         {ask ? (
           <div className="overflow-y-auto p-4">
             {!ask.res ? <AstraThinking kind="ask" /> : (
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <mo.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
                 <div className="rounded-[22px] p-4" style={astraGlow}>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="flex items-center gap-2 text-[13px] font-semibold text-[#ffe2c2]"><AstraStar size={14} />{' '}{t('Answer')}</span>
@@ -171,7 +171,7 @@ function Search() {
                     {ask.res.data.follow_ups.map(f => <button key={f} type="button" onClick={() => runAsk(f)} className="press rounded-full border border-line bg-white/[0.04] px-3 py-1.5 text-[13px] text-fg-2 hover:text-fg">{f}</button>)}
                   </div>
                 )}
-              </motion.div>
+              </mo.div>
             )}
           </div>
         ) : (
@@ -240,7 +240,7 @@ function Search() {
             })}
           </div>
         )}
-      </motion.div>
+      </mo.div>
     </div>
   )
 }
