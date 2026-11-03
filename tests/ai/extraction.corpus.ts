@@ -75,7 +75,7 @@ export const CORPUS: Gold[] = [
   // Ukrainian
   { lang: 'uk', text: 'Познайомився з Анною Волковою за кавою. Вона технічна директорка фінтех-стартапу в Берліні.', first: 'Анна', role: 'CTO', city: 'Berlin', field: 'Fintech' },
   { lang: 'uk', text: 'Пообідав з Маркусом Лі, архітектором з Лісабона. Цікавиться нерухомістю.', first: 'Маркус', role: 'Architect', city: 'Lisbon', field: 'Real estate' },
-  { lang: 'uk', text: 'Поспілкувався з Прією Наїр, фотографинею з Лондона, яка знімає крипто-конференції.', first: 'Пріє', role: 'Photographer', city: 'London', field: 'Crypto' },
+  { lang: 'uk', text: 'Поспілкувався з Прією Наїр, фотографинею з Лондона, яка знімає крипто-конференції.', first: 'Прія', role: 'Photographer', city: 'London', field: 'Crypto' },
   { lang: 'uk', text: 'Зустрівся з Томом Брандтом, генеральним директором логістичної компанії. Тепер живе в Амстердамі.', first: 'Том', role: 'CEO', city: 'Amsterdam', field: 'Logistics' },
   { lang: 'uk', text: 'Передзвонив Юлії Коста, юристці з Мадрида; говорили про медичні стартапи.', first: 'Юлія', role: 'Lawyer', city: 'Madrid', field: 'Healthtech' },
   { lang: 'uk', text: 'Перетнулися з Омаром Хаддадом, продакт-менеджером у Дубаї, захоплюється нейромережами.', first: 'Омар', role: 'Product Manager', city: 'Dubai', field: 'AI' },

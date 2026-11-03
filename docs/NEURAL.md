@@ -2,22 +2,24 @@
 
 [Русский](ru/NEURAL.md)
 
-**Status: a plan with a measured starting point. The neural part is not built yet.** The model hub was not reachable from the environment this was written in, so no model could be downloaded and tried. What is real and verified is the benchmark below.
+**Status: a plan with a measured starting point. The neural part is not built yet; the rules now also read Spanish, German, French, Portuguese and Ukrainian.** The model hub was not reachable from the environment this was written in, so no model could be downloaded and tried. What is real and verified is the benchmark below.
 
 ## The problem, measured
 
-Astra's on-device engine (`src/ai/local/parse.ts`) reads a note with hand-written rules: roles, industries and cities are dictionaries of regular expressions. [`tests/ai/extraction.corpus.ts`](../tests/ai/extraction.corpus.ts) holds 56 short notes (8 in each of the 7 interface languages) and scores any extractor on four things: the person's name, role, city, field of work. Running the engine over it gives:
+Astra's on-device engine (`src/ai/local/parse.ts`) reads a note with hand-written rules: roles, industries and cities are dictionaries of regular expressions. [`tests/ai/extraction.corpus.ts`](../tests/ai/extraction.corpus.ts) holds 56 short notes (8 in each of the 7 interface languages) and scores any extractor on four things: the person's name, role, city, field of work. Run it with `npx vitest run tests/ai/extraction.benchmark.test.ts` (set `BENCH_OUT=file` to keep the table).
 
-| language | person | role | city | field | all four |
-|---|---|---|---|---|---|
-| English | 100% | 100% | 100% | 100% | **100%** |
-| Russian | 100% | 100% | 100% | 100% | **100%** (50% before the fixes below) |
-| Spanish, French, Portuguese, Ukrainian | 0% | 0% | 0% | 0% | **0%** |
-| German | 25% | 13% | 13% | 0% | **0%** |
+| language | rules for English and Russian only | with the Spanish, German, French, Portuguese and Ukrainian rules (`src/ai/local/langs.ts`) |
+|---|---|---|
+| English | 100% | 100% |
+| Russian | 50% at first, 100% after three bug fixes | 100% |
+| Spanish, French, Portuguese, Ukrainian | 0% | 100% |
+| German | 0% | 100% |
 
-So the rules are exactly as good as the README says in the two languages they were written for, and give nothing in the other five. The corpus is small and its vocabulary is the app's own, so read the table as a direction, not as a leaderboard. Run it with `npx vitest run tests/ai/extraction.benchmark.test.ts` (set `BENCH_OUT=file` to keep the table).
+(share of notes where all four things came out right)
 
-The measurement also found bugs *inside* the languages that were supposed to work, now fixed: JavaScript's `\b` does not see Cyrillic, so `вен[аеы]\b` ("Вены") and `рим[ае]?\b` ("Рима") could never match; a city was found after "lives in" / "живёт" / "из" but not after a bare "в Берлине"; "логистической" was not recognised as logistics. Regular expressions fail in exactly the quiet, local way that idea predicts.
+**Read that last column with care.** The corpus was written alongside the rules, so 100% there mostly says the rules fit those sentences. The honest test is a second set worded differently and written afterwards, [`extraction.heldout.ts`](../tests/ai/extraction.heldout.ts): 24 notes. On its first run, before any change, the rules got **67%** (English, Russian and Portuguese 100%; Spanish and German 75%; French 50%; Ukrainian 0%). The misses were real gaps in how people say things: Ukrainian verb forms ("зустрілася", "познайомилась", "із"), Spanish "tomé un café con", German "gesehen", French "j'ai déjeuné avec", "Bruxelles". They were fixed, which means that set is no longer held out; a third set would be needed to measure again. The pattern is the point: hand-written rules reach a high number on what they were written for and lose a third on what they were not, in every language, and each new phrasing is a new rule. That is the case for a model.
+
+The measurement also found bugs *inside* the languages that were supposed to work, now fixed: JavaScript's `\b` does not see Cyrillic or accented letters, so `вен[аеы]\b` ("Вены"), `рим[ае]?\b` ("Рима") and `\bsant[eé]\b` could never match; a city was found after "lives in" / "живёт" / "из" but not after a bare "в Берлине"; "логистической" was not recognised as logistics.
 
 ## What to build
 
@@ -49,9 +51,9 @@ A generative model remains useful for a different job (turning a note into a sen
 3. A median of under 300 ms per note on a mid-range phone, under 150 MB of memory, no request except the model download.
 4. No file or note is sent anywhere; airplane mode works after the first download.
 
-## A smaller step that needs no download
+## The step that needs no download (done)
 
-Add the other languages to the dictionaries: roles, industries, and the city names that differ between languages (Londres, Viena, Wien, Lissabon). It is cheap and safe, and the benchmark will show how far it goes. It will not reach the patterns that decide *who* the note is about ("conocí a", "habe … getroffen"), which are language-specific too; that part is why a model is the better answer.
+`src/ai/local/langs.ts` adds Spanish, German, French, Portuguese and Ukrainian: roles, industries, the city names that differ between languages (Londres, Viena, Wien, Lissabon), and the phrases that say *who* the note is about ("conocí a", "habe … getroffen", "зустрілася з"). It is cheap, safe and needs no download, and it is a list: every new way of saying "I met someone" is one more line. That is the part a model replaces.
 
 ## The same idea in Orbita
 
