@@ -22,6 +22,8 @@ export interface CloudState {
   recovery: boolean
   /** the session ended on its own: sign in again */
   expired: boolean
+  /** cloud encryption: this device seals what it sends ('on'), the cloud copy is sealed and this device lacks the key ('locked'), or neither ('off') */
+  e2e?: 'off' | 'on' | 'locked'
   /** a one-off message (for example, "another account's data was removed from this device") */
   notice?: string
 }

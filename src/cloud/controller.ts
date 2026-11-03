@@ -1,6 +1,6 @@
 import { liveQuery } from 'dexie'
 import { friendlyCloudError } from './auth'
-import { engine as defaultEngine, type Engine, type Remote } from './engine'
+import { E2ELockedError, engine as defaultEngine, type Engine, type Remote } from './engine'
 import type { CloudState } from './store'
 import { t } from '@/i18n'
 
@@ -139,6 +139,13 @@ export class SyncController {
     return this.syncNow({ full: true })
   }
 
+  /** Seals everything again and sends it with fresh stamps: used when encryption is turned on, so no plain copy stays behind. */
+  async reencrypt() {
+    await this.e.clearRejected()
+    await this.e.enqueueAll({ fresh: true })
+    return this.syncNow({ full: true })
+  }
+
   private async runOnce(full: boolean) {
     this.lastRunAt = Date.now()
     if (!this.online()) {
@@ -149,9 +156,15 @@ export class SyncController {
     try {
       await this.e.syncOnce(this.o.remote, { full })
       this.errors = 0
-      this.o.report({ phase: 'idle', lastSyncAt: Date.now(), error: undefined, pending: await this.e.pendingCount(), rejected: await this.e.rejectedCount() })
+      this.o.report({ phase: 'idle', lastSyncAt: Date.now(), error: undefined, pending: await this.e.pendingCount(), rejected: await this.e.rejectedCount(), e2e: await this.e.e2eState() })
     } catch (e) {
       if (this.stopped) return
+      if (e instanceof E2ELockedError) {
+        // not a failure to retry: the cloud copy is sealed and this device waits for its key
+        this.errors = 0
+        this.o.report({ phase: 'idle', error: undefined, e2e: 'locked', pending: await this.e.pendingCount() })
+        return
+      }
       this.errors++
       const value = friendlyCloudError(e)
       const offline = !this.online() || value === t('No internet connection')

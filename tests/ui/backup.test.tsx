@@ -113,3 +113,41 @@ describe('the list of replaced edits', () => {
     expect(await screen.findByText(/Ничего не заменялось/)).toBeInTheDocument()
   })
 })
+
+describe('encrypting the cloud copy', () => {
+  it('turn it on, write the key down, then add a second device through the code exchange', async () => {
+    const { useCloud } = await import('@/cloud/store')
+    const { beginJoin, completeJoin } = await import('@/cloud/e2eSetup')
+    act(() => useCloud.setState({ phase: 'idle', userId: 'u1', email: 'a@b.c', e2e: 'off' }))
+    const { user } = renderApp('/me')
+    await screen.findByText('Резервная копия')
+    act(() => useUI.getState().open({ kind: 'cloudKey' }))
+    await user.click(await screen.findByRole('button', { name: 'Включить' }))
+    const key = (await screen.findByTestId('recovery-key')).textContent!
+    expect(key).toMatch(/^([0-9A-Z]{5}-){10}[0-9A-Z]{5}$/)
+    await user.click(screen.getByRole('checkbox'))
+    await user.click(screen.getByRole('button', { name: 'Готово' }))
+    const mine = (await db.settings.get('me'))?.e2e
+    expect(mine?.key).toBeTruthy()
+    expect(JSON.stringify(await exportBackup())).not.toContain(mine!.key) // the key is not in a backup
+
+    // the sheet switches to the "on" state once a sync reports it
+    act(() => useCloud.setState({ e2e: 'on' }))
+    await user.click(await screen.findByRole('button', { name: 'Добавить устройство' }))
+    const newDevice = await beginJoin()
+    const field = (await screen.findAllByRole('textbox'))[0]!
+    await user.click(field)
+    await user.paste(newDevice.code) // typing 1,700 characters one by one would take longer than the test
+    await user.click(screen.getByRole('button', { name: 'Дальше' }))
+    expect((await screen.findByTestId('digits')).textContent).toBe(newDevice.checkDigits)
+    await user.click(screen.getByRole('button', { name: 'Совпадают: создать ответ' }))
+    const answer = (await screen.findByTestId('code')).textContent!
+    expect(answer.startsWith('SEAL1.')).toBe(true)
+
+    // the new device opens the answer and ends up with the same key
+    const before = mine!.key
+    await db.settings.update('me', { e2e: undefined })
+    await completeJoin(newDevice, answer)
+    expect((await db.settings.get('me'))?.e2e?.key).toBe(before)
+  })
+})

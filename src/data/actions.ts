@@ -182,7 +182,7 @@ export async function exportBackup() {
   ])
   // keys (Astra, speech recognition) do not go into the backup
   const safeSettings = settings.map(s => {
-    const { stt: _stt, autoBackup: _auto, ...rest } = s
+    const { stt: _stt, autoBackup: _auto, e2e: _e2e, ...rest } = s
     return rest.ai ? { ...rest, ai: { ...rest.ai, apiKey: undefined, proxyToken: undefined } } : rest
   })
   return { app: 'aster', version: BACKUP_VERSION, exportedAt: new Date().toISOString(), people, interactions, reminders, circles, settings: safeSettings, intros, events, leads, collections }
@@ -253,6 +253,8 @@ export async function importBackup(data: unknown, { mode = 'replace' }: ImportOp
       // the folder for automatic copies belongs to this device, not to the file
       if (current?.autoBackup) merged.autoBackup = current.autoBackup
       else delete merged.autoBackup
+      if (current?.e2e) merged.e2e = current.e2e
+      else delete merged.e2e
       await db.settings.put(merged)
     }
   })

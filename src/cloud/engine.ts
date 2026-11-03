@@ -33,8 +33,11 @@ export interface Remote {
 }
 
 /** Settings fields that live only on this device (API keys, the date of the last backup file). */
-export const DEVICE_ONLY_SETTINGS = ['ai', 'stt', 'voice', 'lastBackupAt', 'backupSnoozeUntil', 'autoBackup'] as const
+export const DEVICE_ONLY_SETTINGS = ['ai', 'stt', 'voice', 'lastBackupAt', 'backupSnoozeUntil', 'autoBackup', 'e2e'] as const
 const isDeviceOnly = (path: string) => DEVICE_ONLY_SETTINGS.some(k => path === k || path.startsWith(`${k}.`))
+
+/** The cloud copy is encrypted and this device does not have the key yet: nothing is sent until it does (plain data would leak). */
+export class E2ELockedError extends Error {}
 
 /** The server rejected a record for good (bad format, too large): retrying will not help, and it is not a network failure. */
 export class PermanentRemoteError extends Error {}
@@ -168,6 +171,29 @@ export function createEngine(db: AsterDB) {
     await setMeta('conflicts', [...(await conflictLog()), ...entries].slice(-CONFLICT_LOG_LIMIT))
   }
 
+  /* ---------- the cloud key ---------- */
+
+  /** The key that seals the cloud copy, if this device has one (kept in the device-only settings). */
+  let keyCache: { raw: string; key: import('./e2e').CloudKey } | null = null
+  async function cloudKey(): Promise<import('./e2e').CloudKey | null> {
+    const raw = (await db.settings.get('me'))?.e2e?.key
+    if (!raw) {
+      keyCache = null
+      return null
+    }
+    if (keyCache?.raw === raw) return keyCache.key
+    const { importCloudKey } = await import('./e2e')
+    const { fromBase64 } = await import('@/crypto/bytes')
+    keyCache = { raw, key: await importCloudKey(fromBase64(raw)) }
+    return keyCache.key
+  }
+
+  /** 'on': this device seals what it sends; 'locked': the cloud copy is encrypted and this device has no key; 'off'. */
+  async function e2eState(): Promise<'off' | 'on' | 'locked'> {
+    if (await cloudKey()) return (await getMeta<boolean>('e2eMismatch')) ? 'locked' : 'on'
+    return (await getMeta<boolean>('e2eServer')) ? 'locked' : 'off'
+  }
+
   /* ---------- sending ---------- */
 
   const rejectedList = async () => (await getMeta<RejectedEntry[]>('rejected')) ?? []
@@ -248,7 +274,13 @@ export function createEngine(db: AsterDB) {
     let result: Awaited<ReturnType<Remote['push']>>
     try {
       payload = await buildPayload(entries)
-      result = await remote.push(payload)
+      const ck = await cloudKey()
+      let wire = payload
+      if (ck) {
+        const { sealRecord } = await import('./e2e')
+        wire = await Promise.all(payload.map(async r => (r.data ? { ...r, data: (await sealRecord(ck, r.tbl, r.id, r.data)) as unknown as Record<string, unknown> } : r)))
+      }
+      result = await remote.push(wire)
     } catch (e) {
       if (!(e instanceof PermanentRemoteError)) throw e
       if (entries.length > 1) {
@@ -268,6 +300,8 @@ export function createEngine(db: AsterDB) {
 
   /** Sends everything in the outbox in batches. On a network error nothing is lost: the entries stay in the queue. */
   async function pushPending(remote: Remote): Promise<{ pushed: number; conflicts: number }> {
+    // the cloud copy is encrypted and this device has no key: sending plain records would put them next to sealed ones
+    if ((await e2eState()) === 'locked') throw new E2ELockedError()
     let pushed = 0
     const waiting = new Set<string>() // declined for a conflict: they wait for the next pull
     for (;;) {
@@ -281,11 +315,33 @@ export function createEngine(db: AsterDB) {
 
   /* ---------- receiving ---------- */
 
+  /** Opens sealed records with the cloud key. Ones that cannot be opened (no key, another key) are left out, never guessed at. */
+  async function openIncoming(records: RemoteRecord[]): Promise<RemoteRecord[]> {
+    if (!records.some(r => r.data && (r.data as { _e2e?: unknown })._e2e === 1)) return records
+    const ck = await cloudKey()
+    const { isEnvelope, openRecord } = await import('./e2e')
+    if (!(await getMeta<boolean>('e2eServer'))) await setMeta('e2eServer', true)
+    if (!ck) return records.filter(r => !isEnvelope(r.data))
+    const out: RemoteRecord[] = []
+    for (const r of records) {
+      if (!isEnvelope(r.data)) { out.push(r); continue }
+      if (r.data.k !== ck.id) {
+        // sealed with another key: this device must not send anything until it has the right one, or the two copies drift apart unseen
+        if (!(await getMeta<boolean>('e2eMismatch'))) await setMeta('e2eMismatch', true)
+        continue
+      }
+      const plain = await openRecord(ck, r.tbl, r.id, r.data)
+      if (plain) out.push({ ...r, data: plain })
+    }
+    return out
+  }
+
   /**
    * Applies records from the cloud. A row that was also edited here is merged field by field with its base, so edits of
    * different fields on two devices both survive; your own newer edit of the same field is not overwritten.
    */
-  async function applyRemote(records: RemoteRecord[]): Promise<number> {
+  async function applyRemote(incoming: RemoteRecord[]): Promise<number> {
+    const records = await openIncoming(incoming)
     if (!records.length) return 0
     const byTable = new Map<SyncTable, RemoteRecord[]>()
     for (const r of records) {
@@ -395,12 +451,12 @@ export function createEngine(db: AsterDB) {
   /* ---------- first connection and switching accounts ---------- */
 
   /** Queues every local row (its stamp is the time of the last edit, so a fresher cloud is not overwritten). */
-  async function enqueueAll(): Promise<number> {
+  async function enqueueAll({ fresh = false }: { fresh?: boolean } = {}): Promise<number> {
     let n = 0
     for (const name of SYNC_TABLES) {
       const rows = (await table(name).toArray()) as Array<{ id: string; updatedAt?: number; createdAt?: number }>
       if (!rows.length) continue
-      await db.outbox.bulkPut(rows.map(r => ({ key: `${name}:${r.id}`, table: name, rowId: r.id, ts: r.updatedAt ?? r.createdAt ?? 0 })))
+      await db.outbox.bulkPut(rows.map(r => ({ key: `${name}:${r.id}`, table: name, rowId: r.id, ts: fresh ? nextTs() : (r.updatedAt ?? r.createdAt ?? 0) })))
       n += rows.length
     }
     return n
@@ -424,11 +480,11 @@ export function createEngine(db: AsterDB) {
     return false
   }
 
-  return { db, installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, conflictLog, clearConflicts, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData }
+  return { db, installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, e2eState, conflictLog, clearConflicts, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData }
 }
 
 export type Engine = ReturnType<typeof createEngine>
 
 /** The app's engine, bound to the main database. */
 export const engine: Engine = createEngine(appDb)
-export const { installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, conflictLog, clearConflicts, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData } = engine
+export const { installTracking, onLocalChange, getMeta, setMeta, delMeta, pendingCount, e2eState, conflictLog, clearConflicts, rejectedCount, clearRejected, hasDemoData, pushPending, applyRemote, pullAll, syncOnce, enqueueAll, clearLocalData, hasLocalData } = engine
