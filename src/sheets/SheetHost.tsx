@@ -24,6 +24,7 @@ const loaders = {
   bridge: () => import('./BridgeSheet').then(m => ({ default: m.BridgeSheet as SheetComponent })),
   ticktick: () => import('./TickTickSheet').then(m => ({ default: m.TickTickSheet as SheetComponent })),
   claude: () => import('./ClaudeSheet').then(m => ({ default: m.ClaudeSheet as SheetComponent })),
+  syncHistory: () => import('./SyncHistorySheet').then(m => ({ default: m.SyncHistorySheet as SheetComponent })),
   vault: () => import('./VaultSheet').then(m => ({ default: m.VaultSheet as SheetComponent })),
   backup: () => import('./BackupSheet').then(m => ({ default: m.BackupSheet as SheetComponent })),
   restore: () => import('./RestoreSheet').then(m => ({ default: m.RestoreSheet as SheetComponent })),
@@ -61,6 +62,7 @@ export function SheetHost() {
             {sheet.kind === 'circles' && <S.circles onClose={close} />}
             {sheet.kind === 'backup' && <S.backup onClose={close} />}
             {sheet.kind === 'vault' && <S.vault onClose={close} />}
+            {sheet.kind === 'syncHistory' && <S.syncHistory onClose={close} />}
             {sheet.kind === 'restore' && <S.restore mode={sheet.mode} file={sheet.file} onClose={close} />}
             {sheet.kind === 'importVcf' && <S.importVcf text={sheet.text} onClose={close} />}
             {sheet.kind === 'brief' && <S.brief personId={sheet.personId} onClose={close} />}

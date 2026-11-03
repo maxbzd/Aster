@@ -292,6 +292,7 @@
  "Can be loaded onto a phone": "Se puede cargar en el teléfono",
  "Can help:": "Puede ayudar con:",
  "Can help: {v}": "Puede ayudar con: {v}",
+ "Can't be restored automatically": "No se puede restaurar automáticamente",
  "Can't remember": "No lo recuerdo",
  "Cancel": "Cancelar",
  "Cancelled, nothing saved": "Cancelado, no se guardó nada",
@@ -336,6 +337,7 @@
  "City: {v}": "Ciudad: {v}",
  "Clear": "Borrar",
  "Clear chat": "Borrar la conversación",
+ "Clear the list": "Vaciar la lista",
  "Clients": "Clientes",
  "Clipboard is empty": "El portapapeles está vacío",
  "Close": "Cerrar",
@@ -1110,6 +1112,7 @@
  "Nothing to measure yet": "Aún no hay nada que medir",
  "Nothing to suggest yet": "Aún no hay nada que sugerir",
  "Nothing urgent this week — a good moment for new acquaintances.": "Esta semana nada urgente: buen momento para conocer gente nueva.",
+ "Nothing was replaced. Edits from your devices have merged cleanly.": "No se reemplazó nada. Las ediciones de tus dispositivos se han combinado sin problemas.",
  "Nothing written — add a few words so you can find them later": "Nada anotado: añade unas palabras para encontrarlo después",
  "November": "Noviembre",
  "Novosibirsk": "Novosibirsk",
@@ -1287,6 +1290,7 @@
  "Removed from favorites": "Quitado de favoritos",
  "Repeat it": "Repítela",
  "Repeats every year": "Se repite cada año",
+ "Replaced edits": "Ediciones reemplazadas",
  "Replaces current data": "Sustituirá los datos actuales",
  "Report": "Informe",
  "Research shows: jobs, money and intros come more often from distant acquaintances than from close friends. They live in other worlds and know what you don't.": "Las investigaciones muestran que el trabajo, el dinero y las presentaciones llegan más a menudo de conocidos lejanos que de amigos cercanos. Viven en otros mundos y saben lo que tú no sabes.",
@@ -1488,6 +1492,7 @@
  "Testing models on": "Probando modelos en",
  "Text copied": "Texto copiado",
  "Text copied — paste it into the chat": "Texto copiado: pégalo en el chat",
+ "That record no longer exists": "Ese registro ya no existe",
  "That recovery key does not match.": "Esa clave de recuperación no coincide.",
  "That was an in-person meeting.": "Fue una reunión en persona.",
  "That's normal, but check: aren't you carrying someone alone?": "Es normal, pero revisa: ¿no estás cargando tú solo con alguien?",
@@ -1711,6 +1716,7 @@
  "When did we meet?": "¿Cuándo nos vimos?",
  "When is the birthday?": "¿Cuándo es el cumpleaños?",
  "When to write": "Cuándo escribir",
+ "When two devices change the same thing, the newer edit wins. The other one is kept here.": "Cuando dos dispositivos cambian lo mismo, gana la edición más reciente. La otra se guarda aquí.",
  "When you met": "Cuándo os conocisteis",
  "Where": "Dónde",
  "Where are you going?": "¿A dónde vas?",
@@ -1800,6 +1806,7 @@
  "You can help": "Puedes ayudar",
  "You can help with": "Puedes ayudar con",
  "You first": "Tú primero",
+ "You had": "Tenías",
  "You invest more in this connection — that's a good investment.": "Inviertes más en esta conexión, y es una buena inversión.",
  "You met:": "Os conocisteis:",
  "You met: {metPlace}": "Os conocisteis: {metPlace}",
@@ -2226,6 +2233,10 @@
  "{n} day without contact": [
   "{n} día sin contacto",
   "{n} días sin contacto"
+ ],
+ "{n} edit was replaced by a newer one. You can bring it back.": [
+  "{n} edición fue reemplazada por una más reciente. Puedes recuperarla.",
+  "{n} ediciones fueron reemplazadas por otras más recientes. Puedes recuperarlas."
  ],
  "{n} introduction": [
   "{n} presentación",
