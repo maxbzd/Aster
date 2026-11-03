@@ -41,7 +41,8 @@
     "size": "node scripts/check-size.mjs",
     "check": "npm run typecheck && npm run lint && npm run i18n:check && npm run test && npm run build && npm run size",
     "eval": "node --env-file=.env.eval node_modules/vitest/vitest.mjs run tests/eval --reporter=basic",
-    "i18n:check": "node scripts/i18n-check.mjs"
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "e2e:vault": "node scripts/e2e-vault.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
@@ -64,6 +65,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@playwright/test": "~1.64.1",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
