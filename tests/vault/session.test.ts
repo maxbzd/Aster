@@ -313,3 +313,111 @@ describe('turning encryption off', () => {
     await expect(s.vault.disable()).rejects.toThrow()
   })
 })
+
+describe('opening in a second window', () => {
+  it('while the vault is open in another window, a second one is told so and opens nothing', async () => {
+    const name = fresh()
+    const { password } = await enabled(name)
+    const s = load(name)
+    await s.vault.boot()
+    const original = Object.getOwnPropertyDescriptor(navigator, 'locks')
+    // the other window holds the lock: "if available" finds nothing
+    Object.defineProperty(navigator, 'locks', { configurable: true, value: { request: (_n: string, _o: unknown, cb: (l: null) => void) => { cb(null); return Promise.resolve() } } })
+    try {
+      expect(await s.vault.unlock({ kind: 'password', password })).toBe('tab')
+      expect(s.vault.state()).toBe('locked')
+    } finally {
+      if (original) Object.defineProperty(navigator, 'locks', original); else delete (navigator as unknown as Record<string, unknown>).locks
+    }
+  })
+})
+
+describe('"I lost every way in"', () => {
+  it('erases the encrypted data for good and reloads: the next load starts empty and not locked', async () => {
+    const name = fresh()
+    await enabled(name)
+    const s = load(name)
+    await s.vault.boot()
+    localStorage.setItem('aster.vault.throttle', JSON.stringify({ failures: 5, until: Date.now() + 60_000 }))
+    await s.vault.eraseEverything()
+    expect(s.reload).toHaveBeenCalledTimes(1)
+    expect(localStorage.getItem('aster.vault')).toBeNull()
+    expect(localStorage.getItem('aster.vault.throttle')).toBeNull()
+    expect(await databases()).not.toContain(`${name}-vault`)
+    const t = load(name)
+    expect(await t.vault.boot()).toBe('off')
+    expect(await t.db.people.count()).toBe(0)
+  })
+})
+
+describe('locking by itself', () => {
+  const unlocked = async () => {
+    const name = fresh()
+    const { password } = await enabled(name)
+    const s = load(name)
+    await s.vault.boot()
+    await s.vault.unlock({ kind: 'password', password })
+    return s
+  }
+
+  it('the waiting time is kept per device, 5 minutes by default', async () => {
+    const s = load(fresh())
+    expect(s.vault.autoLockMinutes()).toBe(5)
+    s.vault.setAutoLockMinutes(15)
+    expect(s.vault.autoLockMinutes()).toBe(15)
+    expect(localStorage.getItem('aster.vault.autolock')).toBe('15')
+  })
+
+  it('locks after the waiting time without any touch, and a touch starts the wait again', async () => {
+    const s = await unlocked()
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      window.dispatchEvent(new Event('pointerdown')) // a touch re-arms the timer from now
+      await vi.advanceTimersByTimeAsync(4 * 60_000)
+      window.dispatchEvent(new Event('keydown'))
+      await vi.advanceTimersByTimeAsync(4 * 60_000)
+      expect(s.reload).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(61_000)
+      expect(s.reload).toHaveBeenCalledTimes(1)
+    } finally { vi.useRealTimers() }
+  })
+
+  it('"never" (0 minutes) does not lock by itself', async () => {
+    const s = await unlocked()
+    s.vault.setAutoLockMinutes(0)
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+    try {
+      window.dispatchEvent(new Event('pointerdown'))
+      await vi.advanceTimersByTimeAsync(24 * 60 * 60_000)
+      expect(s.reload).not.toHaveBeenCalled()
+    } finally { vi.useRealTimers() }
+  })
+
+  it('leaving the tab writes what is pending; coming back after the waiting time locks, a short absence does not', async () => {
+    const s = await unlocked()
+    const visibility = (value: 'hidden' | 'visible') => {
+      Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => value })
+      document.dispatchEvent(new Event('visibilitychange'))
+    }
+    await s.db.people.add(personOf('p9', { firstName: 'Поздно' }))
+    visibility('hidden')
+    await settle()
+    const j = await openJournal(indexedDB, `${s.name}-vault`)
+    let rows = 0
+    await j.eachRow(() => { rows++ })
+    j.close()
+    expect(rows).toBeGreaterThanOrEqual(3) // the two from before and the new one
+
+    const now = vi.spyOn(Date, 'now')
+    const t0 = Date.now()
+    now.mockReturnValue(t0 + 60_000)
+    visibility('visible') // one minute away: still open
+    expect(s.reload).not.toHaveBeenCalled()
+    visibility('hidden')
+    now.mockReturnValue(t0 + 60_000 + 6 * 60_000)
+    visibility('visible') // six minutes away: locked
+    await settle()
+    expect(s.reload).toHaveBeenCalledTimes(1)
+    delete (document as unknown as Record<string, unknown>).visibilityState
+  })
+})
