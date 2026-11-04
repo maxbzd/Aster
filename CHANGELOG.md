@@ -30,6 +30,7 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 
 ### Fixed
 
+- Birthday in the person's card: the year could not be typed digit by digit (the field emptied itself until four digits were pasted at once), and a birthday without a year was saved as `---MM-DD` instead of `--MM-DD`. Both found by the new tests of the optional sections; old `---MM-DD` values are still read.
 - Russian notes: a city after a bare "в" / "из" ("дизайнер в Берлине") is now found, "Вены" and "Рима" match (JavaScript's `\\b` does not see Cyrillic), and "логистической" counts as logistics.
 
 ### Added
