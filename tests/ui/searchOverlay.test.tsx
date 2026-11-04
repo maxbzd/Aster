@@ -20,9 +20,10 @@ beforeEach(async () => {
 
 const open = async () => {
   const ctx = renderApp('/')
-  await screen.findByText(/Анна/)
+  await screen.findByText(/Анна/, undefined, { timeout: 12_000 })
   await ctx.user.click(screen.getByRole('button', { name: t('Search') }))
-  const input = await screen.findByPlaceholderText(t('Find a person or ask the network…'))
+  // the search is a separate chunk: the first load of it can be slow while coverage is measured
+  const input = await screen.findByPlaceholderText(t('Find a person or ask the network…'), undefined, { timeout: 12_000 })
   const box = input.closest('.glass-strong') as HTMLElement
   return { ...ctx, input, box }
 }
@@ -31,8 +32,8 @@ describe('the search overlay', () => {
   it('with nothing typed: recent people, example questions and the quick actions', async () => {
     const { box } = await open()
     expect(await within(box).findByText(t('Ask your network'))).toBeInTheDocument()
-    expect(within(box).getByText(t('People'))).toBeInTheDocument()
-    expect(within(box).getByText(t('Actions'))).toBeInTheDocument()
+    expect(await within(box).findByText(t('People'))).toBeInTheDocument()
+    expect(await within(box).findByText(t('Actions'))).toBeInTheDocument()
     expect(within(box).getByRole('button', { name: t('Network pulse') })).toBeInTheDocument()
   })
 

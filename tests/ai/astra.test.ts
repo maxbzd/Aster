@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  applyPlan, astraAsk, astraBrief, astraCapture, astraDrafts, astraLeadDrafts, astraMatches, astraNews, astraNoteSuggest, astraWeekly, clearAiCache, localIntroDrafts,
+  applyPlan, astraAsk, astraBrief, astraChat, astraIntroDrafts, astraCapture, astraDrafts, astraLeadDrafts, astraMatches, astraNews, astraNoteSuggest, astraWeekly, clearAiCache, localIntroDrafts,
   setIntroStatus, testConnection,
 } from '@/ai/astra'
 import type { CapturePlan } from '@/ai/schemas'
@@ -200,6 +200,88 @@ describe('with a model: answers are cleaned and backed up by the local mode', ()
     expect(await testConnection()).toEqual({ ok: true, message: 'Привет!' })
     json.mockRejectedValueOnce(Object.assign(new Error('x'), { status: 401 }))
     expect((await testConnection()).ok).toBe(false)
+  })
+})
+
+describe('with a model: the rest of the answers', () => {
+  beforeEach(() => cloud())
+
+  it('ask: a model error → the local answer and a clear message', async () => {
+    await db.people.put(person({ id: 'a', firstName: 'Анна', role: 'Инвестор' }))
+    json.mockRejectedValue(Object.assign(new Error('x'), { status: 429 }))
+    const r = await astraAsk('кто инвестор?')
+    expect(r.source).toBe('local')
+    expect(r.error).toMatch(/Слишком много запросов/)
+  })
+
+  it('brief: a model error → the local brief', async () => {
+    await db.people.put(person({ id: 'a', firstName: 'Нина' }))
+    json.mockRejectedValue(new Error('boom'))
+    const r = await astraBrief('a')
+    expect(r.source).toBe('local')
+    expect(r.error).toBeTruthy()
+  })
+
+  it('chat: the model\'s answer is kept, foreign people and quotes are dropped, follow-ups are capped at three', async () => {
+    await db.people.put(person({ id: 'a', firstName: 'Анна' }))
+    json.mockResolvedValue({
+      answer: 'Анна любит джаз',
+      people: [{ id: 'a', reason: 'да' }, { id: 'ghost', reason: 'нет' }],
+      quotes: [{ person_id: 'a', date: '2026-10-01', text: 'джаз', kind: 'note' }, { person_id: 'ghost', date: null, text: 'нет', kind: 'note' }],
+      follow_ups: ['1', '2', '3', '4'],
+      focus_person_id: 'a',
+    })
+    const r = await astraChat('что про Анну?', [{ id: 'm1', role: 'user', text: 'привет', at: 1 } as never, { id: 'm2', role: 'astra', text: 'здравствуй', at: 2 } as never])
+    expect(r.source).toBe('ai')
+    expect(r.data.text).toBe('Анна любит джаз')
+    expect(r.data.cards.map(c => c.id)).toEqual(['a'])
+    expect(r.data.quotes).toHaveLength(1)
+    expect(r.data.quotes[0]).toMatchObject({ personId: 'a', text: 'джаз' })
+    expect(r.data.followUps).toEqual(['1', '2', '3'])
+    expect(r.data.focus).toEqual({ personId: 'a' })
+    expect(json.mock.calls[0][1].content).toContain('привет') // the conversation so far goes to the model
+  })
+
+  it('chat: a focus on someone who does not exist is dropped; no date stays 0; an error falls back to the local answer', async () => {
+    json.mockResolvedValue({ answer: 'x', people: [], quotes: [{ person_id: 'a', date: null, text: 'q', kind: 'note' }], follow_ups: [], focus_person_id: 'ghost' })
+    await db.people.put(person({ id: 'a', firstName: 'Анна' }))
+    const r = await astraChat('кто?', [])
+    expect(r.data.focus).toBeUndefined()
+    expect(r.data.quotes[0]!.date).toBe(0)
+    json.mockRejectedValue(new Error('boom'))
+    const f = await astraChat('кто?', [])
+    expect(f.source).toBe('local')
+    expect(f.error).toBeTruthy()
+  })
+
+  it('note suggestions: the model\'s list; on an error, the local one', async () => {
+    await db.people.put(person({ id: 'a', firstName: 'Анна' }))
+    json.mockResolvedValue({ items: [{ kind: 'reminder', text: 'позвонить' }] })
+    const r = await astraNoteSuggest('Обещал позвонить в пятницу', 'a')
+    expect(r.source).toBe('ai')
+    expect(r.data).toEqual({ items: [{ kind: 'reminder', text: 'позвонить' }] })
+    json.mockRejectedValue(new Error('boom'))
+    const f = await astraNoteSuggest('Обещал позвонить в пятницу', 'a')
+    expect(f.source).toBe('local')
+    expect(f.error).toBeTruthy()
+  })
+
+  it('introduction drafts: from the model, cached, and the local text on an error', async () => {
+    const a = person({ id: 'a', firstName: 'Анна', lookingFor: 'Инвестор' })
+    const b = person({ id: 'b', firstName: 'Борис', role: 'Инвестор' })
+    await db.people.bulkPut([a, b])
+    const drafts = { to_a: 'А', to_b: 'Б', group: 'Г' }
+    json.mockResolvedValue(drafts)
+    const m = { a, b, reason: 'ищет инвестора', value: 'high', score: 1 } as never
+    const r = await astraIntroDrafts(m)
+    expect(r).toEqual({ data: drafts, source: 'ai' })
+    await astraIntroDrafts(m)
+    expect(json).toHaveBeenCalledTimes(1) // the second time comes from the cache
+    await db.aiCache.clear()
+    json.mockRejectedValue(new Error('boom'))
+    const f = await astraIntroDrafts(m)
+    expect(f.source).toBe('local')
+    expect(f.data.to_a).toContain('Анна')
   })
 })
 
