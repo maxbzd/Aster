@@ -98,3 +98,57 @@ describe('demo data', () => {
     await db.settings.clear()
   })
 })
+
+describe('the connection with TickTick', () => {
+  beforeEach(() => { vi.resetModules(); api.connectUrl.mockReset(); api.disconnect.mockReset(); api.getStatus.mockReset() })
+
+  it('connecting asks the server for the link, with the way back to the profile, and goes there', async () => {
+    const assign = vi.fn()
+    vi.stubGlobal('location', { ...window.location, origin: 'https://app.example', pathname: '/aster/', href: 'https://app.example/aster/', assign })
+    api.connectUrl.mockResolvedValue('https://ticktick.example/authorize?x=1')
+    const { startConnect } = await import('@/ticktick/cycle')
+    await startConnect()
+    expect(api.connectUrl).toHaveBeenCalledWith('https://app.example/aster/#/me')
+    expect(assign).toHaveBeenCalledWith('https://ticktick.example/authorize?x=1')
+    vi.unstubAllGlobals()
+  })
+
+  it('disconnecting tells the server, and the state says "not connected" and not "expired"', async () => {
+    api.getStatus.mockResolvedValue({ configured: true, connected: true, expiresAt: null })
+    api.sync.mockResolvedValue({ ok: true, reply: { completed: [], created: 0, closed: 0, errors: [] } })
+    const { syncNow, disconnect, getTickState } = await import('@/ticktick/cycle')
+    await syncNow()
+    expect(getTickState().status?.connected).toBe(true)
+    await disconnect()
+    expect(api.disconnect).toHaveBeenCalledTimes(1)
+    expect(getTickState()).toMatchObject({ status: { connected: false }, expired: false })
+  })
+
+  it('the way back from TickTick is read from the address, and the address is cleaned', async () => {
+    window.history.replaceState(null, '', '/?ticktick=denied#/me')
+    const { takeReturnResult, returnText } = await import('@/ticktick/cycle')
+    expect(takeReturnResult()).toBe('denied')
+    expect(window.location.search).toBe('')
+    expect(window.location.hash).toBe('#/me')
+    expect(takeReturnResult()).toBeNull() // only once
+    expect(returnText('denied').length).toBeGreaterThan(5)
+    expect(returnText('ok')).not.toBe(returnText('state'))
+    expect(returnText('something-new')).toBeTruthy() // an unknown answer still gets a message
+  })
+
+  it('a request already running is not doubled: it is repeated once after it ends', async () => {
+    vi.useFakeTimers()
+    let release!: () => void
+    api.getStatus.mockImplementationOnce(() => new Promise(resolve => { release = () => resolve({ configured: false, connected: false, expiresAt: null }) }))
+    api.getStatus.mockResolvedValue({ configured: false, connected: false, expiresAt: null })
+    const { syncNow } = await import('@/ticktick/cycle')
+    const first = syncNow()
+    await syncNow() // asked again while the first is still running
+    expect(api.getStatus).toHaveBeenCalledTimes(1)
+    release()
+    await first
+    await vi.advanceTimersByTimeAsync(2000)
+    expect(api.getStatus).toHaveBeenCalledTimes(2)
+    vi.useRealTimers()
+  })
+})
