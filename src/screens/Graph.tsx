@@ -160,7 +160,8 @@ export function Graph() {
                   </mo.g>
                   {/* the name under a bridge or a chosen person is not part of the button (its name already says who it is) */}
                   {(isBridge || isSel) && (
-                    <text aria-hidden="true" x={pt.x} y={pt.y + r + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#f5f5fa" opacity="0.9" style={{ pointerEvents: 'none', paintOrder: 'stroke', stroke: '#05060a', strokeWidth: 3 }}>{p.firstName}</text>
+                    // biome-ignore lint/a11y/noAriaHiddenOnFocusable: a plain svg group, not focusable (the rule reads the focusable button beside it)
+                    <g aria-hidden="true"><text x={pt.x} y={pt.y + r + 11} textAnchor="middle" fontSize="8.5" fontWeight="600" fill="#f5f5fa" opacity="0.9" style={{ pointerEvents: 'none', paintOrder: 'stroke', stroke: '#05060a', strokeWidth: 3 }}>{p.firstName}</text></g>
                   )}
                   </Fragment>
                 )
