@@ -20,8 +20,8 @@ export default defineConfig({
       // the eval harness and its screen are developer tools that call real models: they are run by hand (npm run eval)
       exclude: ['src/main.tsx', 'src/data/demo/**', 'src/**/*.d.ts', 'src/ai/eval/**', 'src/screens/Eval.tsx'],
       reporter: ['text-summary', 'html', 'json-summary'],
-      // a floor, not a goal: coverage may only go up (measured 83.7 / 74.7 / 77.2 / 87.4 on 4 Nov 2026)
-      thresholds: { statements: 83, branches: 74, functions: 77, lines: 87 },
+      // a floor, not a goal: coverage may only go up (measured 84.4 / 75.4 / 77.7 / 88.2 on 4 Nov 2026)
+      thresholds: { statements: 84, branches: 75, functions: 77, lines: 88 },
     },
   },
 })
