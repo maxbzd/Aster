@@ -135,3 +135,98 @@ describe('important dates', () => {
     expect((await db.people.get('p1'))?.firstName).toBe('Ольга')
   })
 })
+
+describe('the optional sections of a person', () => {
+  const edit = async (p = {}) => {
+    await db.people.bulkAdd([personOf('p1', { firstName: 'Ольга', ...p }), personOf('p2', { firstName: 'Игорь', lastName: 'Волков' })])
+    const ctx = renderApp('/people')
+    await screen.findByText(/Ольга/)
+    open({ kind: 'editPerson', id: 'p1' })
+    await dialog().findByDisplayValue('Ольга')
+    return ctx
+  }
+  // the "Add" block lists the sections that are not open yet (a chip with the same word may also exist in the circles above)
+  const add = (label: string) => within(dialog().getByText(t('Add')).parentElement!).getByRole('button', { name: new RegExp(label) })
+  const save = async (user: Awaited<ReturnType<typeof edit>>['user']) => { await user.click(dialog().getByRole('button', { name: t('Save') })); await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull()) }
+
+  it('every missing section is offered, and adding one opens it', async () => {
+    const { user } = await edit()
+    for (const label of ['Birthday', 'City', 'Interests', 'Facts', 'Family', 'Looking for & useful for', 'Meeting story', 'Contact rhythm', 'Links', 'Gift ideas', 'What to call them', 'Note']) {
+      await user.click(add(t(label)))
+    }
+    expect(dialog().queryByText(t('Add'))).toBeNull() // nothing is left to add
+  })
+
+  it('birthday: day and month are chosen, the year is optional; clearing the day removes the date', async () => {
+    const { user } = await edit()
+    await user.click(add(t('Birthday')))
+    await user.click(dialog().getByRole('button', { name: t('Birthday: day') }))
+    await user.click(await screen.findByRole('option', { name: '14' }))
+    await user.click(dialog().getByRole('button', { name: t('Birthday: month') }))
+    await user.click((await screen.findAllByRole('option'))[4]!) // May
+    await user.type(dialog().getByPlaceholderText(t('unknown')), '1990')
+    await save(user)
+    expect((await db.people.get('p1'))?.birthday).toBe('1990-05-14')
+  })
+
+  it('birthday without a year is kept as "--MM-DD"', async () => {
+    const { user } = await edit({ birthday: '1990-05-14' })
+    const year = dialog().getByDisplayValue('1990')
+    await user.clear(year)
+    await save(user)
+    expect((await db.people.get('p1'))?.birthday).toBe('--05-14')
+  })
+
+  it('facts: add, change the icon, edit and delete', async () => {
+    const { user } = await edit({ facts: [{ icon: 'sparkle', text: 'Пьёт фильтр-кофе' }] })
+    await user.type(dialog().getByDisplayValue('Пьёт фильтр-кофе'), '!')
+    await user.click(dialog().getByTitle(t('Change icon')))
+    await user.click(dialog().getByRole('button', { name: t('+ fact') }))
+    const empty = dialog().getAllByPlaceholderText(t('Only drinks filter coffee'))
+    expect(empty).toHaveLength(2) // the placeholder is on every row; the new row is the last
+    await user.type(empty[1]!, 'Бегает по утрам')
+    await save(user)
+    const p = await db.people.get('p1')
+    expect(p?.facts.map(f => f.text)).toEqual(['Пьёт фильтр-кофе!', 'Бегает по утрам'])
+    expect(p?.facts[0]?.icon).not.toBe('sparkle')
+  })
+
+  it('"looking for", "strong at", "how I can help", the story, the nickname, the gift and the note are saved', async () => {
+    const { user } = await edit()
+    for (const label of ['Looking for & useful for', 'Meeting story', 'Gift ideas', 'What to call them', 'Family', 'Note']) await user.click(add(t(label)))
+    const fill = async (placeholder: string, value: string) => user.type(dialog().getByPlaceholderText(placeholder), value)
+    await fill(t('Fintech connections, hiring advice…'), 'Дизайн')
+    await fill(t('Got talking in the coffee queue…'), 'В очереди за кофе')
+    await fill(t('History books, good tea…'), 'Чай')
+    await fill(t('Wife Maria, son Leo (5)'), 'Жена Мария')
+    await fill(t("What they're up to, what you talked about…"), 'Важное')
+    await save(user)
+    const p = await db.people.get('p1')
+    expect(p).toMatchObject({ canHelpMe: 'Дизайн', metStory: 'В очереди за кофе', giftIdeas: 'Чай', family: 'Жена Мария', notes: 'Важное' })
+  })
+
+  it('contact rhythm: a chosen rhythm is saved, "By orbit" clears it', async () => {
+    const { user } = await edit({ cadenceDays: 30 })
+    const chips = dialog().getAllByRole('button').filter(b => b.className.includes('rounded-full') && b.closest('div')?.className.includes('flex-wrap'))
+    expect(chips.length).toBeGreaterThan(1)
+    await user.click(dialog().getByText(t('By orbit')))
+    await save(user)
+    expect((await db.people.get('p1'))?.cadenceDays).toBeUndefined()
+  })
+
+  it('links: the label of a connection can be changed', async () => {
+    const { user } = await edit({ links: [{ personId: 'p2', label: 'знакомы' }] })
+    const label = await dialog().findByDisplayValue('знакомы')
+    await user.clear(label)
+    await user.type(label, 'коллеги')
+    await save(user)
+    expect((await db.people.get('p1'))?.links).toEqual([{ personId: 'p2', label: 'коллеги' }])
+  })
+
+  it('links: the connection can be deleted', async () => {
+    const { user } = await edit({ links: [{ personId: 'p2', label: 'знакомы' }] })
+    await user.click(await dialog().findByRole('button', { name: t('Delete connection') }))
+    await save(user)
+    expect((await db.people.get('p1'))?.links).toEqual([])
+  })
+})
