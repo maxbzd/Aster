@@ -213,15 +213,18 @@ export function PersonSheet({ id, onClose }: { id?: string; onClose: () => void 
 
 function ExtraSection({ k, draft, set }: { k: SectionKey; draft: Person; set: <K extends keyof Person>(k: K, v: Person[K]) => void }) {
   const [tag, setTag] = useState('')
+  // the year is typed digit by digit: until it has four digits it is not part of the date yet, so the field keeps its own text
+  const [yearText, setYearText] = useState<string | null>(null)
   switch (k) {
     case 'birthday': {
-      const m = draft.birthday?.match(/^(\d{4}|--)-(\d{2})-(\d{2})$/)
+      const m = draft.birthday?.match(/^(\d{4}|--)-?(\d{2})-(\d{2})$/)
       const year = m && m[1] !== '--' ? m[1] : ''
       const month = m ? Number(m[2]) : 0
       const day = m ? Number(m[3]) : 0
       const upd = (y: string, mo: number, d: number) => {
         if (!mo || !d) { set('birthday', undefined); return }
-        set('birthday', `${/^\d{4}$/.test(y) ? y : '--'}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
+        // the year is optional: "1990-05-14", or "--05-14" when it is unknown (the form the whole app reads and writes)
+        set('birthday', `${/^\d{4}$/.test(y) ? `${y}-` : '--'}${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`)
       }
       return (
         <FormGroup title={t('Birthday')}>
@@ -235,7 +238,8 @@ function ExtraSection({ k, draft, set }: { k: SectionKey; draft: Person; set: <K
                 options={Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: monthGen(i) }))} />
             </Field>
             <Field label={t('Year')}>
-              <input inputMode="numeric" maxLength={4} value={year} placeholder={t('unknown')} onChange={e => upd(e.target.value.replace(/\D/g, ''), month, day)} className="field text-[16.5px]" />
+              <input inputMode="numeric" maxLength={4} value={yearText ?? year} placeholder={t('unknown')}
+                onChange={e => { const v = e.target.value.replace(/\D/g, ''); setYearText(v); upd(v, month, day) }} onBlur={() => setYearText(null)} className="field text-[16.5px]" />
             </Field>
           </div>
         </FormGroup>
