@@ -43,6 +43,8 @@ describe('the chat with Astra (answering on the device, with no model connected)
     renderApp('/chat?q=%D0%9A%D1%82%D0%BE%20%D0%98%D0%B3%D0%BE%D1%80%D1%8C%3F')
     await waitFor(async () => expect((await db.chat.toArray()).some(m => m.role === 'user' && m.text === 'Кто Игорь?')).toBe(true), { timeout: 8000 })
     await waitFor(() => expect(window.location.hash).toBe('#/chat')) // and the question is taken out of the address
+    // let the answer land too, or it is written into the next test's empty chat
+    await waitFor(async () => expect((await db.chat.toArray()).some(m => m.role === 'astra')).toBe(true), { timeout: 8000 })
   })
 
   it('an empty or blank question is never sent', async () => {
