@@ -28,6 +28,9 @@ jobs:
       - run: npm run typecheck
       - run: npm run lint
       - run: npm run i18n:check
+      - run: npm run check:docs
+      - run: npm run check:licenses
+      - run: npm run licenses -- --check
       - run: npm run test:coverage
       - run: npm run build
       - run: npm run size

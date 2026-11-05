@@ -48,6 +48,9 @@
     "e2e:update": "node scripts/e2e-update.mjs",
     "e2e:scale": "node scripts/e2e-scale.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:licenses": "node scripts/check-licenses.mjs",
+    "licenses": "node scripts/write-licenses.mjs",
     "check:reproducible": "node scripts/check-reproducible.mjs"
   },
   "dependencies": {
