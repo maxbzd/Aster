@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CryptoError, openWithPassword, sealWithPassword, type PasswordSealed } from '@/crypto/password'
-import { utf8 } from '@/crypto/bytes'
+import { fromBase64, utf8 } from '@/crypto/bytes'
 
 const argon2 = { m: 64, t: 1, p: 1 } // cheap on purpose: the point is the envelope, not the cost
 const secret = utf8('любит чай и джаз')
@@ -28,7 +28,11 @@ describe('a password-sealed envelope cannot be changed without notice', () => {
       for (const i of positions) {
         // swap one base64 character for another valid one
         const next = text[i] === 'A' ? 'B' : 'A'
-        outcomes.add(await tryOpen({ ...sealed, [field]: text.slice(0, i) + next + text.slice(i + 1) }, 'backup'))
+        const changed = text.slice(0, i) + next + text.slice(i + 1)
+        // the last characters of base64 can carry bits that mean nothing: such a change leaves the very same bytes, so there is nothing to refuse
+        const sameBytes = (() => { try { return fromBase64(changed).toString() === fromBase64(text).toString() } catch { return false } })()
+        if (sameBytes) continue
+        outcomes.add(await tryOpen({ ...sealed, [field]: changed }, 'backup'))
       }
     }
     // padding characters ("=") swapped for letters change the length, which is also refused
