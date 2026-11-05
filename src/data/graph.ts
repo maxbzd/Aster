@@ -182,57 +182,60 @@ export function layoutGraph(nodeIds: ID[], edges: GraphEdge[], clusterOf: Map<ID
     return [c, { x: width / 2 + (clusterIds.length === 1 ? 0 : Math.cos(a) * R), y: height / 2 + (clusterIds.length === 1 ? 0 : Math.sin(a) * R) }]
   }))
   const hash = (s: string) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return (h >>> 0) / 4294967295 }
-  const pos = new Map<ID, { x: number; y: number }>(ids.map(id => {
+  // plain arrays indexed by person: the same arithmetic in the same order as with maps, but several times faster
+  const px = new Float64Array(n); const py = new Float64Array(n)
+  const cx = new Float64Array(n); const cy = new Float64Array(n)
+  const index = new Map<ID, number>()
+  ids.forEach((id, i) => {
+    index.set(id, i)
     const c = center.get(clusterOf.get(id) ?? 0)!
     const a = hash(id) * Math.PI * 2
     const r = 14 + hash(`${id}r`) * 26
-    return [id, { x: c.x + Math.cos(a) * r, y: c.y + Math.sin(a) * r }]
-  }))
+    px[i] = c.x + Math.cos(a) * r; py[i] = c.y + Math.sin(a) * r
+    cx[i] = c.x; cy[i] = c.y
+  })
+  const links = edges.flatMap(e => { const a = index.get(e.a); const b = index.get(e.b); return a === undefined || b === undefined ? [] : [{ a, b, w: e.w }] })
   const area = width * height
   const k = Math.sqrt(area / n) * 0.62
   let temp = Math.min(width, height) / 8
+  const dx0 = new Float64Array(n); const dy0 = new Float64Array(n)
   for (let it = 0; it < 220; it++) {
-    const disp = new Map<ID, { x: number; y: number }>(ids.map(i => [i, { x: 0, y: 0 }]))
+    dx0.fill(0); dy0.fill(0)
     for (let i = 0; i < n; i++) {
-      const a = pos.get(ids[i]!)!
+      const ax = px[i]!; const ay = py[i]!
       for (let j = i + 1; j < n; j++) {
-        const b = pos.get(ids[j]!)!
-        let dx = a.x - b.x; let dy = a.y - b.y
+        let dx = ax - px[j]!; let dy = ay - py[j]!
         let d = Math.hypot(dx, dy)
         if (d < 0.01) { dx = hash(ids[i]!) - 0.5; dy = hash(ids[j]!) - 0.5; d = 0.5 }
         const f = (k * k) / d
         const ux = dx / d; const uy = dy / d
-        disp.get(ids[i]!)!.x += ux * f; disp.get(ids[i]!)!.y += uy * f
-        disp.get(ids[j]!)!.x -= ux * f; disp.get(ids[j]!)!.y -= uy * f
+        dx0[i]! += ux * f; dy0[i]! += uy * f
+        dx0[j]! -= ux * f; dy0[j]! -= uy * f
       }
     }
-    for (const e of edges) {
-      const a = pos.get(e.a); const b = pos.get(e.b)
-      if (!a || !b) continue
-      const dx = a.x - b.x; const dy = a.y - b.y
+    for (const e of links) {
+      const dx = px[e.a]! - px[e.b]!; const dy = py[e.a]! - py[e.b]!
       const d = Math.max(0.01, Math.hypot(dx, dy))
       const f = ((d * d) / k) * (0.5 + e.w * 0.18)
-      disp.get(e.a)!.x -= (dx / d) * f; disp.get(e.a)!.y -= (dy / d) * f
-      disp.get(e.b)!.x += (dx / d) * f; disp.get(e.b)!.y += (dy / d) * f
+      dx0[e.a]! -= (dx / d) * f; dy0[e.a]! -= (dy / d) * f
+      dx0[e.b]! += (dx / d) * f; dy0[e.b]! += (dy / d) * f
     }
-    for (const id of ids) {
-      const p = pos.get(id)!; const c = center.get(clusterOf.get(id) ?? 0)!
-      const g = disp.get(id)!
+    for (let i = 0; i < n; i++) {
       // a group holds together, the whole graph is pulled toward the middle
-      g.x += (c.x - p.x) * 0.9; g.y += (c.y - p.y) * 0.9
-      g.x += (width / 2 - p.x) * 0.12; g.y += (height / 2 - p.y) * 0.12
-      const len = Math.max(0.01, Math.hypot(g.x, g.y))
+      let gx = dx0[i]! + (cx[i]! - px[i]!) * 0.9; let gy = dy0[i]! + (cy[i]! - py[i]!) * 0.9
+      gx += (width / 2 - px[i]!) * 0.12; gy += (height / 2 - py[i]!) * 0.12
+      const len = Math.max(0.01, Math.hypot(gx, gy))
       const step = Math.min(len, temp)
-      p.x += (g.x / len) * step; p.y += (g.y / len) * step
+      px[i]! += (gx / len) * step; py[i]! += (gy / len) * step
     }
     temp *= 0.975
   }
   // fit into a frame with margins
-  const xs = ids.map(i => pos.get(i)!.x); const ys = ids.map(i => pos.get(i)!.y)
-  const minX = Math.min(...xs); const maxX = Math.max(...xs); const minY = Math.min(...ys); const maxY = Math.max(...ys)
+  let minX = Infinity; let maxX = -Infinity; let minY = Infinity; let maxY = -Infinity
+  for (let i = 0; i < n; i++) { minX = Math.min(minX, px[i]!); maxX = Math.max(maxX, px[i]!); minY = Math.min(minY, py[i]!); maxY = Math.max(maxY, py[i]!) }
   const sx = (width - pad * 2) / Math.max(1, maxX - minX); const sy = (height - pad * 2) / Math.max(1, maxY - minY)
   const s = Math.min(sx, sy, 2.2)
   const ox = (width - (maxX - minX) * s) / 2 - minX * s; const oy = (height - (maxY - minY) * s) / 2 - minY * s
-  for (const id of ids) { const p = pos.get(id)!; out.set(id, { x: p.x * s + ox, y: p.y * s + oy }) }
+  ids.forEach((id, i) => { out.set(id, { x: px[i]! * s + ox, y: py[i]! * s + oy }) })
   return out
 }

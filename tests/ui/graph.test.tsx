@@ -53,4 +53,20 @@ describe('the graph of connections', () => {
       await waitFor(() => expect(window.location.hash).toMatch(/^#\/person\//))
     })
   })
+
+  it('a big network draws only its best-connected people, says so, and still counts everyone', async () => {
+    await seed({ demo: false })
+    // 340 people in a ring, and a hub who knows everyone: the hub is the best-connected
+    const ids = Array.from({ length: 340 }, (_, i) => `p${i}`)
+    const link = (...to: string[]) => to.map(personId => ({ personId, label: 'знакомы' }))
+    await db.people.bulkAdd([
+      personOf('hub', { firstName: 'Центр', links: link(...ids) }),
+      ...ids.map((id, i) => personOf(id, { firstName: `Имя${i}`, links: link(ids[(i + 1) % ids.length]!) })),
+    ])
+    renderApp('/graph')
+    expect(await screen.findByText(t('Showing the {shown} best-connected of {all} people. The groups below count everyone.', { shown: 300, all: 341 }), undefined, { timeout: 15_000 })).toBeInTheDocument()
+    const people = [...document.querySelectorAll('svg [role="button"]')] // the people in the picture (the group cards below are buttons too)
+    expect(people).toHaveLength(300)
+    expect(people.some(b => /Центр/.test(b.getAttribute('aria-label') ?? ''))).toBe(true)
+  }, 30_000)
 })

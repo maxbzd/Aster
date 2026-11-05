@@ -1426,6 +1426,7 @@
   "Afficher {n} personne de plus",
   "Afficher {n} personnes de plus"
  ],
+ "Showing the {shown} best-connected of {all} people. The groups below count everyone.": "Les {shown} personnes les mieux connectées sur {all} sont affichées. Les groupes ci-dessous comptent tout le monde.",
  "Sibling": "Frère ou sœur",
  "Sign in": "Se connecter",
  "Sign in so your people, notes and reminders are on all your devices. Your data stays on this device and is copied to a protected cloud — without internet everything works as before.": "Connecte-toi pour retrouver tes personnes, notes et rappels sur tous tes appareils. Tes données restent sur cet appareil et sont copiées dans un cloud protégé ; sans internet, tout fonctionne comme avant.",

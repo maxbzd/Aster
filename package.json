@@ -46,6 +46,7 @@
     "e2e:audit": "node scripts/e2e-audit.mjs",
     "e2e:quota": "node scripts/e2e-quota.mjs",
     "e2e:update": "node scripts/e2e-update.mjs",
+    "e2e:scale": "node scripts/e2e-scale.mjs",
     "check:reproducible": "node scripts/check-reproducible.mjs"
   },
   "dependencies": {
