@@ -1438,6 +1438,7 @@
   "Показать ещё {n} человек",
   "Показать ещё {n} человека"
  ],
+ "Showing the {shown} best-connected of {all} people. The groups below count everyone.": "Показаны {shown} самых связанных людей из {all}. Группы ниже учитывают всех.",
  "Sibling": "Брат или сестра",
  "Sign in": "Войти",
  "Sign in so your people, notes and reminders are on all your devices. Your data stays on this device and is copied to a protected cloud — without internet everything works as before.": "Войди, чтобы люди, заметки и напоминания были на всех твоих устройствах. Данные хранятся у тебя на устройстве и копируются в защищённое облако — без интернета всё работает как раньше.",
