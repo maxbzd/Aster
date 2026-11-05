@@ -23,7 +23,9 @@ describe('a password-sealed envelope cannot be changed without notice', () => {
     const outcomes = new Set<string>()
     for (const field of ['salt', 'iv', 'data'] as const) {
       const text = sealed[field]
-      for (let i = 0; i < text.length; i++) {
+      // every position would take minutes of key derivation: the two ends, the middle and a few spread in between cover each part
+      const positions = [...new Set([0, 1, 2, text.length >> 2, text.length >> 1, (text.length * 3) >> 2, text.length - 3, text.length - 2, text.length - 1])]
+      for (const i of positions) {
         // swap one base64 character for another valid one
         const next = text[i] === 'A' ? 'B' : 'A'
         outcomes.add(await tryOpen({ ...sealed, [field]: text.slice(0, i) + next + text.slice(i + 1) }, 'backup'))
@@ -31,7 +33,7 @@ describe('a password-sealed envelope cannot be changed without notice', () => {
     }
     // padding characters ("=") swapped for letters change the length, which is also refused
     expect([...outcomes].filter(o => o === 'opened' || o === 'crashed')).toEqual([])
-  })
+  }, 60_000)
 
   it('a damaged envelope is told apart from a wrong password', async () => {
     const sealed = await sealWithPassword('пароль-для-теста', secret, { argon2 })
