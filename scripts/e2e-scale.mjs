@@ -13,7 +13,7 @@ const BASE = (process.env.BASE_URL ?? 'http://localhost:4174/').replace(/#.*$/, 
 const SIZE = Number(process.env.SIZE ?? 2000);
 // generous: a CI machine is slower than a laptop, and a long task is not yet a freeze
 const BUDGET = { longestTaskMs: Number(process.env.LONGEST_TASK_MS ?? 2500), heapMB: Number(process.env.HEAP_MB ?? 500) };
-const ROUTES = ['/', '/people', '/pulse', '/year', '/graph'];
+const ROUTES = ['/', '/people', '/reserve', '/pulse', '/year', '/graph', '/orbit'];
 
 const executablePath = fallbackChromiumPath();
 const browser = await chromium.launch(executablePath ? { executablePath, args: ['--no-sandbox'] } : { args: ['--no-sandbox'] });
@@ -36,7 +36,7 @@ try {
   const sizes = await page.evaluate(async ({ SIZE }) => {
     const db = await new Promise((res, rej) => { const r = indexedDB.open('aster'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
     const out = {};
-    for (const store of ['people', 'interactions', 'reminders']) {
+    for (const store of ['people', 'interactions', 'reminders', 'leads']) {
       const rows = await new Promise((res) => { const r = db.transaction(store).objectStore(store).getAll(); r.onsuccess = () => res(r.result); });
       const keyPath = db.transaction(store).objectStore(store).keyPath;
       const add = [];
