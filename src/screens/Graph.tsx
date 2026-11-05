@@ -17,6 +17,8 @@ import { t, tn } from '@/i18n'
 
 const W = 360
 const H = 440
+/** A phone screen cannot show more than this many people legibly, and drawing thousands of animated shapes freezes the page. */
+export const MAX_DRAWN = 300
 
 /** Group colours come from the circle palettes: one set across the whole app. */
 const clusterColor = (i: number) => PALETTES[PALETTE_KEYS[i % PALETTE_KEYS.length]!]
@@ -31,7 +33,15 @@ export function Graph() {
   const [focus, setFocus] = useState<number | null>(null)
 
   const g = useMemo(() => analyzeGraph(people ?? [], intros, ints, id => circles.find(c => c.id === id)?.name), [people, intros, ints, circles])
-  const pos = useMemo(() => layoutGraph(g.connected.map(p => p.id), g.edges, g.clusterOf, W, H), [g])
+  // in a big network the picture shows the best-connected people (the numbers, groups and bridges still count everyone)
+  const drawn = useMemo(() => {
+    if (g.connected.length <= MAX_DRAWN) return g.connected
+    const keep = new Set([...g.connected].sort((a, b) => (g.degree.get(b.id) ?? 0) - (g.degree.get(a.id) ?? 0)).slice(0, MAX_DRAWN).map(p => p.id))
+    return g.connected.filter(p => keep.has(p.id))
+  }, [g])
+  const drawnIds = useMemo(() => new Set(drawn.map(p => p.id)), [drawn])
+  const drawnEdges = useMemo(() => (drawn === g.connected ? g.edges : g.edges.filter(e => drawnIds.has(e.a) && drawnIds.has(e.b))), [g, drawn, drawnIds])
+  const pos = useMemo(() => layoutGraph(drawn.map(p => p.id), drawnEdges, g.clusterOf, W, H), [g, drawn, drawnEdges])
   const byId = useMemo(() => new Map((people ?? []).map(p => [p.id, p])), [people])
   const bridgeIds = useMemo(() => new Set(g.bridges.slice(0, 6).map(b => b.person.id)), [g])
 
@@ -44,12 +54,13 @@ export function Graph() {
     return m
   }, [g])
 
-  const auras = useMemo(() => g.clusters.filter(c => c.members.length > 1).map(c => {
+  const auras = useMemo(() => g.clusters.filter(c => c.members.length > 1).flatMap(c => {
     const pts = c.members.map(m => pos.get(m.id)).filter((p): p is { x: number; y: number } => !!p)
+    if (!pts.length) return [] // a group none of whose people are drawn
     const cx = pts.reduce((s, p) => s + p.x, 0) / pts.length
     const cy = pts.reduce((s, p) => s + p.y, 0) / pts.length
     const r = Math.max(...pts.map(p => Math.hypot(p.x - cx, p.y - cy))) + 34
-    return { c, cx, cy, r }
+    return [{ c, cx, cy, r }]
   }), [g, pos])
 
   if (!people) return <Page><div /></Page>
@@ -118,7 +129,7 @@ export function Graph() {
               ))}
 
               {/* links */}
-              {g.edges.map((e, i) => {
+              {drawnEdges.map((e, i) => {
                 const A = pos.get(e.a); const B = pos.get(e.b)
                 if (!A || !B) return null
                 const on = edgeLit(e.a, e.b)
@@ -133,7 +144,7 @@ export function Graph() {
               })}
 
               {/* people */}
-              {g.connected.map((p, i) => {
+              {drawn.map((p, i) => {
                 const pt = pos.get(p.id)
                 if (!pt) return null
                 const deg = g.degree.get(p.id) ?? 0
@@ -168,6 +179,9 @@ export function Graph() {
               })}
             </svg>
           </div>
+          {drawn.length < g.connected.length && (
+            <p className="mt-2 text-center text-[12px] text-fg-3">{t('Showing the {shown} best-connected of {all} people. The groups below count everyone.', { shown: drawn.length, all: g.connected.length })}</p>
+          )}
           <div className="mt-2 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[12px] text-fg-3">
             <span className="flex items-center gap-1.5"><span className="h-2 w-2 rounded-full bg-[#ffd9a8] shadow-[0_0_8px_#ffd9a8]" />{t('bridge between groups')}</span>
             <span className="flex items-center gap-1.5"><span className="h-px w-4 border-t border-dashed border-[#ffb36b]" />{t('connection between groups')}</span>
