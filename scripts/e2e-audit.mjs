@@ -90,6 +90,28 @@ try {
   await page.evaluate(() => { document.documentElement.style.fontSize = '' })
   await page.setViewportSize({ width: 390, height: 844 })
 
+  // languages (WCAG 1.4.10): the same screens at 320 px in each of the seven languages; German and French words are the longest
+  {
+    const LANGS = ['en', 'es', 'de', 'fr', 'pt', 'uk', 'ru']
+    await page.setViewportSize({ width: 320, height: 568 })
+    for (const lang of LANGS) {
+      await page.evaluate(([key, value]) => localStorage.setItem(key, value), ['aster.locale', lang])
+      await page.reload({ waitUntil: 'load' })
+      await page.waitForTimeout(1000)
+      for (const route of ROUTES) {
+        await page.evaluate((hash) => { location.hash = `#${hash}` }, route)
+        await page.waitForTimeout(500)
+        const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)
+        if (overflow > 1) failures.push(`language ${lang} ${route}: ${overflow}px too wide at 320 px`)
+      }
+    }
+    await page.evaluate((key) => localStorage.removeItem(key), 'aster.locale')
+    await page.reload({ waitUntil: 'load' })
+    await page.setViewportSize({ width: 390, height: 844 })
+    console.log(`• seven languages at 320 px: ${failures.some((f) => f.startsWith('language')) ? 'FAIL' : 'ok'}`)
+  }
+
+
   if (foreign.size) failures.push(`privacy: requests to other origins: ${[...foreign].join(', ')}`)
   console.log(`• requests to other origins: ${foreign.size}`)
 
