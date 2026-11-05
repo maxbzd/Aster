@@ -6,6 +6,7 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 
 ### Added
 
+- **A compatibility guard** (`npm run check:syntax`, in CI): fails when any JavaScript file of the build uses syntax newer than ES2022 (Chrome 94, Firefox 93, Safari 15.4), so a dependency cannot raise the minimum browser unnoticed.
 - **A big network is tested for.** `npm run e2e:scale` (in CI) multiplies the example data to 2,000 people, entries and reminders in a real Chromium and fails when a heavy screen holds the page for over 2.5 s or the memory passes 500 MB. The graph draws the 300 best-connected people in a very big network and says so (the groups, bridges and counts still use everyone), and its layout is several times faster with the very same positions.
 - **Faster launch**: 12 % less is downloaded at start (333 → 294 KB) and the first chunk is a third smaller (126 → 87 KB): the search and the engine behind it load the first time it is opened. The size budget was lowered to match, so the gain stays. The browser audit now also opens the search and checks that it finds people.
 - **The build is reproducible**: two builds of the same source, in different folders, give byte-identical files; `npm run check:reproducible` (in CI) proves it and prints a fingerprint. - **Text fields show where the keyboard focus is** (they had no frame of their own and no ring). The browser audit (`npm run e2e:audit`, in CI) now also fails when a control shows no focus ring, or when a screen needs sideways scrolling at 320 px with the page's text doubled.

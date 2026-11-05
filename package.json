@@ -47,6 +47,7 @@
     "e2e:quota": "node scripts/e2e-quota.mjs",
     "e2e:update": "node scripts/e2e-update.mjs",
     "e2e:scale": "node scripts/e2e-scale.mjs",
+    "check:syntax": "node scripts/check-syntax.mjs",
     "check:reproducible": "node scripts/check-reproducible.mjs"
   },
   "dependencies": {
@@ -80,6 +81,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/coverage-v8": "^5.0.5",
+    "acorn": "^8.19.0",
     "axe-core": "^4.14.0",
     "fake-indexeddb": "^6.2.7",
     "happy-dom": "^21.0.4",
