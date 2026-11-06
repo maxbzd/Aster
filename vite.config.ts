@@ -5,6 +5,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath, URL } from 'node:url'
 import type { Plugin } from 'vite'
+import { licenseNotices } from './scripts/licenseNotices.mjs'
 
 /**
  * GitHub Pages cannot send headers, so `public/_headers` (used by Cloudflare and Netlify) does nothing there, and the
@@ -51,6 +52,16 @@ function preloadChunks(names: string[]): Plugin {
 }
 
 /** Puts the build's name in the page (`BUILD_TAG`), so that a test can tell two builds of the same code apart. */
+/** Serves the notices of the bundled open-source packages as /third-party-licenses.txt (made from the lock file at every build). */
+function thirdPartyLicenses(): Plugin {
+  return {
+    name: 'third-party-licenses',
+    generateBundle() {
+      this.emitFile({ type: 'asset', fileName: 'third-party-licenses.txt', source: licenseNotices(fileURLToPath(new URL('.', import.meta.url)).replace(/\/$/, '')) })
+    },
+  }
+}
+
 function buildTag(): Plugin {
   return {
     name: 'aster:build-tag',
@@ -79,6 +90,7 @@ export default defineConfig({
   server: { port: 5191, strictPort: true, host: '127.0.0.1' },
   preview: { port: 5192, strictPort: true, host: '127.0.0.1' },
   plugins: [
+    thirdPartyLicenses(),
     react(),
     tailwindcss(),
     cspMeta(),

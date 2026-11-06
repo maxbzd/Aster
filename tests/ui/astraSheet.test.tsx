@@ -72,10 +72,12 @@ describe('connecting Astra to a model', () => {
     await waitFor(async () => expect((await ai())?.webSearch).toBe(!web0))
     await user.click(screen.getByRole('button', { name: new RegExp(t('I understand how my data is processed')) }))
     await waitFor(async () => expect((await ai())?.consentAt).toBeGreaterThan(0))
-    expect(screen.getByRole('button', { name: t('Test connection') })).toBeEnabled()
+    // the button follows the saved setting a moment later
+    await waitFor(() => expect(screen.getByRole('button', { name: t('Test connection') })).toBeEnabled())
     // taking the consent back switches the test off again
     await user.click(screen.getByRole('button', { name: new RegExp(t('I understand how my data is processed')) }))
     await waitFor(async () => expect((await ai())?.consentAt).toBeUndefined())
+    await waitFor(() => expect(screen.getByRole('button', { name: t('Test connection') })).toBeDisabled())
   })
 
   it('the test says it works, or why it does not', async () => {
