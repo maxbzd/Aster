@@ -1,6 +1,6 @@
 // Three promises, checked in a real Chromium against the built app:
 //   1. Privacy: with no account and no AI key, the app talks to nobody but its own origin.
-//   2. Accessibility: no serious or critical axe-core violation (WCAG 2.2 AA) on any screen.
+//   2. Accessibility: no axe-core violation at any impact (WCAG 2.2 AA and best practice: headings, landmarks) on any screen.
 //   3. Offline: after the first visit, a reload with the network off still opens the app.
 //
 //   npm run build && npm run preview -- --port 4174 --strictPort     (in another terminal)
@@ -43,8 +43,8 @@ try {
     await page.waitForTimeout(1000)
     await page.evaluate((source) => { if (!window.axe) { const s = document.createElement('script'); s.textContent = source; document.head.appendChild(s) } }, axeSource)
     const violations = await page.evaluate(async () => {
-      const result = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] } })
-      return result.violations.filter((v) => v.impact === 'serious' || v.impact === 'critical').map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0].target.join(' ').slice(0, 80)}`)
+      const result = await window.axe.run(document, { runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa', 'best-practice'] } })
+      return result.violations.map((v) => `${v.id} (${v.nodes.length}): ${v.nodes[0].target.join(' ').slice(0, 80)}`)
     })
     // keyboard: every control reached with Tab shows where the focus is (drawn shapes inside an SVG draw their own ring and are not tested here)
     await page.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur())
