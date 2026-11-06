@@ -47,6 +47,7 @@
     "e2e:quota": "node scripts/e2e-quota.mjs",
     "e2e:update": "node scripts/e2e-update.mjs",
     "e2e:scale": "node scripts/e2e-scale.mjs",
+    "e2e:idle": "node scripts/e2e-idle.mjs",
     "check:syntax": "node scripts/check-syntax.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "check:licenses": "node scripts/check-licenses.mjs",

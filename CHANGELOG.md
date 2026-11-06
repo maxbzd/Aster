@@ -6,6 +6,7 @@ All notable changes to Aster are documented here. The format follows [Keep a Cha
 
 ### Added
 
+- **Battery guard.** `npm run e2e:idle` (in CI) leaves the main screens alone for five seconds each and fails when one uses over 10 % of the main thread; Aster uses under 1 %.
 - The browser audit (`npm run e2e:audit`, in CI) now also opens every screen at 320 px in all seven languages and fails on sideways overflow (none found in Aster).
 - **Licences are checked and shipped.** `npm run check:licenses` (in CI) fails when a production dependency is under a licence that is not on a short permissive list (GPL, AGPL and "unknown" stop the build until someone decides on purpose). `public/third-party-licenses.txt` carries the notice of every production dependency next to the app, as the MIT, Apache and font licences ask; `npm run licenses -- --check` keeps it current. `npm run check:docs` (in CI) fails on a broken relative link in any Markdown file.
 - **A compatibility guard** (`npm run check:syntax`, in CI): fails when any JavaScript file of the build uses syntax newer than ES2022 (Chrome 94, Firefox 93, Safari 15.4), so a dependency cannot raise the minimum browser unnoticed.
